@@ -125,6 +125,49 @@ superbuild. The final ELF has no shared-library dependency.
   public/orchestrating build and target native code must use the selected LLVM
   toolchain
 
+### Clang hardening profiles
+
+Introduce hardening with the Phase 1 toolchain, before application components
+are implemented. Define one CMake interface target as the mandatory baseline
+for production and ordinary GoogleTest builds. Dedicated diagnostic presets
+start from it but may disable an incompatible item only through a documented,
+narrow CMake preset exception. Apply the baseline to all first-party C/C++
+targets and to dependency targets where whole-program CFI
+or equivalent coverage requires compatible instrumentation. Any dependency
+exception must be explicit, justified, and tested; flags must never silently
+disappear because a compiler probe failed.
+
+The production and test baseline includes:
+
+- `-fstack-protector-strong`, `-ftrivial-auto-var-init=zero`, and
+  `-fstack-clash-protection` where the pinned Clang target implements it;
+- the highest effective `_FORTIFY_SOURCE` mode supported by the pinned
+  musl/Clang headers (target level 3), with compiler probes proving that the
+  expected fortified checks are emitted;
+- ThinLTO, hidden visibility, and Clang CFI (`-fsanitize=cfi`) with trapping and
+  no dynamically loaded code or sanitizer runtime in the final static ELF;
+- the production-appropriate libc++ hardening mode, initially
+  `_LIBCPP_HARDENING_MODE_FAST`, with ABI/configuration consistency across the
+  entire static graph;
+- static PIE plus RELRO, immediate binding where applicable, a non-executable
+  stack, and fatal linker warnings; and
+- architecture-specific branch/control-flow protection: `-fcf-protection=full`
+  on `x86_64` and `-mbranch-protection=standard` on `arm64`, validated against
+  the actual Lambda execution environments.
+
+Normal unit and integration tests retain this exact production baseline.
+Dedicated test presets additionally use ASan/UBSan, MSan, TSan, LSan, fuzzing,
+coverage, stronger libc++ debug checks, or other diagnostics as applicable.
+Each such preset documents the minimum necessary baseline exception; for
+example, MSan disables automatic variable initialization so uninitialized
+reads remain observable.
+These high-overhead diagnostic configurations are test-only: production must
+not use ASan, MSan, TSan, HWASan, LSan, fuzz/coverage instrumentation, debug
+iterators, `-O0`, or similar options that are normally unsuitable for release
+and materially degrade latency, throughput, memory use, or binary size. Release
+optimization must not disable the baseline stack canary, CFI, initialization,
+fortification, or link/branch protections.
+
 ### Direct runtime libraries
 
 - **BoringSSL**: sole TLS and crypto provider.
@@ -210,6 +253,8 @@ Deliverables:
 
 - Add top-level `CMakeLists.txt`, `CMakePresets.json`, and musl toolchain files
   for Lambda `x86_64` and `arm64`.
+- Add hardened production and test presets immediately, backed by the shared
+  CMake hardening interface target; all later phases inherit these presets.
 - Add a dependency lock and CMake `ExternalProject`/`FetchContent`
   orchestration with source hashes and offline rebuild support.
 - Build compiler-rt, libc++, libc++abi, and libunwind for musl; force Clang,
@@ -223,6 +268,8 @@ Deliverables:
   bundle, and static ELF verification targets.
 - Add GoogleTest at a pinned revision as a test-only CMake dependency behind
   `BUILD_TESTING`, and register its suites with `gtest_discover_tests()`.
+- Add positive flag/link inspection and negative stack-smash/CFI violation
+  tests for both architectures before building application components.
 
 Exit criteria:
 
@@ -234,6 +281,9 @@ Exit criteria:
   target libraries.
 - `ctest --preset <test-preset>` discovers and runs a GoogleTest smoke suite,
   and the `bootstrap` link map contains no GoogleTest symbols.
+- The Phase 1 canary proves the production baseline is present, intentional
+  stack corruption and invalid indirect control flow terminate execution, and
+  the release ELF contains no sanitizer runtime.
 
 ### Phase 2 — Runtime API and `RESPONSE_STREAM`
 
@@ -370,12 +420,14 @@ Exit criteria:
 - Cold/warm, disconnect, origin-stall, deadline, and concurrency tests have
   bounded documented behavior.
 
-### Phase 8 — Release hardening and evidence
+### Phase 8 — Release verification and evidence
 
 Deliverables:
 
 - Run the dual-architecture release matrix, static checks, SBOM, license/source
   and relink bundles, and reproducibility comparison.
+- Verify the Phase 1 hardening manifest and performance budget without adding
+  late release-only compiler flags or weakening the tested baseline.
 - Review vulnerabilities and every enabled loader/codec.
 - Fuzz event/query/URL, MIME, PNG/APNG, ICO, and streaming parsers for the
   agreed duration; retain failures as regression inputs.
