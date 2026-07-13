@@ -1,0 +1,26 @@
+{
+    "name": "media-proxy-lambda",
+    "build": {
+        "dockerfile": "./Dockerfile"
+    },
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+    "workspaceFolder": "/workspace",
+    "remoteUser": "ubuntu",
+    "overrideCommand": true,
+    "postCreateCommand": "git config --global pull.rebase false",
+    "customizations": {
+        "vscode": {
+            "extensions": ["editorconfig.editorconfig", "llvm-vs-code-extensions.vscode-clangd", "ms-vscode.cmake-tools"],
+            "settings": {
+                "editor.linkedEditing": true,
+                "editor.formatOnPaste": true,
+                "editor.formatOnSave": false,
+                "html.format.wrapLineLength": 0,
+                "editor.quickSuggestions": {
+                    "strings": "on"
+                },
+                "clangd.path": "clangd-22"
+            }
+        }
+    }
+}
