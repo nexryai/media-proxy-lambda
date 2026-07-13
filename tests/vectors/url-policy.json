@@ -1,0 +1,24 @@
+{
+    "schemaVersion": 1,
+    "cases": [
+        {"id": "url.syntax.lowercase-https", "url": "https://origin.example/image.png", "accepted": true, "hostname": "origin.example", "port": 443, "requestTarget": "/image.png"},
+        {"id": "url.syntax.uppercase-scheme", "url": "HTTPS://origin.example/image.png", "accepted": false},
+        {"id": "url.syntax.http-scheme", "url": "http://origin.example/image.png", "accepted": false},
+        {"id": "url.syntax.username", "url": "https://user@origin.example/image.png", "accepted": false},
+        {"id": "url.syntax.password", "url": "https://user:secret@origin.example/image.png", "accepted": false},
+        {"id": "url.syntax.empty-host", "url": "https:///image.png", "accepted": false},
+        {"id": "url.syntax.single-label-host", "url": "https://localhost/image.png", "accepted": false},
+        {"id": "url.syntax.ipv6-literal", "url": "https://[2606:4700:4700::1111]/image.png", "accepted": false},
+        {"id": "url.syntax.default-port", "url": "https://origin.example/image.png", "accepted": true, "hostname": "origin.example", "port": 443, "requestTarget": "/image.png"},
+        {"id": "url.syntax.explicit-port-80", "url": "https://origin.example:80/image.png", "accepted": true, "hostname": "origin.example", "port": 80, "requestTarget": "/image.png"},
+        {"id": "url.syntax.explicit-port-443", "url": "https://origin.example:443/image.png", "accepted": true, "hostname": "origin.example", "port": 443, "requestTarget": "/image.png"},
+        {"id": "url.syntax.other-port", "url": "https://origin.example:8443/image.png", "accepted": false},
+        {"id": "url.syntax.invalid-port", "url": "https://origin.example:not-a-port/image.png", "accepted": false},
+        {"id": "url.syntax.missing-authority", "url": "https:image.png", "accepted": false},
+        {"id": "url.syntax.fragment", "url": "https://origin.example/image.png?x=1#not-sent", "accepted": true, "hostname": "origin.example", "port": 443, "requestTarget": "/image.png?x=1"},
+        {"id": "url.syntax.empty-path", "url": "https://origin.example", "accepted": true, "hostname": "origin.example", "port": 443, "requestTarget": "/"},
+        {"id": "url.syntax.public-ipv4", "url": "https://1.1.1.1/image.png", "accepted": true, "hostname": "1.1.1.1", "port": 443, "requestTarget": "/image.png"},
+        {"id": "url.syntax.private-ipv4", "url": "https://192.168.1.1/image.png", "accepted": false},
+        {"id": "url.syntax.trailing-dot", "url": "https://origin.example./image.png", "accepted": true, "hostname": "origin.example.", "port": 443, "requestTarget": "/image.png"}
+    ]
+}
