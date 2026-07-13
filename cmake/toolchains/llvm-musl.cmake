@@ -1,0 +1,63 @@
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR "${MEDIAPROXY_TARGET_PROCESSOR}")
+
+# CMake configures a nested project when it checks the compiler ABI.  Preserve
+# every project-specific input that this toolchain needs in that try_compile
+# project; ordinary cache variables are not forwarded automatically.
+set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
+    MEDIAPROXY_TARGET_TRIPLE
+    MEDIAPROXY_TARGET_PROCESSOR
+    MEDIAPROXY_COMPILER_RT_ARCH
+    MEDIAPROXY_SYSROOT
+    MEDIAPROXY_CLANG
+    MEDIAPROXY_CLANGXX
+    MEDIAPROXY_LLD
+    MEDIAPROXY_AR
+    MEDIAPROXY_RANLIB
+    MEDIAPROXY_NM
+    MEDIAPROXY_STRIP
+)
+
+foreach(required_variable
+        MEDIAPROXY_TARGET_TRIPLE
+        MEDIAPROXY_TARGET_PROCESSOR
+        MEDIAPROXY_COMPILER_RT_ARCH
+        MEDIAPROXY_SYSROOT
+        MEDIAPROXY_CLANG
+        MEDIAPROXY_CLANGXX
+        MEDIAPROXY_LLD
+        MEDIAPROXY_AR
+        MEDIAPROXY_RANLIB
+        MEDIAPROXY_NM
+        MEDIAPROXY_STRIP)
+    if(NOT DEFINED ${required_variable})
+        message(FATAL_ERROR "Toolchain variable ${required_variable} is required")
+    endif()
+endforeach()
+
+set(CMAKE_C_COMPILER "${MEDIAPROXY_CLANG}")
+set(CMAKE_CXX_COMPILER "${MEDIAPROXY_CLANGXX}")
+set(CMAKE_C_COMPILER_TARGET "${MEDIAPROXY_TARGET_TRIPLE}")
+set(CMAKE_CXX_COMPILER_TARGET "${MEDIAPROXY_TARGET_TRIPLE}")
+set(CMAKE_LINKER "${MEDIAPROXY_LLD}")
+set(CMAKE_AR "${MEDIAPROXY_AR}")
+set(CMAKE_RANLIB "${MEDIAPROXY_RANLIB}")
+set(CMAKE_NM "${MEDIAPROXY_NM}")
+set(CMAKE_STRIP "${MEDIAPROXY_STRIP}")
+set(CMAKE_SYSROOT "${MEDIAPROXY_SYSROOT}")
+set(CMAKE_FIND_ROOT_PATH "${MEDIAPROXY_SYSROOT}")
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_FLAGS_INIT
+    "-nostdinc++ -isystem ${MEDIAPROXY_SYSROOT}/usr/include/c++/v1")
+set(CMAKE_EXE_LINKER_FLAGS_INIT
+    "-fuse-ld=lld -static-pie -nostdlib ${MEDIAPROXY_SYSROOT}/usr/lib/rcrt1.o ${MEDIAPROXY_SYSROOT}/usr/lib/crti.o ${MEDIAPROXY_SYSROOT}/usr/lib/linux/clang_rt.crtbegin-${MEDIAPROXY_COMPILER_RT_ARCH}.o")
+set(CMAKE_C_STANDARD_LIBRARIES_INIT
+    "-Wl,--start-group -lc ${MEDIAPROXY_SYSROOT}/usr/lib/linux/libclang_rt.builtins-${MEDIAPROXY_COMPILER_RT_ARCH}.a -Wl,--end-group ${MEDIAPROXY_SYSROOT}/usr/lib/linux/clang_rt.crtend-${MEDIAPROXY_COMPILER_RT_ARCH}.o ${MEDIAPROXY_SYSROOT}/usr/lib/crtn.o")
+set(CMAKE_CXX_STANDARD_LIBRARIES_INIT
+    "-L${MEDIAPROXY_SYSROOT}/usr/lib -Wl,--start-group -lc++ -lc++abi -lunwind -lc ${MEDIAPROXY_SYSROOT}/usr/lib/linux/libclang_rt.builtins-${MEDIAPROXY_COMPILER_RT_ARCH}.a -Wl,--end-group ${MEDIAPROXY_SYSROOT}/usr/lib/linux/clang_rt.crtend-${MEDIAPROXY_COMPILER_RT_ARCH}.o ${MEDIAPROXY_SYSROOT}/usr/lib/crtn.o")

@@ -1,0 +1,55 @@
+{
+    "version": 8,
+    "cmakeMinimumRequired": {
+        "major": 4,
+        "minor": 2,
+        "patch": 3
+    },
+    "configurePresets": [
+        {
+            "name": "release-base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "x86_64-release",
+            "inherits": "release-base",
+            "displayName": "Lambda x86_64 release",
+            "cacheVariables": {
+                "MEDIAPROXY_TARGET_ARCH": "x86_64"
+            }
+        },
+        {
+            "name": "arm64-release",
+            "inherits": "release-base",
+            "displayName": "Lambda arm64 release",
+            "cacheVariables": {
+                "MEDIAPROXY_TARGET_ARCH": "arm64"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "x86_64-release",
+            "configurePreset": "x86_64-release"
+        },
+        {
+            "name": "arm64-release",
+            "configurePreset": "arm64-release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "x86_64-release",
+            "configurePreset": "x86_64-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        }
+    ]
+}

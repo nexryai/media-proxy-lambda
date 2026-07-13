@@ -1,0 +1,79 @@
+{
+    "schemaVersion": 1,
+    "dependencies": [
+        {
+            "name": "linux-uapi-headers",
+            "version": "6.18.38",
+            "revision": "v6.18.38",
+            "url": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.38.tar.xz",
+            "sha256": "ac26e508abd56e9f8b89872b6e10c49fc823bcc70d8068a5d8504c1a7c4ff045",
+            "license": "GPL-2.0-only WITH Linux-syscall-note",
+            "buildOptions": [
+                "headers_install only",
+                "ARCH=x86 for x86_64",
+                "ARCH=arm64 for arm64"
+            ],
+            "reason": "Pinned sanitized Linux UAPI headers for the musl target sysroot"
+        },
+        {
+            "name": "musl",
+            "version": "1.2.6",
+            "revision": "v1.2.6 plus the listed upstream security patch",
+            "url": "https://musl.libc.org/releases/musl-1.2.6.tar.gz",
+            "sha256": "d585fd3b613c66151fc3249e8ed44f77020cb5e6c1e635a616d3f9f82460512a",
+            "license": "MIT",
+            "buildOptions": [
+                "--disable-shared",
+                "--prefix=/usr",
+                "--syslibdir=/lib",
+                "-O2",
+                "-fPIC",
+                "LLVM tools only"
+            ],
+            "patches": [
+                {
+                    "path": "cmake/patches/musl-1.2.6-iconv-gb18030.patch",
+                    "sha256": "444fa70e52ca158fb7d4bad560637790bbf8f72e80b82fff840dd66fa83091e3",
+                    "upstreamCommit": "67219f0130ec7c876ac0b299046460fad31caabf",
+                    "reason": "Fix CVE-2026-6042 pathological GB18030 decoding"
+                }
+            ],
+            "securityNotes": [
+                "CVE-2026-40200 affects 32-bit targets; this project builds only x86_64 and arm64"
+            ],
+            "reason": "Sole target C library and static-PIE startup objects"
+        },
+        {
+            "name": "llvm-runtimes",
+            "version": "22.1.2",
+            "revision": "llvmorg-22.1.2",
+            "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.2/llvm-project-22.1.2.src.tar.xz",
+            "sha256": "62f2f13ff25b1bb28ea507888e858212d19aafb65e8e72b4a65ee0629ec4ae0c",
+            "license": "Apache-2.0 WITH LLVM-exception",
+            "buildOptions": [
+                "compiler-rt builtins and static-PIE CRT objects only",
+                "libc++ static only",
+                "libc++abi static only",
+                "libunwind static only",
+                "tests and benchmarks disabled for runtime libraries",
+                "musl target sysroot",
+                "LLVM tools only"
+            ],
+            "reason": "Pinned C++ runtime, ABI, unwinder, and compiler builtins"
+        },
+        {
+            "name": "googletest",
+            "version": "1.17.0",
+            "revision": "v1.17.0",
+            "url": "https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz",
+            "sha256": "65fab701d9829d38cb77c14acdc431d2108bfdbf8979e40eb8ae567edf10b27c",
+            "license": "BSD-3-Clause",
+            "buildOptions": [
+                "BUILD_GMOCK=OFF",
+                "INSTALL_GTEST=OFF",
+                "test-only static linkage"
+            ],
+            "reason": "GoogleTest unit-test framework; excluded from bootstrap"
+        }
+    ]
+}
