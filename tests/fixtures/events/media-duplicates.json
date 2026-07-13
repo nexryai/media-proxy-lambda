@@ -1,0 +1,14 @@
+{
+    "version": "2.0",
+    "rawPath": "/anything+goes",
+    "rawQueryString": "url=https%3A%2F%2Ffirst.example%2Fa.png&url=https%3A%2F%2Fsecond.example%2Fb.png&thumbnail=1&avatar=1&static=1",
+    "queryStringParameters": {
+        "url": "https://second.example/b.png",
+        "thumbnail": "1"
+    },
+    "requestContext": {
+        "http": {
+            "method": "HEAD"
+        }
+    }
+}

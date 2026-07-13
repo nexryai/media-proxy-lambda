@@ -1,0 +1,20 @@
+{
+    "schemaVersion": 1,
+    "cases": [
+        {"id": "selector.defaults-and-precedence.default", "rawQuery": "url=https%3A%2F%2Forigin.example%2Fa", "selector": "default", "width": 3200, "height": 3200, "output": "webp", "static": false},
+        {"id": "selector.defaults-and-precedence.avatar", "rawQuery": "avatar=1", "selector": "avatar", "width": 320, "height": 320, "output": "avif", "static": false},
+        {"id": "selector.defaults-and-precedence.emoji", "rawQuery": "emoji=1", "selector": "emoji", "width": 700, "height": 128, "output": "avif", "static": false},
+        {"id": "selector.defaults-and-precedence.preview", "rawQuery": "preview=1", "selector": "preview", "width": 200, "height": 200, "output": "webp", "static": false},
+        {"id": "selector.defaults-and-precedence.badge", "rawQuery": "badge=1", "selector": "badge", "width": 96, "height": 96, "output": "avif", "static": false},
+        {"id": "selector.defaults-and-precedence.thumbnail", "rawQuery": "thumbnail=1", "selector": "thumbnail", "width": 500, "height": 400, "output": "webp", "static": false},
+        {"id": "selector.defaults-and-precedence.ticker", "rawQuery": "ticker=1", "selector": "ticker", "width": 64, "height": 64, "output": "avif", "static": false},
+        {"id": "selector.defaults-and-precedence.boolean-exact", "rawQuery": "avatar=true&emoji=01&preview=1+&badge=0", "selector": "default", "width": 3200, "height": 3200, "output": "webp", "static": false},
+        {"id": "selector.defaults-and-precedence.avatar-collision", "rawQuery": "ticker=1&thumbnail=1&badge=1&preview=1&emoji=1&avatar=1", "selector": "avatar", "width": 320, "height": 320, "output": "avif", "static": false},
+        {"id": "selector.defaults-and-precedence.emoji-collision", "rawQuery": "ticker=1&thumbnail=1&badge=1&preview=1&emoji=1", "selector": "emoji", "width": 700, "height": 128, "output": "avif", "static": false},
+        {"id": "selector.defaults-and-precedence.preview-collision", "rawQuery": "ticker=1&thumbnail=1&badge=1&preview=1", "selector": "preview", "width": 200, "height": 200, "output": "webp", "static": false},
+        {"id": "selector.defaults-and-precedence.badge-collision", "rawQuery": "ticker=1&thumbnail=1&badge=1", "selector": "badge", "width": 96, "height": 96, "output": "avif", "static": false},
+        {"id": "selector.defaults-and-precedence.thumbnail-collision", "rawQuery": "ticker=1&thumbnail=1", "selector": "thumbnail", "width": 500, "height": 400, "output": "webp", "static": false},
+        {"id": "selector.defaults-and-precedence.static-independent", "rawQuery": "thumbnail=1&static=1", "selector": "thumbnail", "width": 500, "height": 400, "output": "webp", "static": true},
+        {"id": "selector.defaults-and-precedence.first-duplicate", "rawQuery": "avatar=0&avatar=1&preview=1", "selector": "preview", "width": 200, "height": 200, "output": "webp", "static": false}
+    ]
+}

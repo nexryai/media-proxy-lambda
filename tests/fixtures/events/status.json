@@ -1,0 +1,14 @@
+{
+    "version": "2.0",
+    "routeKey": "$default",
+    "rawPath": "/status",
+    "rawQueryString": "ignored=1",
+    "queryStringParameters": {
+        "url": "https://must-not-be-used.example/image.png"
+    },
+    "requestContext": {
+        "http": {
+            "method": "GET"
+        }
+    }
+}

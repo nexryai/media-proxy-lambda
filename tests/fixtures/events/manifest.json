@@ -1,0 +1,58 @@
+{
+    "schemaVersion": 1,
+    "fixtures": [
+        {
+            "id": "event.function-url-v2-fields.status",
+            "file": "status.json",
+            "expected": {
+                "method": "GET",
+                "decodedPath": "/status",
+                "route": "status",
+                "status": 200,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "bodyUtf8": "{\"status\":\"OK\"}"
+            }
+        },
+        {
+            "id": "event.path-decoding.encoded-status",
+            "file": "encoded-status.json",
+            "expected": {
+                "method": "POST",
+                "decodedPath": "/status",
+                "route": "status",
+                "status": 200,
+                "bodyUtf8": "{\"status\":\"OK\"}"
+            }
+        },
+        {
+            "id": "event.function-url-v2-fields.media-duplicates",
+            "file": "media-duplicates.json",
+            "expected": {
+                "method": "HEAD",
+                "decodedPath": "/anything+goes",
+                "route": "media",
+                "firstUrl": "https://first.example/a.png",
+                "selector": "avatar",
+                "widthLimit": 320,
+                "heightLimit": 320,
+                "preferredOutput": "avif",
+                "static": true
+            }
+        },
+        {
+            "id": "event.path-decoding.invalid",
+            "file": "invalid-path-escape.json",
+            "expected": {
+                "method": "GET",
+                "route": "error",
+                "status": 400,
+                "headers": {
+                    "Content-Type": "text/plain; charset=utf-8"
+                },
+                "bodyUtf8": "Bad request\n"
+            }
+        }
+    ]
+}

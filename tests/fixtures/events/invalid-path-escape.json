@@ -1,0 +1,10 @@
+{
+    "version": "2.0",
+    "rawPath": "/bad%2",
+    "rawQueryString": "url=https%3A%2F%2Forigin.example%2Fimage.png",
+    "requestContext": {
+        "http": {
+            "method": "GET"
+        }
+    }
+}

@@ -1,0 +1,80 @@
+{
+    "schemaVersion": 1,
+    "encoding": "UTF-8 strings; decoded non-text bytes are represented by lowercase hexadecimal",
+    "cases": [
+        {
+            "id": "query.field-tokenization.empty",
+            "raw": "",
+            "expected": []
+        },
+        {
+            "id": "query.field-tokenization.skip-empty",
+            "raw": "&&a=1&&b=2&",
+            "expected": [
+                {"keyHex": "61", "valueHex": "31"},
+                {"keyHex": "62", "valueHex": "32"}
+            ]
+        },
+        {
+            "id": "query.field-tokenization.semicolon",
+            "raw": "discard=1;two=2&keep=3&encoded%3Bkey=value%3Bok",
+            "expected": [
+                {"keyHex": "6b656570", "valueHex": "33"},
+                {"keyHex": "656e636f6465643b6b6579", "valueHex": "76616c75653b6f6b"}
+            ]
+        },
+        {
+            "id": "query.field-tokenization.first-equals",
+            "raw": "a=b=c&missing&=empty-key",
+            "expected": [
+                {"keyHex": "61", "valueHex": "623d63"},
+                {"keyHex": "6d697373696e67", "valueHex": ""},
+                {"keyHex": "", "valueHex": "656d7074792d6b6579"}
+            ]
+        },
+        {
+            "id": "query.unescaping.plus-percent",
+            "raw": "a+b=c+d&plus=%2B&bytes=%00%7f%FF",
+            "expected": [
+                {"keyHex": "612062", "valueHex": "632064"},
+                {"keyHex": "706c7573", "valueHex": "2b"},
+                {"keyHex": "6279746573", "valueHex": "007fff"}
+            ]
+        },
+        {
+            "id": "query.unescaping.invalid-fields",
+            "raw": "bad%2=key&bad=value%GG&ok=1&also=%",
+            "expected": [
+                {"keyHex": "6f6b", "valueHex": "31"}
+            ]
+        },
+        {
+            "id": "query.lookup-and-booleans.duplicates",
+            "raw": "flag=1&flag=0&other=first&other=second",
+            "expected": [
+                {"keyHex": "666c6167", "valueHex": "31"},
+                {"keyHex": "666c6167", "valueHex": "30"},
+                {"keyHex": "6f74686572", "valueHex": "6669727374"},
+                {"keyHex": "6f74686572", "valueHex": "7365636f6e64"}
+            ],
+            "lookups": {
+                "flag": "1",
+                "other": "first",
+                "absent": ""
+            }
+        },
+        {
+            "id": "query.lookup-and-booleans.exact-one",
+            "raw": "true=1&word=true&leading=01&space=1+&empty=&missing",
+            "expectedBooleans": {
+                "true": true,
+                "word": false,
+                "leading": false,
+                "space": false,
+                "empty": false,
+                "missing": false,
+                "absent": false
+            }
+        }
+    ]
+}
