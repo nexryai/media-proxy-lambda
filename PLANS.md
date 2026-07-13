@@ -167,8 +167,15 @@ x265 unless a future specification revision explicitly requires one.
 
 ### Test-only tools
 
-Use CTest, Clang sanitizers, and libFuzzer. A local TLS origin fixture is part
-of the test harness. Normal tests have no live-network or external-project
+Use GoogleTest for all C++ unit tests. Fetch and build it at a pinned revision
+through the CMake dependency graph, and link it only into test executables.
+Register each GoogleTest suite and case with CTest through CMake's
+`gtest_discover_tests()` integration.
+
+Run the unit suite through a documented `ctest --preset <test-preset>` command
+so local and CI execution use the same configuration. Also use Clang sanitizers
+and libFuzzer in their dedicated presets. A local TLS origin fixture is part of
+the test harness. Normal tests have no live-network or external-project
 dependency.
 
 ## Work plan
@@ -214,6 +221,8 @@ Deliverables:
 - Generate embedded CA and deterministic font/configuration data.
 - Add `bootstrap` packaging, link map, SBOM, notices/source bundle, relink
   bundle, and static ELF verification targets.
+- Add GoogleTest at a pinned revision as a test-only CMake dependency behind
+  `BUILD_TESTING`, and register its suites with `gtest_discover_tests()`.
 
 Exit criteria:
 
@@ -223,6 +232,8 @@ Exit criteria:
   libgcc, dynamic module, or GPL-only codec.
 - A clean builder reproduces the graph from the lock without package-manager
   target libraries.
+- `ctest --preset <test-preset>` discovers and runs a GoogleTest smoke suite,
+  and the `bootstrap` link map contains no GoogleTest symbols.
 
 ### Phase 2 — Runtime API and `RESPONSE_STREAM`
 
@@ -254,8 +265,8 @@ Deliverables:
   lookup.
 - Implement selector precedence, status route, response metadata, cache
   headers, and exact error bodies.
-- Add table-driven offline vectors for every selector collision and malformed
-  request case.
+- Add GoogleTest value-parameterized unit tests for every selector collision,
+  malformed escape, duplicate-key, and response-mapping case.
 
 Exit criteria:
 
@@ -275,6 +286,9 @@ Deliverables:
 - Implement at most 10 fully revalidated redirects, loop detection, exact user
   agent, `Blocked-By`, status, content-length, truncation, and deadline rules.
 - Isolate the trusted local Runtime API client from public origin URL policy.
+- Add GoogleTest unit tests for URL syntax, address classification, redirect
+  decisions, header parsing, and body-limit state transitions; run local TLS
+  origin scenarios as CTest integration tests.
 
 Exit criteria:
 
@@ -295,6 +309,8 @@ Deliverables:
 - Implement static/animated WebP and AVIF options exactly.
 - Bound arithmetic, pages, frame memory, and decoded resources above valid
   fixture maxima.
+- Add GoogleTest unit tests for MIME priority, format selection, dimension
+  validation, and the pure static/animated resize calculations.
 
 Exit criteria:
 
@@ -318,6 +334,9 @@ Deliverables:
   default WebP animation options, no loop propagation, and response-type quirk.
 - Add named regression fixtures for each section-8.5 case, including
   `BLEND_OP_OVER` with partial alpha and non-zero offsets.
+- Implement GoogleTest fixtures for full-canvas `SOURCE`/`OVER` composition
+  and parameterized blend/dispose combinations, comparing per-frame pixel
+  hashes.
 
 Exit criteria:
 
