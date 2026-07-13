@@ -12,6 +12,23 @@ Read `SPECIFICATION.md` and `PLANS.md` before changing behavior, architecture,
 or dependencies. Update the specification, tests, and plan together whenever a
 normative rule or milestone changes.
 
+## Development environment and missing packages
+
+Treat `.devcontainer/Dockerfile` and `.devcontainer/devcontainer.json` as the
+authoritative inventory and configuration for host development tools. Before
+using a compiler, linker, build generator, package-config tool, language
+runtime, or other host command, verify that it is declared by the devcontainer
+and available in the active environment.
+
+Do not install a missing host package, switch to an undeclared substitute, or
+silently weaken a build/test workflow. If implementation or validation needs a
+host package that is absent from either the devcontainer definition or the
+active environment, stop work and notify the user. Identify the missing
+package/command and the task that requires it, then wait for the environment to
+be updated before continuing. Pinned target libraries built by the CMake
+superbuild remain governed by the dependency lock rather than this host-package
+rule.
+
 ## Sources of truth
 
 Use this precedence when behavior is ambiguous:
