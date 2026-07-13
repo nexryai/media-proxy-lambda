@@ -178,6 +178,8 @@ system.
 
 ## Coding rules
 
+Format all code according to the repository's `.editorconfig`.
+
 Use RAII for BoringSSL, curl, libvips, GLib, file descriptors, and Runtime API
 resources. Use bounded containers and checked arithmetic for byte lengths,
 dimensions, offsets, rectangles, pages, frame counts, timestamps, and chunk
@@ -205,6 +207,10 @@ Before committing:
 - inspect the complete staged diff and exclude unrelated user changes;
 - stage explicit paths or hunks instead of relying on a blanket add in a mixed
   worktree;
+- for code changes, inspect `.devcontainer/Dockerfile` and
+  `.devcontainer/devcontainer.json` for applicable static-analysis tools and
+  run the relevant checks with every such tool that is available in the active
+  environment;
 - run the smallest relevant validation for that unit and include its tests in
   the same commit when practical;
 - use a concise imperative commit subject that describes the behavior or
