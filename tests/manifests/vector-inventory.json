@@ -1,0 +1,596 @@
+{
+    "schemaVersion": 1,
+    "specification": "SPECIFICATION.md",
+    "cases": [
+        {
+            "id": "contract.self-contained",
+            "sections": ["1", "10"],
+            "suite": "repository-audit",
+            "variants": [
+                "no legacy checkout path in build inputs",
+                "no live network dependency in normal tests",
+                "APNG OVER is the only intentional initial media divergence"
+            ]
+        },
+        {
+            "id": "event.function-url-v2-fields",
+            "sections": ["2.1"],
+            "suite": "event-query",
+            "variants": [
+                "method comes from requestContext.http.method",
+                "route comes from rawPath",
+                "query comes only from rawQueryString",
+                "queryStringParameters is ignored"
+            ]
+        },
+        {
+            "id": "event.path-decoding",
+            "sections": ["2.1"],
+            "suite": "event-query",
+            "variants": [
+                "percent-decoded exact /status",
+                "plus remains plus",
+                "invalid percent escape is bad request",
+                "non-status decoded path invokes media proxy"
+            ]
+        },
+        {
+            "id": "event.method-independent-routing",
+            "sections": ["2.1"],
+            "suite": "event-query",
+            "variants": ["GET", "HEAD", "POST", "nonstandard method"]
+        },
+        {
+            "id": "query.field-tokenization",
+            "sections": ["2.2"],
+            "suite": "event-query",
+            "variants": [
+                "ordered ampersand fields",
+                "empty fields skipped",
+                "unescaped semicolon field rejected while parsing continues",
+                "first equals separates key and value",
+                "missing equals gives empty value"
+            ]
+        },
+        {
+            "id": "query.unescaping",
+            "sections": ["2.2"],
+            "suite": "event-query",
+            "variants": [
+                "plus decodes to space in key and value",
+                "valid percent escape decodes one byte",
+                "invalid key escape discards field",
+                "invalid value escape discards field"
+            ]
+        },
+        {
+            "id": "query.lookup-and-booleans",
+            "sections": ["2.2"],
+            "suite": "event-query",
+            "variants": [
+                "duplicates retain encounter order",
+                "lookup returns first duplicate",
+                "absent lookup is empty",
+                "unknown parameter ignored",
+                "boolean exact 1 is true",
+                "true 01 and trailing-space variants are false"
+            ]
+        },
+        {
+            "id": "route.status",
+            "sections": ["2.3"],
+            "suite": "event-query",
+            "variants": ["exact status", "application/json header", "exact body without newline"]
+        },
+        {
+            "id": "route.required-url",
+            "sections": ["2.3", "2.5"],
+            "suite": "event-query",
+            "variants": ["missing url", "empty first url", "later non-empty duplicate ignored"]
+        },
+        {
+            "id": "selector.defaults-and-precedence",
+            "sections": ["2.3"],
+            "suite": "event-query",
+            "variants": [
+                "default 3200x3200 WebP",
+                "avatar 320x320 AVIF",
+                "emoji 700x128 AVIF",
+                "preview 200x200 WebP",
+                "badge 96x96 AVIF",
+                "thumbnail 500x400 WebP",
+                "ticker 64x64 AVIF",
+                "all pairwise and all-flags collisions choose first table row",
+                "static is independent of selector"
+            ]
+        },
+        {
+            "id": "response.success-metadata",
+            "sections": ["2.4"],
+            "suite": "response-mapping",
+            "variants": [
+                "AVIF selector content type",
+                "WebP selector content type",
+                "exact CDN cache header",
+                "exact browser cache header"
+            ]
+        },
+        {
+            "id": "response.animated-content-type-mismatch",
+            "sections": ["2.4", "6", "8.5"],
+            "suite": "media-golden",
+            "variants": ["animated GIF under AVIF selector", "animated WebP under AVIF selector", "non-palette APNG under AVIF selector"]
+        },
+        {
+            "id": "response.error-mapping",
+            "sections": ["2.5"],
+            "suite": "response-mapping",
+            "variants": [
+                "bad event or path maps to exact 400 body",
+                "pre-fetch URL rejection maps to exact 403 body",
+                "media failure maps to exact 400 resize body",
+                "download or internal failure maps to exact 500 body",
+                "all errors use exact text content type",
+                "errors omit success cache headers"
+            ]
+        },
+        {
+            "id": "url.syntax",
+            "sections": ["3.1"],
+            "suite": "url-policy",
+            "variants": [
+                "lowercase https accepted",
+                "uppercase or alternate scheme rejected",
+                "username rejected",
+                "password rejected",
+                "empty host rejected",
+                "single-label host rejected",
+                "host containing colon rejected",
+                "absent port accepted",
+                "explicit port 80 accepted",
+                "explicit port 443 accepted",
+                "other explicit port rejected",
+                "malformed trailing syntax rejected",
+                "fragment parsed but not sent",
+                "IPv4 hostname passes address policy"
+            ]
+        },
+        {
+            "id": "url.idna-corpus",
+            "sections": ["3.1", "10"],
+            "suite": "url-policy",
+            "variants": ["accepted Unicode host vectors", "rejected Unicode host vectors", "ASCII hostname retained for SNI verification"]
+        },
+        {
+            "id": "address.generic-classification",
+            "sections": ["3.2"],
+            "suite": "url-policy",
+            "variants": [
+                "parse failure rejected",
+                "public IPv4 accepted",
+                "public IPv6 accepted",
+                "loopback rejected",
+                "private or unique-local rejected",
+                "multicast rejected",
+                "link-local rejected",
+                "unspecified rejected",
+                "non-global-unicast rejected",
+                "IPv4-mapped textual prefixes rejected"
+            ]
+        },
+        {
+            "id": "address.explicit-deny-cidrs",
+            "sections": ["3.2"],
+            "suite": "url-policy",
+            "variants": [
+                "0.0.0.0/8 boundaries",
+                "100.64.0.0/10 boundaries",
+                "64:ff9b::/96 boundaries",
+                "64:ff9b:1::/48 boundaries",
+                "2001:10::/28 boundaries",
+                "2001:db8::/32 boundaries",
+                "::/96 boundaries"
+            ]
+        },
+        {
+            "id": "dns.validate-and-pin",
+            "sections": ["3.3"],
+            "suite": "origin-tls",
+            "variants": [
+                "resolve before connect",
+                "all-safe candidates retained",
+                "mixed safe and forbidden answer rejected",
+                "connection pinned without library re-resolution",
+                "logical hostname retained for SNI and certificate verification"
+            ]
+        },
+        {
+            "id": "redirect.policy",
+            "sections": ["3.3", "10"],
+            "suite": "origin-tls",
+            "variants": [
+                "relative location resolution",
+                "ten redirects accepted",
+                "eleventh redirect rejected",
+                "complete URL policy reapplied each hop",
+                "redirect user information rejected",
+                "redirect loop rejected",
+                "caller credentials not forwarded",
+                "origin authorization not forwarded"
+            ]
+        },
+        {
+            "id": "origin.request",
+            "sections": ["4"],
+            "suite": "origin-tls",
+            "variants": [
+                "GET method",
+                "exact user agent",
+                "valid chain and hostname accepted",
+                "invalid chain rejected",
+                "hostname mismatch rejected",
+                "HTTP/1.1 negotiation",
+                "HTTP/2 negotiation",
+                "HTTP/3 not required",
+                "gzip transparently decompressed before sniffing"
+            ]
+        },
+        {
+            "id": "origin.content-length",
+            "sections": ["4"],
+            "suite": "origin-tls",
+            "variants": [
+                "signed decimal zero",
+                "signed decimal exact 10 MiB",
+                "value above 10 MiB rejected",
+                "parse failure rejected",
+                "signed 64-bit overflow rejected"
+            ]
+        },
+        {
+            "id": "origin.body-limit-without-length",
+            "sections": ["4"],
+            "suite": "origin-tls",
+            "variants": [
+                "short body retained",
+                "exact 10 MiB retained",
+                "long chunked body exposes only first 10 MiB without probe byte",
+                "retained allocation never exceeds limit"
+            ]
+        },
+        {
+            "id": "origin.response-policy",
+            "sections": ["4"],
+            "suite": "origin-tls",
+            "variants": [
+                "exact Blocked-By NextDNS rejected",
+                "case or value variants do not trigger exact rule",
+                "body read and sniffed before status evaluation",
+                "status 200 accepted",
+                "all non-200 statuses rejected",
+                "timeouts preserve response-submission margin"
+            ]
+        },
+        {
+            "id": "mime.image-signatures",
+            "sections": ["5.1"],
+            "suite": "mime",
+            "variants": ["ICO", "BMP", "GIF87a", "GIF89a", "WebP wildcard length", "PNG", "JPEG"]
+        },
+        {
+            "id": "mime.non-image-signatures",
+            "sections": ["5.1"],
+            "suite": "mime",
+            "variants": [
+                "PDF",
+                "PostScript",
+                "MP3 ID3",
+                "Ogg",
+                "WebM",
+                "AVI wildcard length",
+                "WAVE wildcard length",
+                "ZIP",
+                "gzip",
+                "Wasm"
+            ]
+        },
+        {
+            "id": "mime.text-container-and-font-signatures",
+            "sections": ["5.1"],
+            "suite": "mime",
+            "variants": [
+                "HTML tags after ASCII whitespace",
+                "XML declaration",
+                "UTF-8 BOM",
+                "UTF-16 little-endian BOM",
+                "UTF-16 big-endian BOM",
+                "common MP4 ftyp brands",
+                "TrueType",
+                "OpenType",
+                "WOFF",
+                "EOT"
+            ]
+        },
+        {
+            "id": "mime.priority-and-fallback",
+            "sections": ["5", "5.1"],
+            "suite": "mime",
+            "variants": [
+                "only first 512 bytes inspected",
+                "signature priority on overlapping samples",
+                "case-sensitive signature mismatch",
+                "plain UTF-8 fallback",
+                "every listed binary-control boundary",
+                "binary octet-stream fallback"
+            ]
+        },
+        {
+            "id": "mime.overrides",
+            "sections": ["5.2"],
+            "suite": "mime",
+            "variants": [
+                "exact SVG origin type overrides plain text",
+                "SVG parameters do not override",
+                "SVG case variant does not override",
+                "exact ftypavif at bytes 4 through 11 overrides octet stream",
+                "other AVIF or HEIF brands do not override",
+                "override precondition MIME must match"
+            ]
+        },
+        {
+            "id": "media.convertible-mimes",
+            "sections": ["6"],
+            "suite": "media-classification",
+            "variants": ["AVIF", "ICO", "JPEG", "HEIF", "PNG", "WebP", "GIF", "SVG", "x-icon", "all other MIME rejected"]
+        },
+        {
+            "id": "media.animation-classification",
+            "sections": ["6"],
+            "suite": "media-classification",
+            "variants": [
+                "GIF animated by default",
+                "GIF static flag",
+                "WebP ANIM at exact offset animated",
+                "WebP non-ANIM static",
+                "WebP static flag",
+                "other MIME not preclassified animated"
+            ]
+        },
+        {
+            "id": "media.encoder-selection",
+            "sections": ["6"],
+            "suite": "media-classification",
+            "variants": [
+                "animated input forces WebP",
+                "static AVIF preference selects AVIF",
+                "static WebP preference selects WebP"
+            ]
+        },
+        {
+            "id": "media.loader-isolation",
+            "sections": ["6"],
+            "suite": "media-malformed",
+            "variants": ["all pages loaded from memory", "loader cannot fetch network URL", "loader cannot read external file", "SVG external resources disabled"]
+        },
+        {
+            "id": "vips.process-initialization",
+            "sections": ["7.1"],
+            "suite": "media-golden",
+            "variants": ["concurrency one", "8 MiB cache memory", "32 cache entries", "32 cached files", "all pages requested"]
+        },
+        {
+            "id": "ico.first-decodable-entry",
+            "sections": ["7.1"],
+            "suite": "ico",
+            "variants": [
+                "libvips success bypasses fallback",
+                "first directory entry decodes",
+                "first corrupt then second decodes",
+                "smaller first entry wins over larger later entry",
+                "all entries invalid",
+                "fallback PNG is loaded from memory"
+            ]
+        },
+        {
+            "id": "media.dimensions",
+            "sections": ["7.1"],
+            "suite": "media-dimensions",
+            "variants": [
+                "static width and height",
+                "animated page height division",
+                "zero pages rejected",
+                "non-integral page height rejected",
+                "width over 5120 rejected",
+                "per-frame height over 5120 rejected",
+                "non-palette APNG bypasses 5120 rejection"
+            ]
+        },
+        {
+            "id": "resize.static",
+            "sections": ["7.2"],
+            "suite": "resize",
+            "variants": [
+                "no upscale within limits",
+                "width-only overflow",
+                "height-only overflow",
+                "both overflow width-excess branch",
+                "both overflow height-excess branch",
+                "equal excess chooses width scale",
+                "absolute-excess quirk may leave one limit exceeded",
+                "single resize with automatic kernel"
+            ]
+        },
+        {
+            "id": "resize.animated",
+            "sections": ["7.3"],
+            "suite": "resize",
+            "variants": [
+                "no resize within limits",
+                "width-only overflow",
+                "height-only overflow remains unresized when width limit is nonzero",
+                "both overflow clears width limit on smaller width excess",
+                "both overflow clears height limit otherwise",
+                "equal excess clears height limit",
+                "rounded width from height",
+                "rounded height from width",
+                "thumbnail uses interesting-all and size-down"
+            ]
+        },
+        {
+            "id": "encode.options",
+            "sections": ["7.4"],
+            "suite": "media-golden",
+            "variants": [
+                "static WebP lossy quality 70",
+                "animated WebP lossy quality 70",
+                "AVIF lossy quality 65 effort 1",
+                "static request for animation encodes first page only",
+                "metadata orientation profile alpha and timing golden diagnostics"
+            ]
+        },
+        {
+            "id": "apng.fixed-offset-detection",
+            "sections": ["8.1"],
+            "suite": "apng-parser",
+            "variants": [
+                "PNG signature plus acTL at bytes 37 through 40",
+                "length exactly 41 is not APNG",
+                "acTL at other offset is not compatibility APNG",
+                "PLTE at bytes 57 through 60 with length above 64",
+                "length exactly 64 is non-palette",
+                "PLTE at other offset is ignored"
+            ]
+        },
+        {
+            "id": "apng.branching",
+            "sections": ["8.1"],
+            "suite": "apng-golden",
+            "variants": [
+                "palette APNG uses static path",
+                "palette APNG honors static and AVIF preference",
+                "non-palette APNG ignores static",
+                "non-palette APNG ignores route limits",
+                "non-palette APNG forces WebP",
+                "target dimensions come from all-pages load",
+                "IHDR dimensions define composition canvas",
+                "zero target or canvas dimension rejected"
+            ]
+        },
+        {
+            "id": "apng.chunk-validation",
+            "sections": ["8.2"],
+            "suite": "apng-parser",
+            "variants": [
+                "acTL fcTL IDAT and fdAT accepted",
+                "truncated chunk rejected",
+                "length overflow rejected",
+                "CRC mismatch rejected",
+                "frame rectangle outside each canvas edge rejected",
+                "unknown blend rejected before canvas access",
+                "unknown dispose rejected before canvas access",
+                "zero delay denominator rejected"
+            ]
+        },
+        {
+            "id": "apng.first-callback",
+            "sections": ["8.2", "8.5"],
+            "suite": "apng-golden",
+            "variants": ["callback zero initializes canvas", "callback zero is not emitted", "callback zero disposal is ignored"]
+        },
+        {
+            "id": "apng.composition-matrix",
+            "sections": ["8.3", "8.5"],
+            "suite": "apng-compositor",
+            "variants": [
+                "opaque SOURCE with NONE BACKGROUND PREVIOUS",
+                "opaque OVER with NONE BACKGROUND PREVIOUS",
+                "partial-alpha SOURCE with NONE BACKGROUND PREVIOUS",
+                "partial-alpha OVER with NONE BACKGROUND PREVIOUS",
+                "zero and non-zero offsets",
+                "transparent holes reveal two or more prior frames",
+                "SOURCE after OVER",
+                "OVER after SOURCE"
+            ]
+        },
+        {
+            "id": "apng.canvas-transitions",
+            "sections": ["8.3", "8.5"],
+            "suite": "apng-compositor",
+            "variants": [
+                "pre-frame snapshot before every emitted frame",
+                "SOURCE clears and replaces only frame rectangle",
+                "OVER uses straight-alpha source-over",
+                "outside-frame pixels retained",
+                "BACKGROUND clears only current rectangle",
+                "PREVIOUS restores exact snapshot",
+                "rectangles touch each canvas edge",
+                "offsets applied before exactly one full-canvas resize"
+            ]
+        },
+        {
+            "id": "apng.animation-options-and-timing",
+            "sections": ["8.4", "8.5"],
+            "suite": "apng-golden",
+            "variants": [
+                "libwebp default encoder options",
+                "APNG loop count not propagated",
+                "non-cumulative float32 timestamp formula",
+                "varying delays",
+                "null per-frame WebPConfig",
+                "no synthetic terminal frame",
+                "assembled deterministic output hash"
+            ]
+        },
+        {
+            "id": "runtime.response-request",
+            "sections": ["9"],
+            "suite": "runtime-wire",
+            "variants": [
+                "request-ID response endpoint",
+                "streaming response-mode header",
+                "chunked transfer header",
+                "integration response content type",
+                "declared Lambda runtime error trailers"
+            ]
+        },
+        {
+            "id": "runtime.response-entity",
+            "sections": ["9"],
+            "suite": "runtime-wire",
+            "variants": [
+                "valid status and single-value header JSON",
+                "exact eight NUL delimiter",
+                "raw binary body without base64",
+                "valid terminal chunk",
+                "underlying connection closed"
+            ]
+        },
+        {
+            "id": "runtime.failure-protocol",
+            "sections": ["2.1", "9"],
+            "suite": "runtime-wire",
+            "variants": [
+                "pre-response invocation failure uses matching error endpoint",
+                "post-start failure uses declared trailers",
+                "trailer error body is base64 encoded",
+                "fragmented reads and writes",
+                "partial writes and backpressure",
+                "peer connection closure"
+            ]
+        },
+        {
+            "id": "artifacts.compatibility-golden",
+            "sections": ["10"],
+            "suite": "repository-audit",
+            "variants": [
+                "event and metadata fixtures",
+                "URL query and address vectors",
+                "local TLS PKI and deterministic origin responses",
+                "redistributable image provenance",
+                "encoded and decoded diagnostics",
+                "security exception vectors",
+                "dependency graph that produced goldens"
+            ]
+        }
+    ]
+}
