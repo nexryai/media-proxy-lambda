@@ -53,6 +53,48 @@ if(BUILD_TESTING)
     include(GoogleTest)
     gtest_discover_tests(mediaproxy_smoke_test DISCOVERY_MODE PRE_TEST)
 
+    add_executable(mediaproxy_stack_smash_probe
+        tests/hardening/stack_smash.cpp
+    )
+    add_executable(mediaproxy_cfi_violation_probe
+        tests/hardening/cfi_violation.cpp
+    )
+    foreach(hardening_probe IN ITEMS
+            mediaproxy_stack_smash_probe
+            mediaproxy_cfi_violation_probe)
+        target_link_libraries(${hardening_probe}
+            PRIVATE
+                mediaproxy_hardening
+                mediaproxy_warnings
+        )
+    endforeach()
+
+    add_test(
+        NAME hardening-flags
+        COMMAND "${CMAKE_COMMAND}"
+            "-DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+            "-DCOMPILE_COMMANDS=${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json"
+            "-DNINJA=${CMAKE_MAKE_PROGRAM}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/HardeningFlagsTest.cmake"
+    )
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        add_test(
+            NAME hardening-stack-smash
+            COMMAND "${CMAKE_COMMAND}"
+                "-DPROGRAM=$<TARGET_FILE:mediaproxy_stack_smash_probe>"
+                "-DEXPECTED_RESULT=Segmentation fault"
+                -P "${CMAKE_SOURCE_DIR}/tests/cmake/ExpectSignalFailure.cmake"
+        )
+        add_test(
+            NAME hardening-cfi-violation
+            COMMAND "${CMAKE_COMMAND}"
+                "-DPROGRAM=$<TARGET_FILE:mediaproxy_cfi_violation_probe>"
+                "-DEXPECTED_RESULT=Illegal instruction"
+                -P "${CMAKE_SOURCE_DIR}/tests/cmake/ExpectSignalFailure.cmake"
+        )
+    endif()
+
     add_test(
         NAME static-elf-policy
         COMMAND "${CMAKE_COMMAND}"
@@ -67,5 +109,13 @@ if(BUILD_TESTING)
             "-DNM=${MEDIAPROXY_NM}"
             "-DUNDEFINED_SYMBOLS_FILE=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.undefined-symbols.txt"
             -P "${CMAKE_SOURCE_DIR}/cmake/VerifyStaticElf.cmake"
+    )
+    add_test(
+        NAME release-binary-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/ReleaseBinaryPolicyTest.cmake"
     )
 endif()

@@ -126,8 +126,10 @@ ExternalProject_Add(compiler_rt
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DCMAKE_C_COMPILER=${host_clang}"
         "-DCMAKE_CXX_COMPILER=${host_clangxx}"
+        "-DCMAKE_ASM_COMPILER=${host_clang}"
         "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
         "-DCMAKE_CXX_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_ASM_COMPILER_TARGET=${target_triple}"
         "-DCMAKE_SYSROOT=${sysroot}"
         "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
         "-DCMAKE_AR=${host_ar}"
@@ -223,6 +225,7 @@ ExternalProject_Add(llvm_runtimes
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
     DEPENDS llvm_runtimes
+    BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
     DOWNLOAD_COMMAND ""
@@ -249,6 +252,7 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_GOOGLETEST_SHA256=${googletest_sha256}"
         "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"
         "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
         "-DBUILD_TESTING=${BUILD_TESTING}"
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS
