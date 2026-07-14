@@ -48,6 +48,9 @@ mediaproxy_lock_get(fortify-headers sha256 fortify_headers_sha256)
 mediaproxy_lock_get(fortify-headers version fortify_headers_version)
 mediaproxy_lock_get(llvm-runtimes url llvm_url)
 mediaproxy_lock_get(llvm-runtimes sha256 llvm_sha256)
+mediaproxy_lock_get(boringssl url boringssl_url)
+mediaproxy_lock_get(boringssl sha256 boringssl_sha256)
+mediaproxy_lock_get(boringssl version boringssl_version)
 mediaproxy_lock_get(yyjson url yyjson_url)
 mediaproxy_lock_get(yyjson sha256 yyjson_sha256)
 mediaproxy_lock_get(yyjson version yyjson_version)
@@ -134,7 +137,7 @@ ExternalProject_Add(fortify_headers
         "${fortify_headers_include_dir}/string.h"
 )
 
-set(dependency_hardening_flags
+set(dependency_hardening_base_flags
     -O2
     -fPIC
     -fstack-protector-strong
@@ -146,11 +149,26 @@ set(dependency_hardening_flags
     -fsanitize=cfi
     -fsanitize-trap=cfi
     -fno-sanitize-recover=cfi
-    "-D_FORTIFY_SOURCE=3"
-    "-isystem ${fortify_headers_include_dir}"
     ${dependency_arch_hardening_flags}
 )
-string(JOIN " " dependency_hardening_c_flags ${dependency_hardening_flags})
+set(dependency_hardening_c_flags_list
+    "-D_FORTIFY_SOURCE=3"
+    "-isystem ${fortify_headers_include_dir}"
+    ${dependency_hardening_base_flags}
+)
+set(dependency_hardening_cxx_flags_list
+    -nostdinc++
+    "-isystem ${sysroot}/usr/include/c++/v1"
+    "-isystem ${fortify_headers_include_dir}"
+    "-D_FORTIFY_SOURCE=3"
+    "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST"
+    -fvisibility-inlines-hidden
+    ${dependency_hardening_base_flags}
+)
+string(JOIN " " dependency_hardening_c_flags
+    ${dependency_hardening_c_flags_list})
+string(JOIN " " dependency_hardening_cxx_flags
+    ${dependency_hardening_cxx_flags_list})
 
 set(yyjson_binary_directory "${CMAKE_BINARY_DIR}/yyjson-build")
 set(yyjson_library "${sysroot}/usr/lib/libyyjson.a")
@@ -318,9 +336,64 @@ ExternalProject_Add(llvm_runtimes
         "${sysroot}/usr/lib/libunwind.a"
 )
 
+set(boringssl_binary_directory "${CMAKE_BINARY_DIR}/boringssl-build")
+set(boringssl_crypto_library "${sysroot}/usr/lib/libcrypto.a")
+set(boringssl_ssl_library "${sysroot}/usr/lib/libssl.a")
+set(boringssl_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(boringssl
+    DEPENDS fortify_headers llvm_runtimes
+    URL "${boringssl_url}"
+    URL_HASH "SHA256=${boringssl_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "boringssl-${boringssl_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${boringssl_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DMEDIAPROXY_TARGET_TRIPLE=${target_triple}"
+        "-DMEDIAPROXY_TARGET_PROCESSOR=${target_processor}"
+        "-DMEDIAPROXY_COMPILER_RT_ARCH=${compiler_rt_arch}"
+        "-DMEDIAPROXY_SYSROOT=${sysroot}"
+        "-DMEDIAPROXY_CLANG=${host_clang}"
+        "-DMEDIAPROXY_CLANGXX=${host_clangxx}"
+        "-DMEDIAPROXY_LLD=${host_lld}"
+        "-DMEDIAPROXY_AR=${host_ar}"
+        "-DMEDIAPROXY_RANLIB=${host_ranlib}"
+        "-DMEDIAPROXY_NM=${host_nm}"
+        "-DMEDIAPROXY_STRIP=${host_strip}"
+        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags}"
+        "-DCMAKE_CXX_FLAGS=${dependency_hardening_cxx_flags}"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DBUILD_TESTING=OFF"
+        "-DFIPS=OFF"
+        "-DOPENSSL_NO_ASM=ON"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target crypto ssl
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${boringssl_include_dir}/openssl"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        <SOURCE_DIR>/include/openssl "${boringssl_include_dir}/openssl"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libcrypto.a "${boringssl_crypto_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libssl.a "${boringssl_ssl_library}"
+    BUILD_BYPRODUCTS
+        "${boringssl_crypto_library}"
+        "${boringssl_ssl_library}"
+        "${boringssl_include_dir}/openssl/ssl.h"
+)
+
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS fortify_headers llvm_runtimes yyjson
+    DEPENDS boringssl fortify_headers llvm_runtimes yyjson
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -348,6 +421,10 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_YYJSON_INCLUDE_DIR=${yyjson_include_dir}"
         "-DMEDIAPROXY_YYJSON_LIBRARY=${yyjson_library}"
         "-DMEDIAPROXY_YYJSON_COMPILE_COMMANDS=${yyjson_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_BORINGSSL_INCLUDE_DIR=${boringssl_include_dir}"
+        "-DMEDIAPROXY_BORINGSSL_CRYPTO_LIBRARY=${boringssl_crypto_library}"
+        "-DMEDIAPROXY_BORINGSSL_SSL_LIBRARY=${boringssl_ssl_library}"
+        "-DMEDIAPROXY_BORINGSSL_COMPILE_COMMANDS=${boringssl_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_GOOGLETEST_URL=${googletest_url}"
         "-DMEDIAPROXY_GOOGLETEST_SHA256=${googletest_sha256}"
         "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"

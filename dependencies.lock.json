@@ -77,6 +77,25 @@
             "reason": "Pinned C++ runtime, ABI, unwinder, and compiler builtins"
         },
         {
+            "name": "boringssl",
+            "version": "0.20260713.0",
+            "revision": "8b43ff0f72137b31b23d482f0b2344186d797b03",
+            "url": "https://github.com/google/boringssl/releases/download/0.20260713.0/boringssl-0.20260713.0.tar.gz",
+            "sha256": "8176853e9d5c0f1af15270587f3c577171a60fddbd0ee903f7763663c04db949",
+            "license": "Apache-2.0",
+            "buildOptions": [
+                "BUILD_SHARED_LIBS=OFF",
+                "BUILD_TESTING=OFF",
+                "FIPS=OFF",
+                "OPENSSL_NO_ASM=ON to keep every crypto object under ThinLTO and CFI",
+                "crypto and ssl static archives only",
+                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "generated release sources only; Go and Perl are not invoked",
+                "LLVM tools only"
+            ],
+            "reason": "Sole TLS and cryptography provider for origin and Runtime API HTTPS"
+        },
+        {
             "name": "yyjson",
             "version": "0.12.0",
             "revision": "8b4a38dc994a110abaec8a400615567bd996105f",

@@ -14,9 +14,29 @@ foreach(required_yyjson_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_boringssl_artifact IN ITEMS
+        "${MEDIAPROXY_BORINGSSL_INCLUDE_DIR}/openssl/ssl.h"
+        "${MEDIAPROXY_BORINGSSL_CRYPTO_LIBRARY}"
+        "${MEDIAPROXY_BORINGSSL_SSL_LIBRARY}")
+    if(NOT EXISTS "${required_boringssl_artifact}")
+        message(FATAL_ERROR
+            "Pinned BoringSSL artifact is absent: ${required_boringssl_artifact}")
+    endif()
+endforeach()
+
 add_library(mediaproxy_yyjson STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_yyjson PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_YYJSON_LIBRARY}"
+)
+
+add_library(mediaproxy_boringssl_crypto STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_boringssl_crypto PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_BORINGSSL_CRYPTO_LIBRARY}"
+)
+add_library(mediaproxy_boringssl_ssl STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_boringssl_ssl PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_BORINGSSL_SSL_LIBRARY}"
+    INTERFACE_LINK_LIBRARIES mediaproxy_boringssl_crypto
 )
 
 add_executable(bootstrap src/bootstrap.cpp)
@@ -24,6 +44,7 @@ target_link_libraries(bootstrap
     PRIVATE
         mediaproxy_hardening
         mediaproxy_warnings
+        mediaproxy_boringssl_ssl
         mediaproxy_yyjson
 )
 target_link_options(bootstrap PRIVATE
@@ -61,6 +82,7 @@ if(BUILD_TESTING)
         PRIVATE
             mediaproxy_hardening
             mediaproxy_warnings
+            mediaproxy_boringssl_ssl
             mediaproxy_yyjson
             GTest::gtest_main
     )
@@ -88,6 +110,21 @@ if(BUILD_TESTING)
         )
     endforeach()
 
+    add_test(
+        NAME boringssl-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_BORINGSSL_COMPILE_COMMANDS}"
+            "-DCRYPTO_ARCHIVE=${MEDIAPROXY_BORINGSSL_CRYPTO_LIBRARY}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DSSL_ARCHIVE=${MEDIAPROXY_BORINGSSL_SSL_LIBRARY}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/BoringSslBuildTest.cmake"
+    )
     add_test(
         NAME yyjson-build-policy
         COMMAND "${CMAKE_COMMAND}"

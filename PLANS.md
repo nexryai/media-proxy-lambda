@@ -194,7 +194,10 @@ fortification, or link/branch protections.
 
 ### Direct runtime libraries
 
-- **BoringSSL**: sole TLS and crypto provider.
+- **BoringSSL**: sole TLS and crypto provider. Initially build without
+  architecture assembly so every crypto object participates in ThinLTO and
+  trapping CFI. Assembly may be enabled later only with equivalent control-flow
+  protection and architecture-specific performance measurements.
 - **curl**: origin HTTP and Runtime API client, with HTTP/1.1 forced for the
   Runtime API connection and HTTP/2 permitted for origins.
 - **nghttp2**: curl origin HTTP/2 support.
