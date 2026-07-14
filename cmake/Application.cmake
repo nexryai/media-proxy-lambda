@@ -24,6 +24,15 @@ foreach(required_boringssl_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_nghttp2_artifact IN ITEMS
+        "${MEDIAPROXY_NGHTTP2_INCLUDE_DIR}/nghttp2/nghttp2.h"
+        "${MEDIAPROXY_NGHTTP2_LIBRARY}")
+    if(NOT EXISTS "${required_nghttp2_artifact}")
+        message(FATAL_ERROR
+            "Pinned nghttp2 artifact is absent: ${required_nghttp2_artifact}")
+    endif()
+endforeach()
+
 foreach(required_zlib_artifact IN ITEMS
         "${MEDIAPROXY_ZLIB_INCLUDE_DIR}/zlib.h"
         "${MEDIAPROXY_ZLIB_LIBRARY}")
@@ -48,6 +57,12 @@ set_target_properties(mediaproxy_boringssl_ssl PROPERTIES
     INTERFACE_LINK_LIBRARIES mediaproxy_boringssl_crypto
 )
 
+add_library(mediaproxy_nghttp2 STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_nghttp2 PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_NGHTTP2_LIBRARY}"
+    INTERFACE_COMPILE_DEFINITIONS NGHTTP2_STATICLIB
+)
+
 add_library(mediaproxy_zlib STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_zlib PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_ZLIB_LIBRARY}"
@@ -59,6 +74,7 @@ target_link_libraries(bootstrap
         mediaproxy_hardening
         mediaproxy_warnings
         mediaproxy_boringssl_ssl
+        mediaproxy_nghttp2
         mediaproxy_yyjson
         mediaproxy_zlib
 )
@@ -98,6 +114,7 @@ if(BUILD_TESTING)
             mediaproxy_hardening
             mediaproxy_warnings
             mediaproxy_boringssl_ssl
+            mediaproxy_nghttp2
             mediaproxy_yyjson
             mediaproxy_zlib
             GTest::gtest_main
@@ -152,6 +169,21 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/YyjsonBuildTest.cmake"
+    )
+    add_test(
+        NAME nghttp2-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_NGHTTP2_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_NGHTTP2_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNGHTTP2_ARCHIVE=${MEDIAPROXY_NGHTTP2_LIBRARY}"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/Nghttp2BuildTest.cmake"
     )
     add_test(
         NAME zlib-build-policy

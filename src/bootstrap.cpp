@@ -1,6 +1,7 @@
 #include <memory>
 #include <string_view>
 
+#include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <zlib.h>
 
@@ -17,6 +18,13 @@ int main()
     const char* const linked_zlib_version = zlib_version_function();
     if (linked_zlib_version == nullptr
             || std::string_view{linked_zlib_version} != ZLIB_VERSION) {
+        return 1;
+    }
+    auto* volatile nghttp2_version_function = &nghttp2_version;
+    const nghttp2_info* const http2_version_info =
+        nghttp2_version_function(0);
+    if (http2_version_info == nullptr
+            || http2_version_info->version_num != NGHTTP2_VERSION_NUM) {
         return 1;
     }
     if (SSL_CTX_set_min_proto_version(tls_context.get(), TLS1_2_VERSION) != 1

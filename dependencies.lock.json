@@ -96,6 +96,31 @@
             "reason": "Sole TLS and cryptography provider for origin and Runtime API HTTPS"
         },
         {
+            "name": "nghttp2",
+            "version": "1.69.0",
+            "revision": "68cb6900fde14c77f0cd7add0e094a862960eb99",
+            "url": "https://github.com/nghttp2/nghttp2/releases/download/v1.69.0/nghttp2-1.69.0.tar.xz",
+            "sha256": "1fb324b6ec2c56f6bde0658f4139ffd8209fa9e77ce98fd7a5f63af8d0e508ad",
+            "license": "MIT",
+            "buildOptions": [
+                "ENABLE_LIB_ONLY=ON",
+                "BUILD_SHARED_LIBS=OFF",
+                "BUILD_STATIC_LIBS=ON",
+                "BUILD_TESTING=OFF",
+                "ENABLE_APP=OFF",
+                "ENABLE_DOC=OFF",
+                "ENABLE_EXAMPLES=OFF",
+                "ENABLE_HPACK_TOOLS=OFF",
+                "ENABLE_HTTP3=OFF",
+                "SIZEOF_SSIZE_T=8 for the two supported 64-bit targets",
+                "OpenSSL discovery disabled; libnghttp2 contains no TLS implementation",
+                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "warnings as errors",
+                "LLVM tools only"
+            ],
+            "reason": "HTTP/2 framing and HPACK support for curl origin requests"
+        },
+        {
             "name": "zlib",
             "version": "1.3.2",
             "revision": "da607da739fa6047df13e66a2af6b8bec7c2a498",

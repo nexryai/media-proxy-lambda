@@ -51,6 +51,9 @@ mediaproxy_lock_get(llvm-runtimes sha256 llvm_sha256)
 mediaproxy_lock_get(boringssl url boringssl_url)
 mediaproxy_lock_get(boringssl sha256 boringssl_sha256)
 mediaproxy_lock_get(boringssl version boringssl_version)
+mediaproxy_lock_get(nghttp2 url nghttp2_url)
+mediaproxy_lock_get(nghttp2 sha256 nghttp2_sha256)
+mediaproxy_lock_get(nghttp2 version nghttp2_version)
 mediaproxy_lock_get(zlib url zlib_url)
 mediaproxy_lock_get(zlib sha256 zlib_sha256)
 mediaproxy_lock_get(zlib version zlib_version)
@@ -172,6 +175,82 @@ string(JOIN " " dependency_hardening_c_flags
     ${dependency_hardening_c_flags_list})
 string(JOIN " " dependency_hardening_cxx_flags
     ${dependency_hardening_cxx_flags_list})
+
+set(nghttp2_binary_directory "${CMAKE_BINARY_DIR}/nghttp2-build")
+set(nghttp2_library "${sysroot}/usr/lib/libnghttp2.a")
+set(nghttp2_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(nghttp2
+    DEPENDS fortify_headers
+    URL "${nghttp2_url}"
+    URL_HASH "SHA256=${nghttp2_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "nghttp2-${nghttp2_version}.tar.xz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${nghttp2_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -Werror"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Jansson=TRUE"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Jemalloc=TRUE"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Libevent=TRUE"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Libnghttp3=TRUE"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Libngtcp2=TRUE"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_LibXml2=TRUE"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=TRUE"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Systemd=TRUE"
+        "-DSIZEOF_SSIZE_T=8"
+        "-DENABLE_LIB_ONLY=ON"
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DBUILD_STATIC_LIBS=ON"
+        "-DBUILD_TESTING=OFF"
+        "-DENABLE_WERROR=ON"
+        "-DENABLE_THREADS=OFF"
+        "-DENABLE_APP=OFF"
+        "-DENABLE_DOC=OFF"
+        "-DENABLE_EXAMPLES=OFF"
+        "-DENABLE_FAILMALLOC=OFF"
+        "-DENABLE_HPACK_TOOLS=OFF"
+        "-DENABLE_HTTP3=OFF"
+        "-DWITH_LIBBPF=OFF"
+        "-DWITH_LIBXML2=OFF"
+        "-DWITH_JEMALLOC=OFF"
+        "-DWITH_MRUBY=OFF"
+        "-DWITH_NEVERBLEED=OFF"
+        "-DWITH_WOLFSSL=OFF"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target nghttp2_static
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${nghttp2_include_dir}/nghttp2" "${sysroot}/usr/lib"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/lib/libnghttp2.a "${nghttp2_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/lib/includes/nghttp2/nghttp2.h
+        "${nghttp2_include_dir}/nghttp2/nghttp2.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/lib/includes/nghttp2/nghttp2ver.h
+        "${nghttp2_include_dir}/nghttp2/nghttp2ver.h"
+    BUILD_BYPRODUCTS
+        "${nghttp2_library}"
+        "${nghttp2_include_dir}/nghttp2/nghttp2.h"
+        "${nghttp2_include_dir}/nghttp2/nghttp2ver.h"
+)
 
 set(zlib_binary_directory "${CMAKE_BINARY_DIR}/zlib-build")
 set(zlib_library "${sysroot}/usr/lib/libz.a")
@@ -444,7 +523,7 @@ ExternalProject_Add(boringssl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl fortify_headers llvm_runtimes yyjson zlib
+    DEPENDS boringssl fortify_headers llvm_runtimes nghttp2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -476,6 +555,10 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_BORINGSSL_CRYPTO_LIBRARY=${boringssl_crypto_library}"
         "-DMEDIAPROXY_BORINGSSL_SSL_LIBRARY=${boringssl_ssl_library}"
         "-DMEDIAPROXY_BORINGSSL_COMPILE_COMMANDS=${boringssl_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_NGHTTP2_INCLUDE_DIR=${nghttp2_include_dir}"
+        "-DMEDIAPROXY_NGHTTP2_LIBRARY=${nghttp2_library}"
+        "-DMEDIAPROXY_NGHTTP2_COMPILE_COMMANDS=${nghttp2_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_NGHTTP2_CONFIG_HEADER=${nghttp2_binary_directory}/config.h"
         "-DMEDIAPROXY_ZLIB_INCLUDE_DIR=${zlib_include_dir}"
         "-DMEDIAPROXY_ZLIB_LIBRARY=${zlib_library}"
         "-DMEDIAPROXY_ZLIB_COMPILE_COMMANDS=${zlib_binary_directory}/compile_commands.json"
