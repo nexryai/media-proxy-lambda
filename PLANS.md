@@ -141,6 +141,8 @@ evidence that these exceptions introduce no runtime shared dependency.
 
 - LLVM/Clang, LLD, llvm-ar/ranlib/nm/strip, compiler-rt
 - musl, libc++, libc++abi, libunwind
+- fortify-headers as a pinned header-only overlay providing level-3 dynamic
+  object-size checks that the pinned musl headers do not provide themselves
 - CMake and Ninja
 - Python, Meson, and pkgconf for libvips/GLib-family builds
 - Rust/Cargo only for a pinned librsvg build if required; CMake remains the

@@ -44,6 +44,21 @@
             "reason": "Sole target C library and static-PIE startup objects"
         },
         {
+            "name": "fortify-headers",
+            "version": "3.0.2",
+            "revision": "3.0.2",
+            "url": "https://github.com/jvoisin/fortify-headers/archive/refs/tags/3.0.2.tar.gz",
+            "sha256": "a4aab14c56eb00239cbd61ac65b3e778cf29ec82f06116ba343a50552882f587",
+            "license": "0BSD",
+            "buildOptions": [
+                "header-only installation under /usr/include/fortify",
+                "_FORTIFY_SOURCE=3",
+                "Clang pass_dynamic_object_size checks",
+                "musl system-header overlay"
+            ],
+            "reason": "Provide effective inline fortify checks missing from the pinned musl headers"
+        },
+        {
             "name": "llvm-runtimes",
             "version": "22.1.2",
             "revision": "llvmorg-22.1.2",

@@ -59,9 +59,13 @@ if(BUILD_TESTING)
     add_executable(mediaproxy_cfi_violation_probe
         tests/hardening/cfi_violation.cpp
     )
+    add_executable(mediaproxy_fortify_probe
+        tests/hardening/fortify.cpp
+    )
     foreach(hardening_probe IN ITEMS
             mediaproxy_stack_smash_probe
-            mediaproxy_cfi_violation_probe)
+            mediaproxy_cfi_violation_probe
+            mediaproxy_fortify_probe)
         target_link_libraries(${hardening_probe}
             PRIVATE
                 mediaproxy_hardening
@@ -74,11 +78,24 @@ if(BUILD_TESTING)
         COMMAND "${CMAKE_COMMAND}"
             "-DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}"
             "-DCOMPILE_COMMANDS=${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
             "-DNINJA=${CMAKE_MAKE_PROGRAM}"
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/HardeningFlagsTest.cmake"
     )
     if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        add_test(
+            NAME hardening-fortify-safe
+            COMMAND mediaproxy_fortify_probe
+        )
+        add_test(
+            NAME hardening-fortify-overflow
+            COMMAND "${CMAKE_COMMAND}"
+                "-DPROGRAM=$<TARGET_FILE:mediaproxy_fortify_probe>"
+                "-DPROGRAM_ARGUMENTS=overflow"
+                "-DEXPECTED_RESULT=Illegal instruction"
+                -P "${CMAKE_SOURCE_DIR}/tests/cmake/ExpectSignalFailure.cmake"
+        )
         add_test(
             NAME hardening-stack-smash
             COMMAND "${CMAKE_COMMAND}"

@@ -1,4 +1,9 @@
-foreach(required_variable BUILD_DIR COMPILE_COMMANDS NINJA TARGET_ARCH)
+foreach(required_variable
+        BUILD_DIR
+        COMPILE_COMMANDS
+        FORTIFY_INCLUDE_DIR
+        NINJA
+        TARGET_ARCH)
     if(NOT DEFINED ${required_variable})
         message(FATAL_ERROR "${required_variable} is required")
     endif()
@@ -21,6 +26,7 @@ set(required_link_flags
 set(hardening_targets
     mediaproxy_stack_smash_probe
     mediaproxy_cfi_violation_probe
+    mediaproxy_fortify_probe
 )
 foreach(hardening_target IN LISTS hardening_targets)
     execute_process(
@@ -62,6 +68,7 @@ if(command_count EQUAL 0)
 endif()
 
 set(required_flags
+    -D_FORTIFY_SOURCE=3
     -fstack-protector-strong
     -ftrivial-auto-var-init=zero
     -fvisibility=hidden
@@ -70,6 +77,7 @@ set(required_flags
     -fsanitize-trap=cfi
     -fno-sanitize-recover=cfi
     -Werror
+    "-isystem ${FORTIFY_INCLUDE_DIR}"
 )
 if(TARGET_ARCH STREQUAL "x86_64")
     list(APPEND required_flags -fstack-clash-protection -fcf-protection=full)
@@ -82,6 +90,7 @@ endif()
 set(required_sources
     tests/hardening/stack_smash.cpp
     tests/hardening/cfi_violation.cpp
+    tests/hardening/fortify.cpp
 )
 foreach(required_source IN LISTS required_sources)
     set(matching_command "")

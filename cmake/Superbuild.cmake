@@ -38,6 +38,9 @@ mediaproxy_lock_get(musl url musl_url)
 mediaproxy_lock_get(musl sha256 musl_sha256)
 mediaproxy_lock_get_patch(musl 0 path musl_patch_relative)
 mediaproxy_lock_get_patch(musl 0 sha256 musl_patch_sha256)
+mediaproxy_lock_get(fortify-headers url fortify_headers_url)
+mediaproxy_lock_get(fortify-headers sha256 fortify_headers_sha256)
+mediaproxy_lock_get(fortify-headers version fortify_headers_version)
 mediaproxy_lock_get(llvm-runtimes url llvm_url)
 mediaproxy_lock_get(llvm-runtimes sha256 llvm_sha256)
 mediaproxy_lock_get(googletest url googletest_url)
@@ -99,6 +102,28 @@ ExternalProject_Add(musl
     BUILD_BYPRODUCTS
         "${sysroot}/usr/lib/libc.a"
         "${sysroot}/usr/lib/rcrt1.o"
+)
+
+set(fortify_headers_include_dir "${sysroot}/usr/include/fortify")
+ExternalProject_Add(fortify_headers
+    DEPENDS musl
+    URL "${fortify_headers_url}"
+    URL_HASH "SHA256=${fortify_headers_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "fortify-headers-${fortify_headers_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND
+        "${host_make}" -C <SOURCE_DIR>
+        "DESTDIR=${sysroot}"
+        "PREFIX=/usr"
+        install
+    BUILD_IN_SOURCE TRUE
+    BUILD_BYPRODUCTS
+        "${fortify_headers_include_dir}/fortify-headers.h"
+        "${fortify_headers_include_dir}/string.h"
 )
 
 ExternalProject_Add(llvm_source
@@ -224,7 +249,7 @@ ExternalProject_Add(llvm_runtimes
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS llvm_runtimes
+    DEPENDS fortify_headers llvm_runtimes
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -248,6 +273,7 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_STRIP=${host_strip}"
         "-DMEDIAPROXY_READELF=${host_readelf}"
         "-DMEDIAPROXY_SOURCE_CACHE=${source_cache}"
+        "-DMEDIAPROXY_FORTIFY_INCLUDE_DIR=${fortify_headers_include_dir}"
         "-DMEDIAPROXY_GOOGLETEST_URL=${googletest_url}"
         "-DMEDIAPROXY_GOOGLETEST_SHA256=${googletest_sha256}"
         "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"

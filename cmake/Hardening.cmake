@@ -1,7 +1,16 @@
 add_library(mediaproxy_hardening INTERFACE)
 add_library(mediaproxy_warnings INTERFACE)
 
+if(NOT DEFINED MEDIAPROXY_FORTIFY_INCLUDE_DIR
+        OR NOT EXISTS "${MEDIAPROXY_FORTIFY_INCLUDE_DIR}/fortify-headers.h")
+    message(FATAL_ERROR
+        "Pinned fortify headers are required at MEDIAPROXY_FORTIFY_INCLUDE_DIR")
+endif()
+
 target_compile_features(mediaproxy_hardening INTERFACE cxx_std_20)
+target_include_directories(mediaproxy_hardening SYSTEM BEFORE INTERFACE
+    "${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+)
 target_compile_definitions(mediaproxy_hardening INTERFACE
     _FORTIFY_SOURCE=3
     _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST

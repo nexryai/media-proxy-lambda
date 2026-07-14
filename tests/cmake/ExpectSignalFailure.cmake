@@ -9,7 +9,7 @@ if(NOT EXISTS "${PROGRAM}")
 endif()
 
 execute_process(
-    COMMAND "${PROGRAM}"
+    COMMAND "${PROGRAM}" ${PROGRAM_ARGUMENTS}
     RESULT_VARIABLE process_result
     OUTPUT_VARIABLE process_output
     ERROR_VARIABLE process_error
