@@ -51,6 +51,9 @@ mediaproxy_lock_get(llvm-runtimes sha256 llvm_sha256)
 mediaproxy_lock_get(boringssl url boringssl_url)
 mediaproxy_lock_get(boringssl sha256 boringssl_sha256)
 mediaproxy_lock_get(boringssl version boringssl_version)
+mediaproxy_lock_get(zlib url zlib_url)
+mediaproxy_lock_get(zlib sha256 zlib_sha256)
+mediaproxy_lock_get(zlib version zlib_version)
 mediaproxy_lock_get(yyjson url yyjson_url)
 mediaproxy_lock_get(yyjson sha256 yyjson_sha256)
 mediaproxy_lock_get(yyjson version yyjson_version)
@@ -169,6 +172,54 @@ string(JOIN " " dependency_hardening_c_flags
     ${dependency_hardening_c_flags_list})
 string(JOIN " " dependency_hardening_cxx_flags
     ${dependency_hardening_cxx_flags_list})
+
+set(zlib_binary_directory "${CMAKE_BINARY_DIR}/zlib-build")
+set(zlib_library "${sysroot}/usr/lib/libz.a")
+set(zlib_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(zlib
+    DEPENDS fortify_headers
+    URL "${zlib_url}"
+    URL_HASH "SHA256=${zlib_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "zlib-${zlib_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${zlib_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -Wall -Wextra -Werror"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DZLIB_BUILD_SHARED=OFF"
+        "-DZLIB_BUILD_STATIC=ON"
+        "-DZLIB_BUILD_TESTING=OFF"
+        "-DZLIB_INSTALL=OFF"
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${zlib_include_dir}" "${sysroot}/usr/lib"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libz.a "${zlib_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/zlib.h "${zlib_include_dir}/zlib.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/zconf.h "${zlib_include_dir}/zconf.h"
+    BUILD_BYPRODUCTS
+        "${zlib_library}"
+        "${zlib_include_dir}/zlib.h"
+        "${zlib_include_dir}/zconf.h"
+)
 
 set(yyjson_binary_directory "${CMAKE_BINARY_DIR}/yyjson-build")
 set(yyjson_library "${sysroot}/usr/lib/libyyjson.a")
@@ -393,7 +444,7 @@ ExternalProject_Add(boringssl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl fortify_headers llvm_runtimes yyjson
+    DEPENDS boringssl fortify_headers llvm_runtimes yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -425,6 +476,9 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_BORINGSSL_CRYPTO_LIBRARY=${boringssl_crypto_library}"
         "-DMEDIAPROXY_BORINGSSL_SSL_LIBRARY=${boringssl_ssl_library}"
         "-DMEDIAPROXY_BORINGSSL_COMPILE_COMMANDS=${boringssl_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_ZLIB_INCLUDE_DIR=${zlib_include_dir}"
+        "-DMEDIAPROXY_ZLIB_LIBRARY=${zlib_library}"
+        "-DMEDIAPROXY_ZLIB_COMPILE_COMMANDS=${zlib_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_GOOGLETEST_URL=${googletest_url}"
         "-DMEDIAPROXY_GOOGLETEST_SHA256=${googletest_sha256}"
         "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"

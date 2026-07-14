@@ -24,6 +24,15 @@ foreach(required_boringssl_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_zlib_artifact IN ITEMS
+        "${MEDIAPROXY_ZLIB_INCLUDE_DIR}/zlib.h"
+        "${MEDIAPROXY_ZLIB_LIBRARY}")
+    if(NOT EXISTS "${required_zlib_artifact}")
+        message(FATAL_ERROR
+            "Pinned zlib artifact is absent: ${required_zlib_artifact}")
+    endif()
+endforeach()
+
 add_library(mediaproxy_yyjson STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_yyjson PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_YYJSON_LIBRARY}"
@@ -39,6 +48,11 @@ set_target_properties(mediaproxy_boringssl_ssl PROPERTIES
     INTERFACE_LINK_LIBRARIES mediaproxy_boringssl_crypto
 )
 
+add_library(mediaproxy_zlib STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_zlib PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_ZLIB_LIBRARY}"
+)
+
 add_executable(bootstrap src/bootstrap.cpp)
 target_link_libraries(bootstrap
     PRIVATE
@@ -46,6 +60,7 @@ target_link_libraries(bootstrap
         mediaproxy_warnings
         mediaproxy_boringssl_ssl
         mediaproxy_yyjson
+        mediaproxy_zlib
 )
 target_link_options(bootstrap PRIVATE
     "LINKER:-Map,${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
@@ -84,6 +99,7 @@ if(BUILD_TESTING)
             mediaproxy_warnings
             mediaproxy_boringssl_ssl
             mediaproxy_yyjson
+            mediaproxy_zlib
             GTest::gtest_main
     )
 
@@ -136,6 +152,20 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/YyjsonBuildTest.cmake"
+    )
+    add_test(
+        NAME zlib-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_ZLIB_COMPILE_COMMANDS}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DZLIB_ARCHIVE=${MEDIAPROXY_ZLIB_LIBRARY}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/ZlibBuildTest.cmake"
     )
     add_test(
         NAME hardening-flags

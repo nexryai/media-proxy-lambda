@@ -2,6 +2,7 @@
 #include <string_view>
 
 #include <openssl/ssl.h>
+#include <zlib.h>
 
 int main()
 {
@@ -10,6 +11,12 @@ int main()
         SSL_CTX_new(TLS_method()),
         &SSL_CTX_free);
     if (runtime_name.empty() || tls_context == nullptr) {
+        return 1;
+    }
+    auto* volatile zlib_version_function = &zlibVersion;
+    const char* const linked_zlib_version = zlib_version_function();
+    if (linked_zlib_version == nullptr
+            || std::string_view{linked_zlib_version} != ZLIB_VERSION) {
         return 1;
     }
     if (SSL_CTX_set_min_proto_version(tls_context.get(), TLS1_2_VERSION) != 1
