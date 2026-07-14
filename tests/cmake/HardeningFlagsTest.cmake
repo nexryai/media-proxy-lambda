@@ -67,6 +67,9 @@ if(command_count EQUAL 0)
     message(FATAL_ERROR "Compile command database is empty")
 endif()
 
+get_filename_component(sysroot_include_dir "${FORTIFY_INCLUDE_DIR}" DIRECTORY)
+set(libcxx_include_dir "${sysroot_include_dir}/c++/v1")
+
 set(required_flags
     -D_FORTIFY_SOURCE=3
     -fstack-protector-strong
@@ -116,4 +119,16 @@ foreach(required_source IN LISTS required_sources)
                 "${matching_command}")
         endif()
     endforeach()
+
+    string(FIND "${matching_command}"
+        "-isystem ${libcxx_include_dir}" libcxx_include_offset)
+    string(FIND "${matching_command}"
+        "-isystem ${FORTIFY_INCLUDE_DIR}" fortify_include_offset)
+    if(libcxx_include_offset EQUAL -1
+            OR fortify_include_offset EQUAL -1
+            OR libcxx_include_offset GREATER_EQUAL fortify_include_offset)
+        message(FATAL_ERROR
+            "${required_source} must search libc++ before fortify headers: "
+            "${matching_command}")
+    endif()
 endforeach()

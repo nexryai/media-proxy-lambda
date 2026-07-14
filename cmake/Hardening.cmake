@@ -8,14 +8,12 @@ if(NOT DEFINED MEDIAPROXY_FORTIFY_INCLUDE_DIR
 endif()
 
 target_compile_features(mediaproxy_hardening INTERFACE cxx_std_20)
-target_include_directories(mediaproxy_hardening SYSTEM BEFORE INTERFACE
-    "${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
-)
 target_compile_definitions(mediaproxy_hardening INTERFACE
     _FORTIFY_SOURCE=3
     _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
 )
 target_compile_options(mediaproxy_hardening INTERFACE
+    "SHELL:-isystem ${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
     -O2
     -fstack-protector-strong
     -ftrivial-auto-var-init=zero
