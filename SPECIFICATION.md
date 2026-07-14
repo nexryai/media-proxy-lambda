@@ -471,7 +471,34 @@ bytes are never base64 encoded. End with a valid terminal chunk and close the
 underlying connection. A failure after streaming begins uses the declared
 trailers, with the error body base64 encoded as required by the Runtime API.
 
-## 10. Test and compatibility artifacts
+## 10. Deployment artifact contract
+
+The deployed `bootstrap` is a statically linked musl PIE. Its ELF type is
+`ET_DYN`, it has no `PT_INTERP` program header, and it has no runtime shared
+library or loadable-module dependency.
+
+A `.dynamic` section and matching `PT_DYNAMIC` program header are permitted as
+a narrow exception when the pinned musl/LLD static-PIE link uses them for
+self-relocation and process-startup metadata. Relocation, symbol/hash,
+initialization/finalization, RELRO, and PIE/immediate-binding flag entries do
+not by themselves constitute a runtime shared-library dependency. The section
+and program header are not required when a future pinned toolchain can produce
+an otherwise equivalent static PIE without them.
+
+The dynamic table must contain none of these external-object tags:
+
+- `DT_NEEDED`, `DT_SONAME`, `DT_RPATH`, or `DT_RUNPATH`;
+- `DT_FILTER` or `DT_AUXILIARY`;
+- `DT_CONFIG`, `DT_AUDIT`, or `DT_DEPAUDIT`.
+
+The release verifier must inspect the dynamic-table entries rather than reject
+the `.dynamic` section or `PT_DYNAMIC` program header by name. It must still
+reject an ELF interpreter, any forbidden dynamic tag, an executable stack, or
+an unresolved symbol. Link-map, SBOM, and minimal-filesystem checks must prove
+that no dynamic loader, shared object, or loadable codec is required at
+runtime.
+
+## 11. Test and compatibility artifacts
 
 All normal tests are offline and self-contained. Check in:
 
@@ -491,7 +518,7 @@ checked-in suite must not clone, import, execute, or inspect a legacy project.
 Changing a normative value requires updating this document and reviewing the
 corresponding fixture diff in the same change.
 
-## 11. Design provenance (non-normative)
+## 12. Design provenance (non-normative)
 
 The corrected full-canvas `BLEND_OP_OVER` approach was informed by:
 

@@ -2,7 +2,8 @@
 
 ## Document status
 
-- Status: revised for self-contained compatibility and corrected APNG blending
+- Status: revised for self-contained compatibility, corrected APNG blending,
+  and musl static-PIE dynamic metadata
 - Normative behavior: `SPECIFICATION.md`
 - Target: AWS Lambda custom runtime with Function URL `RESPONSE_STREAM`
 - Artifact: one statically linked musl C++ `bootstrap` binary
@@ -114,6 +115,23 @@ Do not change these unrelated APNG behaviors while fixing blend:
 
 Every dependency is built as a pinned static archive through the CMake
 superbuild. The final ELF has no shared-library dependency.
+
+### Approved static-PIE dynamic metadata exception
+
+A normal musl static PIE is `ET_DYN` and may carry a `.dynamic` section with a
+matching `PT_DYNAMIC` program header so its startup code can perform
+self-relocation. This link-time/startup metadata is permitted and does not
+weaken the requirement that `bootstrap` have no dynamic runtime dependency.
+
+The ELF verifier must therefore inspect semantics instead of rejecting the
+section or program header by name. It permits relocation, symbol/hash,
+initialization/finalization, RELRO, and PIE/immediate-binding metadata, while
+rejecting `DT_NEEDED`, `DT_SONAME`, `DT_RPATH`, `DT_RUNPATH`, `DT_FILTER`,
+`DT_AUXILIARY`, `DT_CONFIG`, `DT_AUDIT`, and `DT_DEPAUDIT`. `PT_INTERP`,
+runtime shared objects, loadable codecs, and unresolved symbols remain
+forbidden. The link map, SBOM, and minimal-filesystem release checks remain
+independent evidence that the exception is used only for static-PIE
+self-relocation and startup.
 
 ### Toolchain and build-only tools
 
@@ -274,7 +292,9 @@ Deliverables:
 Exit criteria:
 
 - A trivial `bootstrap` is a static PIE for both architectures.
-- `llvm-readelf` reports no interpreter, dynamic section, or `DT_NEEDED`.
+- `llvm-readelf` reports no interpreter, `DT_NEEDED`, or other forbidden
+  external-object dynamic tag. A `.dynamic` section and `PT_DYNAMIC` are
+  accepted only as the approved static-PIE self-relocation/startup metadata.
 - The link map contains BoringSSL but no other TLS provider, glibc, libstdc++,
   libgcc, dynamic module, or GPL-only codec.
 - A clean builder reproduces the graph from the lock without package-manager

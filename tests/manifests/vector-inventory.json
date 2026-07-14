@@ -4,12 +4,26 @@
     "cases": [
         {
             "id": "contract.self-contained",
-            "sections": ["1", "10"],
+            "sections": ["1", "11"],
             "suite": "repository-audit",
             "variants": [
                 "no legacy checkout path in build inputs",
                 "no live network dependency in normal tests",
                 "APNG OVER is the only intentional initial media divergence"
+            ]
+        },
+        {
+            "id": "artifact.static-pie-dynamic-metadata",
+            "sections": ["10"],
+            "suite": "static-elf-policy",
+            "variants": [
+                "ET_DYN static PIE accepted",
+                "PT_INTERP rejected",
+                "non-executable stack required",
+                ".dynamic and PT_DYNAMIC self-relocation metadata accepted",
+                "DT_NEEDED SONAME RPATH RUNPATH FILTER AUXILIARY CONFIG AUDIT and DEPAUDIT rejected",
+                "unresolved symbols rejected",
+                "link map SBOM and minimal-filesystem checks prove no runtime shared dependency"
             ]
         },
         {
@@ -157,7 +171,7 @@
         },
         {
             "id": "url.idna-corpus",
-            "sections": ["3.1", "10"],
+            "sections": ["3.1", "11"],
             "suite": "url-policy",
             "variants": ["accepted Unicode host vectors", "rejected Unicode host vectors", "ASCII hostname retained for SNI verification"]
         },
@@ -206,7 +220,7 @@
         },
         {
             "id": "redirect.policy",
-            "sections": ["3.3", "10"],
+            "sections": ["3.3", "11"],
             "suite": "origin-tls",
             "variants": [
                 "relative location resolution",
@@ -580,7 +594,7 @@
         },
         {
             "id": "artifacts.compatibility-golden",
-            "sections": ["10"],
+            "sections": ["11"],
             "suite": "repository-audit",
             "variants": [
                 "event and metadata fixtures",

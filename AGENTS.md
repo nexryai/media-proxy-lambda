@@ -64,6 +64,10 @@ covered by tests.
 - The deployment artifact is a statically linked PIE named `bootstrap`. It has
   no ELF interpreter, `DT_NEEDED` entry, loadable codec, or runtime shared
   library dependency.
+- A `.dynamic` section and `PT_DYNAMIC` program header are permitted only for
+  musl static-PIE self-relocation and process-startup metadata. They must not
+  contain a dynamic tag that names, loads, audits, filters, or searches for a
+  shared object.
 - Embed CA roots and all required font/configuration data at build time.
 - Pin every third-party revision, archive hash, build option, and enabled codec.
   Never use a rolling distribution package or unpinned branch for a release.
@@ -237,7 +241,9 @@ after the full release gates pass:
 4. Run libFuzzer smoke corpora for event/query/URL, MIME, PNG/APNG, ICO, and
    streaming metadata parsing.
 5. Verify `bootstrap` with `file`, `llvm-readelf`, and `ldd`: static PIE, no
-   interpreter, no dynamic section/`DT_NEEDED`, and no unresolved symbol.
+   interpreter, no `DT_NEEDED` or other shared-object lookup tag, and no
+   unresolved symbol. Permit `.dynamic`/`PT_DYNAMIC` only for the static-PIE
+   self-relocation and startup metadata described above.
 6. Inspect the link map and SBOM: BoringSSL is the only TLS provider and no
    GPL-only or unexpected codec is linked.
 7. Run in a minimal filesystem and then deploy a canary to verify headers,

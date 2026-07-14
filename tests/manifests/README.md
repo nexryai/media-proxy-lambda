@@ -11,5 +11,5 @@ offline assets are added. Implementations may split one inventory case into
 multiple executable tests, but they must retain the inventory ID so coverage
 can be audited without inspecting test source.
 
-Section 11 is intentionally absent because the specification marks it as
+Section 12 is intentionally absent because the specification marks it as
 non-normative design provenance.

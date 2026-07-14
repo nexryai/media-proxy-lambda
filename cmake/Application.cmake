@@ -51,4 +51,19 @@ if(BUILD_TESTING)
 
     include(GoogleTest)
     gtest_discover_tests(mediaproxy_smoke_test DISCOVERY_MODE PRE_TEST)
+
+    add_test(
+        NAME static-elf-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DSOURCE_DIR=${CMAKE_SOURCE_DIR}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/StaticElfPolicyTest.cmake"
+    )
+    add_test(
+        NAME bootstrap-static-elf
+        COMMAND "${CMAKE_COMMAND}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DREADELF=${MEDIAPROXY_READELF}"
+            "-DNM=${MEDIAPROXY_NM}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/VerifyStaticElf.cmake"
+    )
 endif()
