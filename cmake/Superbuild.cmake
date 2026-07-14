@@ -9,11 +9,16 @@ if(MEDIAPROXY_TARGET_ARCH STREQUAL "x86_64")
     set(target_processor x86_64)
     set(compiler_rt_arch x86_64)
     set(kernel_arch x86)
+    set(dependency_arch_hardening_flags
+        -fstack-clash-protection
+        -fcf-protection=full
+    )
 elseif(MEDIAPROXY_TARGET_ARCH STREQUAL "arm64")
     set(target_triple aarch64-linux-musl)
     set(target_processor aarch64)
     set(compiler_rt_arch aarch64)
     set(kernel_arch arm64)
+    set(dependency_arch_hardening_flags -mbranch-protection=standard)
 else()
     message(FATAL_ERROR "MEDIAPROXY_TARGET_ARCH must be x86_64 or arm64")
 endif()
@@ -43,6 +48,9 @@ mediaproxy_lock_get(fortify-headers sha256 fortify_headers_sha256)
 mediaproxy_lock_get(fortify-headers version fortify_headers_version)
 mediaproxy_lock_get(llvm-runtimes url llvm_url)
 mediaproxy_lock_get(llvm-runtimes sha256 llvm_sha256)
+mediaproxy_lock_get(yyjson url yyjson_url)
+mediaproxy_lock_get(yyjson sha256 yyjson_sha256)
+mediaproxy_lock_get(yyjson version yyjson_version)
 mediaproxy_lock_get(googletest url googletest_url)
 mediaproxy_lock_get(googletest sha256 googletest_sha256)
 
@@ -124,6 +132,69 @@ ExternalProject_Add(fortify_headers
     BUILD_BYPRODUCTS
         "${fortify_headers_include_dir}/fortify-headers.h"
         "${fortify_headers_include_dir}/string.h"
+)
+
+set(dependency_hardening_flags
+    -O2
+    -fPIC
+    -fstack-protector-strong
+    -ftrivial-auto-var-init=zero
+    -fvisibility=hidden
+    -ffunction-sections
+    -fdata-sections
+    -flto=thin
+    -fsanitize=cfi
+    -fsanitize-trap=cfi
+    -fno-sanitize-recover=cfi
+    "-D_FORTIFY_SOURCE=3"
+    "-isystem ${fortify_headers_include_dir}"
+    ${dependency_arch_hardening_flags}
+)
+string(JOIN " " dependency_hardening_c_flags ${dependency_hardening_flags})
+
+set(yyjson_binary_directory "${CMAKE_BINARY_DIR}/yyjson-build")
+set(yyjson_library "${sysroot}/usr/lib/libyyjson.a")
+set(yyjson_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(yyjson
+    DEPENDS fortify_headers
+    URL "${yyjson_url}"
+    URL_HASH "SHA256=${yyjson_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "yyjson-${yyjson_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${yyjson_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags}"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DYYJSON_BUILD_TESTS=OFF"
+        "-DYYJSON_BUILD_FUZZER=OFF"
+        "-DYYJSON_BUILD_MISC=OFF"
+        "-DYYJSON_BUILD_DOC=OFF"
+        "-DYYJSON_DISABLE_INCR_READER=ON"
+        "-DYYJSON_DISABLE_UTILS=ON"
+        "-DYYJSON_DISABLE_NON_STANDARD=ON"
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E env "DESTDIR=${sysroot}"
+        "${CMAKE_COMMAND}" --install <BINARY_DIR>
+    BUILD_BYPRODUCTS
+        "${yyjson_library}"
+        "${yyjson_include_dir}/yyjson.h"
 )
 
 ExternalProject_Add(llvm_source
@@ -249,7 +320,7 @@ ExternalProject_Add(llvm_runtimes
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS fortify_headers llvm_runtimes
+    DEPENDS fortify_headers llvm_runtimes yyjson
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -274,6 +345,9 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_READELF=${host_readelf}"
         "-DMEDIAPROXY_SOURCE_CACHE=${source_cache}"
         "-DMEDIAPROXY_FORTIFY_INCLUDE_DIR=${fortify_headers_include_dir}"
+        "-DMEDIAPROXY_YYJSON_INCLUDE_DIR=${yyjson_include_dir}"
+        "-DMEDIAPROXY_YYJSON_LIBRARY=${yyjson_library}"
+        "-DMEDIAPROXY_YYJSON_COMPILE_COMMANDS=${yyjson_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_GOOGLETEST_URL=${googletest_url}"
         "-DMEDIAPROXY_GOOGLETEST_SHA256=${googletest_sha256}"
         "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"

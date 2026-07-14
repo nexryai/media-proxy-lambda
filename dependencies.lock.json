@@ -77,6 +77,27 @@
             "reason": "Pinned C++ runtime, ABI, unwinder, and compiler builtins"
         },
         {
+            "name": "yyjson",
+            "version": "0.12.0",
+            "revision": "8b4a38dc994a110abaec8a400615567bd996105f",
+            "url": "https://github.com/ibireme/yyjson/archive/refs/tags/0.12.0.tar.gz",
+            "sha256": "b16246f617b2a136c78d73e5e2647c6f1de1313e46678062985bdcf1f40bb75d",
+            "license": "MIT",
+            "buildOptions": [
+                "BUILD_SHARED_LIBS=OFF",
+                "YYJSON_BUILD_TESTS=OFF",
+                "YYJSON_BUILD_FUZZER=OFF",
+                "YYJSON_BUILD_MISC=OFF",
+                "YYJSON_BUILD_DOC=OFF",
+                "YYJSON_DISABLE_INCR_READER=ON",
+                "YYJSON_DISABLE_UTILS=ON",
+                "YYJSON_DISABLE_NON_STANDARD=ON",
+                "production hardening flags including fortify, ThinLTO, and CFI",
+                "LLVM tools only"
+            ],
+            "reason": "Bounded Function URL event parsing and response metadata serialization"
+        },
+        {
             "name": "googletest",
             "version": "1.17.0",
             "revision": "v1.17.0",

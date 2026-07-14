@@ -6,11 +6,25 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+foreach(required_yyjson_artifact IN ITEMS
+        "${MEDIAPROXY_YYJSON_INCLUDE_DIR}/yyjson.h"
+        "${MEDIAPROXY_YYJSON_LIBRARY}")
+    if(NOT EXISTS "${required_yyjson_artifact}")
+        message(FATAL_ERROR "Pinned yyjson artifact is absent: ${required_yyjson_artifact}")
+    endif()
+endforeach()
+
+add_library(mediaproxy_yyjson STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_yyjson PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_YYJSON_LIBRARY}"
+)
+
 add_executable(bootstrap src/bootstrap.cpp)
 target_link_libraries(bootstrap
     PRIVATE
         mediaproxy_hardening
         mediaproxy_warnings
+        mediaproxy_yyjson
 )
 target_link_options(bootstrap PRIVATE
     "LINKER:-Map,${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
@@ -47,6 +61,7 @@ if(BUILD_TESTING)
         PRIVATE
             mediaproxy_hardening
             mediaproxy_warnings
+            mediaproxy_yyjson
             GTest::gtest_main
     )
 
@@ -73,6 +88,18 @@ if(BUILD_TESTING)
         )
     endforeach()
 
+    add_test(
+        NAME yyjson-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DARCHIVE=${MEDIAPROXY_YYJSON_LIBRARY}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_YYJSON_COMPILE_COMMANDS}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/YyjsonBuildTest.cmake"
+    )
     add_test(
         NAME hardening-flags
         COMMAND "${CMAKE_COMMAND}"
