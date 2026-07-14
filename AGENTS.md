@@ -68,6 +68,9 @@ covered by tests.
   musl static-PIE self-relocation and process-startup metadata. They must not
   contain a dynamic tag that names, loads, audits, filters, or searches for a
   shared object.
+- Undefined weak references are permitted as optional static-runtime hooks;
+  when no definition is linked, ELF weak-symbol semantics resolve them to
+  zero. Undefined non-weak references remain forbidden.
 - Embed CA roots and all required font/configuration data at build time.
 - Pin every third-party revision, archive hash, build option, and enabled codec.
   Never use a rolling distribution package or unpinned branch for a release.
@@ -242,8 +245,8 @@ after the full release gates pass:
    streaming metadata parsing.
 5. Verify `bootstrap` with `file`, `llvm-readelf`, and `ldd`: static PIE, no
    interpreter, no `DT_NEEDED` or other shared-object lookup tag, and no
-   unresolved symbol. Permit `.dynamic`/`PT_DYNAMIC` only for the static-PIE
-   self-relocation and startup metadata described above.
+   undefined non-weak symbol. Permit `.dynamic`/`PT_DYNAMIC` and undefined weak
+   references only under the narrow rules described above.
 6. Inspect the link map and SBOM: BoringSSL is the only TLS provider and no
    GPL-only or unexpected codec is linked.
 7. Run in a minimal filesystem and then deploy a canary to verify headers,

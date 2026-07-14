@@ -23,6 +23,7 @@ add_custom_command(
         "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
         "-DREADELF=${MEDIAPROXY_READELF}"
         "-DNM=${MEDIAPROXY_NM}"
+        "-DUNDEFINED_SYMBOLS_FILE=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.undefined-symbols.txt"
         -P "${CMAKE_SOURCE_DIR}/cmake/VerifyStaticElf.cmake"
     VERBATIM
 )
@@ -64,6 +65,7 @@ if(BUILD_TESTING)
             "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
             "-DREADELF=${MEDIAPROXY_READELF}"
             "-DNM=${MEDIAPROXY_NM}"
+            "-DUNDEFINED_SYMBOLS_FILE=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.undefined-symbols.txt"
             -P "${CMAKE_SOURCE_DIR}/cmake/VerifyStaticElf.cmake"
     )
 endif()

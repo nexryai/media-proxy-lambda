@@ -493,10 +493,18 @@ The dynamic table must contain none of these external-object tags:
 
 The release verifier must inspect the dynamic-table entries rather than reject
 the `.dynamic` section or `PT_DYNAMIC` program header by name. It must still
-reject an ELF interpreter, any forbidden dynamic tag, an executable stack, or
-an unresolved symbol. Link-map, SBOM, and minimal-filesystem checks must prove
-that no dynamic loader, shared object, or loadable codec is required at
-runtime.
+reject an ELF interpreter, any forbidden dynamic tag, or an executable stack.
+
+Undefined weak references are permitted for optional static-runtime hooks.
+When no definition is linked, ELF weak-symbol semantics resolve such a
+reference to zero; it does not cause a loader or shared object to be consulted.
+Every undefined non-weak reference remains forbidden. The verifier must run
+`llvm-nm --undefined-only --no-weak` and require empty output, while release
+evidence retains the complete undefined-symbol inventory as
+`bootstrap.undefined-symbols.txt` so weak references remain reviewable.
+
+Link-map, SBOM, and minimal-filesystem checks must prove that no dynamic loader,
+shared object, or loadable codec is required at runtime.
 
 ## 11. Test and compatibility artifacts
 

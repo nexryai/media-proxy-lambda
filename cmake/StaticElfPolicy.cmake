@@ -2,7 +2,7 @@ function(mediaproxy_validate_static_elf_outputs
         header_output
         program_output
         dynamic_output
-        nm_output
+        strong_undefined_output
         result_variable)
     set(validation_error "")
 
@@ -30,9 +30,10 @@ function(mediaproxy_validate_static_elf_outputs
             endif()
         endforeach()
 
-        if(validation_error STREQUAL "" AND NOT nm_output STREQUAL "")
+        if(validation_error STREQUAL "" AND
+                NOT strong_undefined_output STREQUAL "")
             set(validation_error
-                "bootstrap contains unresolved symbols: ${nm_output}")
+                "bootstrap contains undefined non-weak symbols: ${strong_undefined_output}")
         endif()
     endif()
 

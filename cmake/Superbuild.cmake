@@ -254,6 +254,7 @@ ExternalProject_Add(application
     BUILD_BYPRODUCTS
         "${application_binary_directory}/bootstrap"
         "${application_binary_directory}/bootstrap.map"
+        "${application_binary_directory}/bootstrap.undefined-symbols.txt"
 )
 
 if(BUILD_TESTING)

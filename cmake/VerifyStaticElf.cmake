@@ -6,6 +6,10 @@ endforeach()
 
 include("${CMAKE_CURRENT_LIST_DIR}/StaticElfPolicy.cmake")
 
+if(NOT DEFINED UNDEFINED_SYMBOLS_FILE)
+    set(UNDEFINED_SYMBOLS_FILE "${BOOTSTRAP}.undefined-symbols.txt")
+endif()
+
 execute_process(
     COMMAND "${READELF}" --file-header "${BOOTSTRAP}"
     RESULT_VARIABLE header_result
@@ -34,9 +38,20 @@ if(NOT dynamic_result EQUAL 0)
     message(FATAL_ERROR "llvm-readelf failed: ${dynamic_error}")
 endif()
 execute_process(
-    COMMAND "${NM}" --undefined-only "${BOOTSTRAP}"
+    COMMAND "${NM}" --undefined-only --format=posix "${BOOTSTRAP}"
+    RESULT_VARIABLE all_nm_result
+    OUTPUT_VARIABLE all_undefined_output
+    ERROR_VARIABLE all_nm_error
+)
+if(NOT all_nm_result EQUAL 0)
+    message(FATAL_ERROR "llvm-nm failed: ${all_nm_error}")
+endif()
+file(WRITE "${UNDEFINED_SYMBOLS_FILE}" "${all_undefined_output}")
+
+execute_process(
+    COMMAND "${NM}" --undefined-only --no-weak --format=posix "${BOOTSTRAP}"
     RESULT_VARIABLE nm_result
-    OUTPUT_VARIABLE nm_output
+    OUTPUT_VARIABLE strong_undefined_output
     ERROR_VARIABLE nm_error
 )
 if(NOT nm_result EQUAL 0)
@@ -46,7 +61,7 @@ mediaproxy_validate_static_elf_outputs(
     "${header_output}"
     "${program_output}"
     "${dynamic_output}"
-    "${nm_output}"
+    "${strong_undefined_output}"
     validation_error
 )
 if(NOT validation_error STREQUAL "")

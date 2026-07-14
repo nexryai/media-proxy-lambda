@@ -108,10 +108,10 @@ assert_policy_rejects(
     ""
 )
 assert_policy_rejects(
-    "unresolved symbol"
-    "bootstrap contains unresolved symbols:                  U external_symbol\n"
+    "undefined non-weak symbol"
+    "bootstrap contains undefined non-weak symbols: external_symbol U 0 0\n"
     "${valid_header}"
     "${valid_program}"
     "${valid_dynamic}"
-    "                 U external_symbol\n"
+    "external_symbol U 0 0\n"
 )

@@ -128,10 +128,14 @@ section or program header by name. It permits relocation, symbol/hash,
 initialization/finalization, RELRO, and PIE/immediate-binding metadata, while
 rejecting `DT_NEEDED`, `DT_SONAME`, `DT_RPATH`, `DT_RUNPATH`, `DT_FILTER`,
 `DT_AUXILIARY`, `DT_CONFIG`, `DT_AUDIT`, and `DT_DEPAUDIT`. `PT_INTERP`,
-runtime shared objects, loadable codecs, and unresolved symbols remain
-forbidden. The link map, SBOM, and minimal-filesystem release checks remain
-independent evidence that the exception is used only for static-PIE
-self-relocation and startup.
+runtime shared objects, and loadable codecs remain forbidden. Undefined weak
+references are permitted for optional static-runtime hooks because an absent
+definition resolves to zero without consulting a loader; every undefined
+non-weak reference remains forbidden. The verifier requires empty
+`llvm-nm --undefined-only --no-weak` output, and release evidence records the
+complete undefined-symbol inventory in `bootstrap.undefined-symbols.txt`. The
+link map, SBOM, and minimal-filesystem release checks remain independent
+evidence that these exceptions introduce no runtime shared dependency.
 
 ### Toolchain and build-only tools
 
@@ -295,6 +299,8 @@ Exit criteria:
 - `llvm-readelf` reports no interpreter, `DT_NEEDED`, or other forbidden
   external-object dynamic tag. A `.dynamic` section and `PT_DYNAMIC` are
   accepted only as the approved static-PIE self-relocation/startup metadata.
+- `llvm-nm --undefined-only --no-weak` reports no symbols; any remaining
+  undefined symbols are weak optional hooks recorded in the release evidence.
 - The link map contains BoringSSL but no other TLS provider, glibc, libstdc++,
   libgcc, dynamic module, or GPL-only codec.
 - A clean builder reproduces the graph from the lock without package-manager

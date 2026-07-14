@@ -22,7 +22,8 @@
                 "non-executable stack required",
                 ".dynamic and PT_DYNAMIC self-relocation metadata accepted",
                 "DT_NEEDED SONAME RPATH RUNPATH FILTER AUXILIARY CONFIG AUDIT and DEPAUDIT rejected",
-                "unresolved symbols rejected",
+                "undefined weak optional hooks accepted and recorded in bootstrap.undefined-symbols.txt",
+                "undefined non-weak symbols rejected",
                 "link map SBOM and minimal-filesystem checks prove no runtime shared dependency"
             ]
         },
