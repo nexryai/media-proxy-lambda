@@ -4,6 +4,7 @@
 
 #include <curl/curl.h>
 #include <expat.h>
+#include <ffi.h>
 #include <jpeglib.h>
 #include <lcms2.h>
 #include <libexif/exif-tag.h>
@@ -110,6 +111,18 @@ int main()
     const XML_LChar* const expat_version = expat_version_function();
     if (expat_version == nullptr
         || std::string_view{expat_version} != "expat_2.8.2") {
+        return 1;
+    }
+    ffi_cif ffi_call_interface{};
+    ffi_type* ffi_argument_types[] = {
+        &ffi_type_sint32,
+        &ffi_type_sint32,
+    };
+    auto* volatile ffi_prepare_function = &ffi_prep_cif;
+    if (std::string_view{FFI_VERSION_STRING} != "3.7.1"
+            || ffi_prepare_function(&ffi_call_interface, FFI_DEFAULT_ABI,
+                2, &ffi_type_sint32, ffi_argument_types)
+                != FFI_OK) {
         return 1;
     }
     auto* volatile pcre2_config_function = &pcre2_config;

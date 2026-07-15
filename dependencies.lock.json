@@ -176,6 +176,35 @@
             "reason": "Pinned XML parser required by libvips metadata and serialization support"
         },
         {
+            "name": "libffi",
+            "version": "3.7.1",
+            "revision": "5c1c43091ed611fdea774374355eb938c73a9157",
+            "url": "https://github.com/libffi/libffi/releases/download/v3.7.1/libffi-3.7.1.tar.gz",
+            "sha256": "d5e9a6638ddbd2513ddb54518eb67e4bbe6fa707bcc01c10f6212f0a088d819d",
+            "license": "MIT",
+            "buildOptions": [
+                "curated CMake static-only source build after upstream cross-configuration",
+                "--disable-shared and --enable-static",
+                "--disable-docs, --disable-raw-api, and --disable-symvers",
+                "struct arguments and closures retained for GObject",
+                "static executable trampoline tables enabled to avoid generating writable executable instructions",
+                "x86_64 uses ffi64.c, ffiw64.c, unix64.S, and win64.S",
+                "arm64 uses ffi.c and sysv.S",
+                "architecture ABI assembly is the narrow CFI instrumentation exception; x86 CET and arm64 BTI/PAC plus non-executable-stack annotations are required",
+                "all C sources retain fortify, ThinLTO, trapping CFI, and warnings as errors",
+                "warning exceptions are source-local: unused ABI parameters in prep_cif.c and aarch64/ffi.c, plus dlmalloc integer-offset idioms included by closures.c",
+                "the configure cache asserts musl memcpy availability because Clang rejects Autoconf's obsolete incompatible redeclaration under warnings as errors",
+                "static libffi archive, ffi.h, ffitarget.h, and libffi.pc only",
+                "LLVM tools only"
+            ],
+            "securityNotes": [
+                "3.7.1 fixes aarch64 ffi_call memory corruption when passing many large structs by value",
+                "3.7.1 includes the 3.5.2 close-on-exec fix for static trampoline file descriptors",
+                "the x86_64 smoke test exercises both ffi_call and an allocated closure through the static PIE"
+            ],
+            "reason": "Pinned foreign-call ABI and closure support required by GLib GObject"
+        },
+        {
             "name": "pcre2",
             "version": "10.47",
             "revision": "f454e231fe5006dd7ff8f4693fd2b8eb94333429",

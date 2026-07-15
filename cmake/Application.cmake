@@ -98,6 +98,17 @@ foreach(required_libexpat_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_libffi_artifact IN ITEMS
+        "${MEDIAPROXY_LIBFFI_INCLUDE_DIR}/ffi.h"
+        "${MEDIAPROXY_LIBFFI_INCLUDE_DIR}/ffitarget.h"
+        "${MEDIAPROXY_LIBFFI_LIBRARY}"
+        "${MEDIAPROXY_LIBFFI_PKGCONFIG}")
+    if(NOT EXISTS "${required_libffi_artifact}")
+        message(FATAL_ERROR
+            "Pinned libffi artifact is absent: ${required_libffi_artifact}")
+    endif()
+endforeach()
+
 foreach(required_pcre2_artifact IN ITEMS
         "${MEDIAPROXY_PCRE2_INCLUDE_DIR}/pcre2.h"
         "${MEDIAPROXY_PCRE2_LIBRARY}"
@@ -196,6 +207,11 @@ set_target_properties(mediaproxy_libexpat PROPERTIES
     INTERFACE_COMPILE_DEFINITIONS XML_STATIC
 )
 
+add_library(mediaproxy_libffi STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libffi PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBFFI_LIBRARY}"
+)
+
 add_library(mediaproxy_pcre2 STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_pcre2 PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_PCRE2_LIBRARY}"
@@ -245,6 +261,7 @@ target_link_libraries(bootstrap
         mediaproxy_lcms2
         mediaproxy_libexif
         mediaproxy_libexpat
+        mediaproxy_libffi
         mediaproxy_pcre2
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
@@ -292,6 +309,7 @@ if(BUILD_TESTING)
         tests/smoke/lcms2_test.cpp
         tests/smoke/libexif_test.cpp
         tests/smoke/libexpat_test.cpp
+        tests/smoke/libffi_test.cpp
         tests/smoke/pcre2_test.cpp
         tests/smoke/libjpeg_turbo_test.cpp
         tests/smoke/libnsgif_test.cpp
@@ -310,6 +328,7 @@ if(BUILD_TESTING)
             mediaproxy_lcms2
             mediaproxy_libexif
             mediaproxy_libexpat
+            mediaproxy_libffi
             mediaproxy_pcre2
             mediaproxy_libjpeg_turbo
             mediaproxy_libnsgif
@@ -480,6 +499,23 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibExpatBuildTest.cmake"
+    )
+    add_test(
+        NAME libffi-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBFFI_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_LIBFFI_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLIBFFI_ARCHIVE=${MEDIAPROXY_LIBFFI_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DPKGCONFIG=${MEDIAPROXY_LIBFFI_PKGCONFIG}"
+            "-DREADELF=${MEDIAPROXY_READELF}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibFfiBuildTest.cmake"
     )
     add_test(
         NAME pcre2-build-policy

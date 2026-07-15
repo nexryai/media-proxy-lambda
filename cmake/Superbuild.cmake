@@ -57,6 +57,9 @@ mediaproxy_lock_get(curl version curl_version)
 mediaproxy_lock_get(libexpat url libexpat_url)
 mediaproxy_lock_get(libexpat sha256 libexpat_sha256)
 mediaproxy_lock_get(libexpat version libexpat_version)
+mediaproxy_lock_get(libffi url libffi_url)
+mediaproxy_lock_get(libffi sha256 libffi_sha256)
+mediaproxy_lock_get(libffi version libffi_version)
 mediaproxy_lock_get(pcre2 url pcre2_url)
 mediaproxy_lock_get(pcre2 sha256 pcre2_sha256)
 mediaproxy_lock_get(pcre2 version pcre2_version)
@@ -202,6 +205,8 @@ string(JOIN " " dependency_hardening_c_flags
     ${dependency_hardening_c_flags_list})
 string(JOIN " " dependency_hardening_cxx_flags
     ${dependency_hardening_cxx_flags_list})
+string(JOIN " " dependency_hardening_asm_flags
+    -fPIC ${dependency_arch_hardening_flags})
 
 set(nghttp2_binary_directory "${CMAKE_BINARY_DIR}/nghttp2-build")
 set(nghttp2_library "${sysroot}/usr/lib/libnghttp2.a")
@@ -788,6 +793,96 @@ ExternalProject_Add(libexpat
         "${libexpat_pkgconfig}"
 )
 
+set(libffi_binary_directory "${CMAKE_BINARY_DIR}/libffi-static-build")
+set(libffi_cmake_binary_directory
+    "${libffi_binary_directory}/cmake-build")
+set(libffi_library "${sysroot}/usr/lib/libffi.a")
+set(libffi_include_dir "${sysroot}/usr/include")
+set(libffi_config_header "${libffi_binary_directory}/fficonfig.h")
+set(libffi_pkgconfig "${sysroot}/usr/lib/pkgconfig/libffi.pc")
+set(libffi_configure_ldflags
+    "--target=${target_triple} --sysroot=${sysroot} -fuse-ld=lld -static-pie -nostdlib ${sysroot}/usr/lib/rcrt1.o ${sysroot}/usr/lib/crti.o ${sysroot}/usr/lib/linux/clang_rt.crtbegin-${compiler_rt_arch}.o")
+set(libffi_configure_libs
+    "-Wl,--start-group -lc ${sysroot}/usr/lib/linux/libclang_rt.builtins-${compiler_rt_arch}.a -Wl,--end-group ${sysroot}/usr/lib/linux/clang_rt.crtend-${compiler_rt_arch}.o ${sysroot}/usr/lib/crtn.o")
+file(SHA256
+    "${CMAKE_SOURCE_DIR}/cmake/dependencies/libffi/CMakeLists.txt"
+    libffi_build_definition_sha256)
+ExternalProject_Add(libffi
+    DEPENDS fortify_headers
+    URL "${libffi_url}"
+    URL_HASH "SHA256=${libffi_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "libffi-${libffi_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${libffi_binary_directory}"
+    CONFIGURE_COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "CC=${host_clang} --target=${target_triple} --sysroot=${sysroot}"
+        "CXX=${host_clangxx} --target=${target_triple} --sysroot=${sysroot}"
+        "CCAS=${host_clang} --target=${target_triple} --sysroot=${sysroot}"
+        "AR=${host_ar}"
+        "RANLIB=${host_ranlib}"
+        "NM=${host_nm}"
+        "STRIP=${host_strip}"
+        "ac_cv_func_memcpy=yes"
+        "CFLAGS=${dependency_hardening_c_flags} -Wall -Wextra -Werror"
+        "CCASFLAGS=${dependency_hardening_asm_flags}"
+        "LDFLAGS=${libffi_configure_ldflags}"
+        "LIBS=${libffi_configure_libs}"
+        <SOURCE_DIR>/configure
+        --build=x86_64-pc-linux-gnu
+        "--host=${target_triple}"
+        --prefix=/usr
+        --libdir=/usr/lib
+        --includedir=/usr/include
+        --disable-shared
+        --enable-static
+        --with-pic
+        --disable-docs
+        --disable-dependency-tracking
+        --disable-multi-os-directory
+        --disable-raw-api
+        --enable-exec-static-tramp
+        --disable-symvers
+        COMMAND "${CMAKE_COMMAND}"
+        -S "${CMAKE_SOURCE_DIR}/cmake/dependencies/libffi"
+        -B "${libffi_cmake_binary_directory}"
+        -G Ninja
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_ASM_COMPILER=${host_clang}"
+        "-DCMAKE_ASM_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags}"
+        "-DCMAKE_ASM_FLAGS=${dependency_hardening_asm_flags}"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DMEDIAPROXY_BUILD_DEFINITION_SHA256=${libffi_build_definition_sha256}"
+        "-DMEDIAPROXY_LIBFFI_CONFIG_DIR=${libffi_binary_directory}"
+        "-DMEDIAPROXY_LIBFFI_SOURCE_DIR=<SOURCE_DIR>"
+        "-DMEDIAPROXY_LIBFFI_TARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+        "-DMEDIAPROXY_LIBFFI_VERSION=${libffi_version}"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build "${libffi_cmake_binary_directory}"
+        --parallel 2 --target ffi
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" --install "${libffi_cmake_binary_directory}"
+        --prefix "${sysroot}/usr"
+    BUILD_BYPRODUCTS
+        "${libffi_library}"
+        "${libffi_include_dir}/ffi.h"
+        "${libffi_include_dir}/ffitarget.h"
+        "${libffi_pkgconfig}"
+)
+
 set(pcre2_binary_directory "${CMAKE_BINARY_DIR}/pcre2-static-build")
 set(pcre2_library "${sysroot}/usr/lib/libpcre2-8.a")
 set(pcre2_include_dir "${sysroot}/usr/include")
@@ -1197,7 +1292,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers lcms2 libexif libexpat libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers lcms2 libexif libexpat libffi libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -1266,6 +1361,11 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBEXPAT_COMPILE_COMMANDS=${libexpat_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_LIBEXPAT_CONFIG_HEADER=${libexpat_config_header}"
         "-DMEDIAPROXY_LIBEXPAT_PKGCONFIG=${libexpat_pkgconfig}"
+        "-DMEDIAPROXY_LIBFFI_INCLUDE_DIR=${libffi_include_dir}"
+        "-DMEDIAPROXY_LIBFFI_LIBRARY=${libffi_library}"
+        "-DMEDIAPROXY_LIBFFI_COMPILE_COMMANDS=${libffi_cmake_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBFFI_CONFIG_HEADER=${libffi_config_header}"
+        "-DMEDIAPROXY_LIBFFI_PKGCONFIG=${libffi_pkgconfig}"
         "-DMEDIAPROXY_PCRE2_INCLUDE_DIR=${pcre2_include_dir}"
         "-DMEDIAPROXY_PCRE2_LIBRARY=${pcre2_library}"
         "-DMEDIAPROXY_PCRE2_COMPILE_COMMANDS=${pcre2_binary_directory}/compile_commands.json"
