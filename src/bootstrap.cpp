@@ -1,7 +1,9 @@
+#include <cstdio>
 #include <memory>
 #include <string_view>
 
 #include <curl/curl.h>
+#include <jpeglib.h>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <png.h>
@@ -13,6 +15,9 @@
 #include <zlib.h>
 
 namespace {
+
+#define MEDIAPROXY_STRINGIFY_IMPL(value) #value
+#define MEDIAPROXY_STRINGIFY(value) MEDIAPROXY_STRINGIFY_IMPL(value)
 
 class CurlGlobal final {
 public:
@@ -68,6 +73,14 @@ int main()
     }
     auto* volatile png_version_function = &png_access_version_number;
     if (png_version_function() != PNG_LIBPNG_VER) {
+        return 1;
+    }
+    jpeg_error_mgr jpeg_errors{};
+    auto* volatile jpeg_error_function = &jpeg_std_error;
+    constexpr std::string_view required_jpeg_version =
+        MEDIAPROXY_STRINGIFY(LIBJPEG_TURBO_VERSION);
+    if (jpeg_error_function(&jpeg_errors) != &jpeg_errors
+            || required_jpeg_version != "3.1.4.1") {
         return 1;
     }
     constexpr int required_webp_version = 0x010600;

@@ -60,6 +60,9 @@ mediaproxy_lock_get(nghttp2 version nghttp2_version)
 mediaproxy_lock_get(libpng url libpng_url)
 mediaproxy_lock_get(libpng sha256 libpng_sha256)
 mediaproxy_lock_get(libpng version libpng_version)
+mediaproxy_lock_get(libjpeg-turbo url libjpeg_turbo_url)
+mediaproxy_lock_get(libjpeg-turbo sha256 libjpeg_turbo_sha256)
+mediaproxy_lock_get(libjpeg-turbo version libjpeg_turbo_version)
 mediaproxy_lock_get(libwebp url libwebp_url)
 mediaproxy_lock_get(libwebp sha256 libwebp_sha256)
 mediaproxy_lock_get(libwebp version libwebp_version)
@@ -367,6 +370,75 @@ ExternalProject_Add(libpng
         "${libpng_include_dir}/png.h"
         "${libpng_include_dir}/pngconf.h"
         "${libpng_include_dir}/pnglibconf.h"
+)
+
+set(libjpeg_turbo_binary_directory
+    "${CMAKE_BINARY_DIR}/libjpeg-turbo-static-build")
+set(libjpeg_turbo_library "${sysroot}/usr/lib/libjpeg.a")
+set(libjpeg_turbo_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(libjpeg_turbo
+    DEPENDS fortify_headers
+    URL "${libjpeg_turbo_url}"
+    URL_HASH "SHA256=${libjpeg_turbo_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "libjpeg-turbo-${libjpeg_turbo_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${libjpeg_turbo_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_SIZEOF_VOID_P=8"
+        "-DSIZE_T=8"
+        "-DUNSIGNED_LONG=8"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -Wall -Wextra -Werror -Wno-unused-parameter -ffp-contract=off"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DENABLE_SHARED=OFF"
+        "-DENABLE_STATIC=ON"
+        "-DREQUIRE_SIMD=OFF"
+        "-DWITH_SIMD=OFF"
+        "-DWITH_ARITH_DEC=ON"
+        "-DWITH_ARITH_ENC=OFF"
+        "-DWITH_JPEG7=OFF"
+        "-DWITH_JPEG8=OFF"
+        "-DWITH_TURBOJPEG=OFF"
+        "-DWITH_JAVA=OFF"
+        "-DWITH_TOOLS=OFF"
+        "-DWITH_TESTS=OFF"
+        "-DWITH_FUZZ=OFF"
+        "-DFORCE_INLINE=ON"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target jpeg-static
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${libjpeg_turbo_include_dir}" "${sysroot}/usr/lib"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libjpeg.a "${libjpeg_turbo_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/jconfig.h
+        <SOURCE_DIR>/src/jerror.h
+        <SOURCE_DIR>/src/jmorecfg.h
+        <SOURCE_DIR>/src/jpeglib.h
+        "${libjpeg_turbo_include_dir}"
+    BUILD_BYPRODUCTS
+        "${libjpeg_turbo_library}"
+        "${libjpeg_turbo_include_dir}/jconfig.h"
+        "${libjpeg_turbo_include_dir}/jerror.h"
+        "${libjpeg_turbo_include_dir}/jmorecfg.h"
+        "${libjpeg_turbo_include_dir}/jpeglib.h"
 )
 
 set(libwebp_binary_directory "${CMAKE_BINARY_DIR}/libwebp-static-build")
@@ -801,7 +873,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers libpng libwebp llvm_runtimes nghttp2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers libjpeg_turbo libpng libwebp llvm_runtimes nghttp2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -845,6 +917,11 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBPNG_LIBRARY=${libpng_library}"
         "-DMEDIAPROXY_LIBPNG_COMPILE_COMMANDS=${libpng_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_LIBPNG_CONFIG_HEADER=${libpng_binary_directory}/pnglibconf.h"
+        "-DMEDIAPROXY_LIBJPEG_TURBO_INCLUDE_DIR=${libjpeg_turbo_include_dir}"
+        "-DMEDIAPROXY_LIBJPEG_TURBO_LIBRARY=${libjpeg_turbo_library}"
+        "-DMEDIAPROXY_LIBJPEG_TURBO_COMPILE_COMMANDS=${libjpeg_turbo_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBJPEG_TURBO_CONFIG_HEADER=${libjpeg_turbo_binary_directory}/jconfig.h"
+        "-DMEDIAPROXY_LIBJPEG_TURBO_INTERNAL_CONFIG_HEADER=${libjpeg_turbo_binary_directory}/jconfigint.h"
         "-DMEDIAPROXY_LIBWEBP_INCLUDE_DIR=${libwebp_include_dir}"
         "-DMEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY=${libwebp_sharpyuv_library}"
         "-DMEDIAPROXY_LIBWEBP_LIBRARY=${libwebp_library}"

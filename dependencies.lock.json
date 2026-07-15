@@ -189,6 +189,39 @@
             "reason": "Pinned PNG decode/encode primitives for static images and the first-party APNG pipeline"
         },
         {
+            "name": "libjpeg-turbo",
+            "version": "3.1.4.1",
+            "revision": "9217719d3a58633923b096af4c1d50d304768a64",
+            "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.4.1/libjpeg-turbo-3.1.4.1.tar.gz",
+            "sha256": "ecae8008e2cc9ade2f2c1bb9d5e6d4fb73e7c433866a056bd82980741571a022",
+            "license": "IJG AND BSD-3-Clause AND Zlib",
+            "buildOptions": [
+                "ENABLE_SHARED=OFF",
+                "ENABLE_STATIC=ON",
+                "WITH_SIMD=OFF so every codec object remains under ThinLTO and trapping CFI and output stays architecture-independent",
+                "WITH_ARITH_DEC=ON",
+                "WITH_ARITH_ENC=OFF",
+                "WITH_JPEG7=OFF and WITH_JPEG8=OFF for the libjpeg v6b-compatible API/ABI",
+                "WITH_TURBOJPEG=OFF",
+                "WITH_JAVA=OFF",
+                "WITH_TOOLS=OFF",
+                "WITH_TESTS=OFF with a first-party in-memory encode/decode smoke test",
+                "WITH_FUZZ=OFF",
+                "CMAKE_SIZEOF_VOID_P=8 for the two supported 64-bit targets",
+                "SIZE_T=8 and UNSIGNED_LONG=8 for the two supported LP64 targets",
+                "-ffp-contract=off for architecture-independent floating-point DCT behavior",
+                "-Wno-unused-parameter for upstream precision-wrapper callbacks whose parameters are conditionally unused",
+                "libjpeg static archive only",
+                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "warnings as errors",
+                "LLVM tools only"
+            ],
+            "securityNotes": [
+                "3.1.4.1 includes the 3.1.4 fix for TurboJPEG destination-buffer reallocation paths that could leak memory or lead to a caller double free; the TurboJPEG API is nevertheless excluded from this build"
+            ],
+            "reason": "Pinned JPEG decode/encode primitives for libvips and first-entry ICO fallback"
+        },
+        {
             "name": "libwebp",
             "version": "1.6.0",
             "revision": "4fa21912338357f89e4fd51cf2368325b59e9bd9",

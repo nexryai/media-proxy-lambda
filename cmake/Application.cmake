@@ -52,6 +52,19 @@ foreach(required_libpng_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_libjpeg_turbo_artifact IN ITEMS
+        "${MEDIAPROXY_LIBJPEG_TURBO_INCLUDE_DIR}/jconfig.h"
+        "${MEDIAPROXY_LIBJPEG_TURBO_INCLUDE_DIR}/jerror.h"
+        "${MEDIAPROXY_LIBJPEG_TURBO_INCLUDE_DIR}/jmorecfg.h"
+        "${MEDIAPROXY_LIBJPEG_TURBO_INCLUDE_DIR}/jpeglib.h"
+        "${MEDIAPROXY_LIBJPEG_TURBO_LIBRARY}")
+    if(NOT EXISTS "${required_libjpeg_turbo_artifact}")
+        message(FATAL_ERROR
+            "Pinned libjpeg-turbo artifact is absent: "
+            "${required_libjpeg_turbo_artifact}")
+    endif()
+endforeach()
+
 foreach(required_libwebp_artifact IN ITEMS
         "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/decode.h"
         "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/encode.h"
@@ -109,6 +122,11 @@ set_target_properties(mediaproxy_libpng PROPERTIES
     INTERFACE_LINK_LIBRARIES mediaproxy_zlib
 )
 
+add_library(mediaproxy_libjpeg_turbo STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libjpeg_turbo PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBJPEG_TURBO_LIBRARY}"
+)
+
 add_library(mediaproxy_libwebp_sharpyuv STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_libwebp_sharpyuv PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
@@ -144,6 +162,7 @@ target_link_libraries(bootstrap
         mediaproxy_warnings
         mediaproxy_curl
         mediaproxy_boringssl_ssl
+        mediaproxy_libjpeg_turbo
         mediaproxy_libpng
         mediaproxy_libwebp_demux
         mediaproxy_libwebp_mux
@@ -181,13 +200,24 @@ if(BUILD_TESTING)
     target_link_libraries(gtest PRIVATE mediaproxy_hardening)
     target_link_libraries(gtest_main PRIVATE mediaproxy_hardening)
 
-    add_executable(mediaproxy_smoke_test tests/smoke_test.cpp)
+    add_executable(mediaproxy_smoke_test
+        tests/smoke/build_test.cpp
+        tests/smoke/boringssl_test.cpp
+        tests/smoke/curl_test.cpp
+        tests/smoke/libjpeg_turbo_test.cpp
+        tests/smoke/libpng_test.cpp
+        tests/smoke/libwebp_test.cpp
+        tests/smoke/nghttp2_test.cpp
+        tests/smoke/yyjson_test.cpp
+        tests/smoke/zlib_test.cpp
+    )
     target_link_libraries(mediaproxy_smoke_test
         PRIVATE
             mediaproxy_hardening
             mediaproxy_warnings
             mediaproxy_curl
             mediaproxy_boringssl_ssl
+            mediaproxy_libjpeg_turbo
             mediaproxy_libpng
             mediaproxy_libwebp_demux
             mediaproxy_libwebp_mux
@@ -293,6 +323,22 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibPngBuildTest.cmake"
+    )
+    add_test(
+        NAME libjpeg-turbo-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBJPEG_TURBO_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_LIBJPEG_TURBO_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DINTERNAL_CONFIG_HEADER=${MEDIAPROXY_LIBJPEG_TURBO_INTERNAL_CONFIG_HEADER}"
+            "-DJPEG_ARCHIVE=${MEDIAPROXY_LIBJPEG_TURBO_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibJpegTurboBuildTest.cmake"
     )
     add_test(
         NAME zlib-build-policy
