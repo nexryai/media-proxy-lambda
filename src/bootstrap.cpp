@@ -9,6 +9,7 @@
 #include <libexif/exif-tag.h>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
+#include <pcre2.h>
 #include <png.h>
 #include <webp/decode.h>
 #include <webp/demux.h>
@@ -109,6 +110,13 @@ int main()
     const XML_LChar* const expat_version = expat_version_function();
     if (expat_version == nullptr
         || std::string_view{expat_version} != "expat_2.8.2") {
+        return 1;
+    }
+    auto* volatile pcre2_config_function = &pcre2_config;
+    PCRE2_UCHAR pcre2_version[32] = {};
+    if (pcre2_config_function(PCRE2_CONFIG_VERSION, pcre2_version) < 0
+        || !std::string_view{reinterpret_cast<const char*>(pcre2_version)}
+                .starts_with("10.47 ")) {
         return 1;
     }
     constexpr int required_webp_version = 0x010600;

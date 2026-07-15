@@ -98,6 +98,16 @@ foreach(required_libexpat_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_pcre2_artifact IN ITEMS
+        "${MEDIAPROXY_PCRE2_INCLUDE_DIR}/pcre2.h"
+        "${MEDIAPROXY_PCRE2_LIBRARY}"
+        "${MEDIAPROXY_PCRE2_PKGCONFIG}")
+    if(NOT EXISTS "${required_pcre2_artifact}")
+        message(FATAL_ERROR
+            "Pinned PCRE2 artifact is absent: ${required_pcre2_artifact}")
+    endif()
+endforeach()
+
 foreach(required_lcms2_artifact IN ITEMS
         "${MEDIAPROXY_LCMS2_INCLUDE_DIR}/lcms2.h"
         "${MEDIAPROXY_LCMS2_LIBRARY}")
@@ -186,6 +196,12 @@ set_target_properties(mediaproxy_libexpat PROPERTIES
     INTERFACE_COMPILE_DEFINITIONS XML_STATIC
 )
 
+add_library(mediaproxy_pcre2 STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_pcre2 PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_PCRE2_LIBRARY}"
+    INTERFACE_COMPILE_DEFINITIONS "PCRE2_CODE_UNIT_WIDTH=8;PCRE2_STATIC"
+)
+
 add_library(mediaproxy_lcms2 STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_lcms2 PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LCMS2_LIBRARY}"
@@ -229,6 +245,7 @@ target_link_libraries(bootstrap
         mediaproxy_lcms2
         mediaproxy_libexif
         mediaproxy_libexpat
+        mediaproxy_pcre2
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
         mediaproxy_libpng
@@ -275,6 +292,7 @@ if(BUILD_TESTING)
         tests/smoke/lcms2_test.cpp
         tests/smoke/libexif_test.cpp
         tests/smoke/libexpat_test.cpp
+        tests/smoke/pcre2_test.cpp
         tests/smoke/libjpeg_turbo_test.cpp
         tests/smoke/libnsgif_test.cpp
         tests/smoke/libpng_test.cpp
@@ -292,6 +310,7 @@ if(BUILD_TESTING)
             mediaproxy_lcms2
             mediaproxy_libexif
             mediaproxy_libexpat
+            mediaproxy_pcre2
             mediaproxy_libjpeg_turbo
             mediaproxy_libnsgif
             mediaproxy_libpng
@@ -461,6 +480,22 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibExpatBuildTest.cmake"
+    )
+    add_test(
+        NAME pcre2-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_PCRE2_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_PCRE2_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DPCRE2_ARCHIVE=${MEDIAPROXY_PCRE2_LIBRARY}"
+            "-DPKGCONFIG=${MEDIAPROXY_PCRE2_PKGCONFIG}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/Pcre2BuildTest.cmake"
     )
     add_test(
         NAME lcms2-build-policy

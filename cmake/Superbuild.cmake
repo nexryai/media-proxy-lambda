@@ -57,6 +57,9 @@ mediaproxy_lock_get(curl version curl_version)
 mediaproxy_lock_get(libexpat url libexpat_url)
 mediaproxy_lock_get(libexpat sha256 libexpat_sha256)
 mediaproxy_lock_get(libexpat version libexpat_version)
+mediaproxy_lock_get(pcre2 url pcre2_url)
+mediaproxy_lock_get(pcre2 sha256 pcre2_sha256)
+mediaproxy_lock_get(pcre2 version pcre2_version)
 mediaproxy_lock_get(nghttp2 url nghttp2_url)
 mediaproxy_lock_get(nghttp2 sha256 nghttp2_sha256)
 mediaproxy_lock_get(nghttp2 version nghttp2_version)
@@ -785,6 +788,74 @@ ExternalProject_Add(libexpat
         "${libexpat_pkgconfig}"
 )
 
+set(pcre2_binary_directory "${CMAKE_BINARY_DIR}/pcre2-static-build")
+set(pcre2_library "${sysroot}/usr/lib/libpcre2-8.a")
+set(pcre2_include_dir "${sysroot}/usr/include")
+set(pcre2_config_header "${pcre2_binary_directory}/src/config.h")
+set(pcre2_pkgconfig "${sysroot}/usr/lib/pkgconfig/libpcre2-8.pc")
+ExternalProject_Add(pcre2
+    DEPENDS fortify_headers
+    URL "${pcre2_url}"
+    URL_HASH "SHA256=${pcre2_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "pcre2-${pcre2_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${pcre2_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_PROJECT_INCLUDE=${CMAKE_CURRENT_SOURCE_DIR}/cmake/LittleEndian64Cross.cmake"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -Wall -Wextra -Werror -Wpedantic -Wno-overlength-strings"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DBUILD_STATIC_LIBS=ON"
+        "-DPCRE2_BUILD_PCRE2_8=ON"
+        "-DPCRE2_BUILD_PCRE2_16=OFF"
+        "-DPCRE2_BUILD_PCRE2_32=OFF"
+        "-DPCRE2_STATIC_PIC=ON"
+        "-DPCRE2_BUILD_PCRE2GREP=OFF"
+        "-DPCRE2_BUILD_TESTS=OFF"
+        "-DPCRE2_SUPPORT_JIT=OFF"
+        "-DPCRE2_SUPPORT_JIT_SEALLOC=OFF"
+        "-DPCRE2GREP_SUPPORT_JIT=OFF"
+        "-DPCRE2GREP_SUPPORT_CALLOUT=OFF"
+        "-DPCRE2GREP_SUPPORT_CALLOUT_FORK=OFF"
+        "-DPCRE2_SUPPORT_LIBZ=OFF"
+        "-DPCRE2_SUPPORT_UNICODE=ON"
+        "-DPCRE2_SUPPORT_VALGRIND=OFF"
+        "-DPCRE2_REBUILD_CHARTABLES=OFF"
+        "-DPCRE2_SHOW_REPORT=ON"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target pcre2-8-static
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${pcre2_include_dir}" "${sysroot}/usr/lib/pkgconfig"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libpcre2-8.a "${pcre2_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/interface/pcre2.h "${pcre2_include_dir}/pcre2.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libpcre2-8.pc "${pcre2_pkgconfig}"
+    BUILD_BYPRODUCTS
+        "${pcre2_library}"
+        "${pcre2_include_dir}/pcre2.h"
+        "${pcre2_pkgconfig}"
+)
+
 set(yyjson_binary_directory "${CMAKE_BINARY_DIR}/yyjson-build")
 set(yyjson_library "${sysroot}/usr/lib/libyyjson.a")
 set(yyjson_include_dir "${sysroot}/usr/include")
@@ -1126,7 +1197,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers lcms2 libexif libexpat libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers lcms2 libexif libexpat libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -1195,6 +1266,11 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBEXPAT_COMPILE_COMMANDS=${libexpat_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_LIBEXPAT_CONFIG_HEADER=${libexpat_config_header}"
         "-DMEDIAPROXY_LIBEXPAT_PKGCONFIG=${libexpat_pkgconfig}"
+        "-DMEDIAPROXY_PCRE2_INCLUDE_DIR=${pcre2_include_dir}"
+        "-DMEDIAPROXY_PCRE2_LIBRARY=${pcre2_library}"
+        "-DMEDIAPROXY_PCRE2_COMPILE_COMMANDS=${pcre2_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_PCRE2_CONFIG_HEADER=${pcre2_config_header}"
+        "-DMEDIAPROXY_PCRE2_PKGCONFIG=${pcre2_pkgconfig}"
         "-DMEDIAPROXY_LCMS2_INCLUDE_DIR=${lcms2_include_dir}"
         "-DMEDIAPROXY_LCMS2_LIBRARY=${lcms2_library}"
         "-DMEDIAPROXY_LCMS2_COMPILE_COMMANDS=${lcms2_binary_directory}/compile_commands.json"

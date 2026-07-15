@@ -176,6 +176,33 @@
             "reason": "Pinned XML parser required by libvips metadata and serialization support"
         },
         {
+            "name": "pcre2",
+            "version": "10.47",
+            "revision": "f454e231fe5006dd7ff8f4693fd2b8eb94333429",
+            "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.47/pcre2-10.47.tar.gz",
+            "sha256": "c08ae2388ef333e8403e670ad70c0a11f1eed021fd88308d7e02f596fcd9dc16",
+            "license": "BSD-3-Clause WITH PCRE2-exception",
+            "buildOptions": [
+                "BUILD_SHARED_LIBS=OFF and BUILD_STATIC_LIBS=ON",
+                "PCRE2_BUILD_PCRE2_8=ON with 16-bit and 32-bit libraries disabled",
+                "PCRE2_STATIC_PIC=ON",
+                "PCRE2_SUPPORT_UNICODE=ON",
+                "PCRE2_SUPPORT_JIT=OFF to forbid runtime executable-memory generation",
+                "PCRE2_BUILD_PCRE2GREP=OFF and PCRE2_BUILD_TESTS=OFF with a first-party bounded Unicode match test",
+                "POSIX wrapper, pcre2test, pcre2grep, documentation, and shared libraries excluded",
+                "default upstream match, depth, heap, lookbehind, and nesting limits retained",
+                "static libpcre2-8 archive, public header, and libpcre2-8.pc only",
+                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "warnings as errors except -Wno-overlength-strings for the upstream 5686-byte error-message table",
+                "LLVM tools only"
+            ],
+            "securityNotes": [
+                "10.47 fixes an easily reachable pcre2_callout_enumerate crash for patterns containing a Unicode character class",
+                "JIT is excluded so the production process does not allocate executable memory for regular expressions"
+            ],
+            "reason": "Pinned Unicode regular-expression engine required by GLib GRegex"
+        },
+        {
             "name": "zlib",
             "version": "1.3.2",
             "revision": "da607da739fa6047df13e66a2af6b8bec7c2a498",
