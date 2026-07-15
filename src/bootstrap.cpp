@@ -5,6 +5,11 @@
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <png.h>
+#include <webp/decode.h>
+#include <webp/demux.h>
+#include <webp/encode.h>
+#include <webp/mux.h>
+#include <webp/sharpyuv/sharpyuv.h>
 #include <zlib.h>
 
 namespace {
@@ -63,6 +68,19 @@ int main()
     }
     auto* volatile png_version_function = &png_access_version_number;
     if (png_version_function() != PNG_LIBPNG_VER) {
+        return 1;
+    }
+    constexpr int required_webp_version = 0x010600;
+    auto* volatile webp_decoder_version_function = &WebPGetDecoderVersion;
+    auto* volatile webp_encoder_version_function = &WebPGetEncoderVersion;
+    auto* volatile webp_demux_version_function = &WebPGetDemuxVersion;
+    auto* volatile webp_mux_version_function = &WebPGetMuxVersion;
+    auto* volatile sharpyuv_version_function = &SharpYuvGetVersion;
+    if (webp_decoder_version_function() != required_webp_version
+            || webp_encoder_version_function() != required_webp_version
+            || webp_demux_version_function() != required_webp_version
+            || webp_mux_version_function() != required_webp_version
+            || sharpyuv_version_function() != SHARPYUV_VERSION) {
         return 1;
     }
     auto* volatile zlib_version_function = &zlibVersion;

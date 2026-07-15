@@ -60,6 +60,9 @@ mediaproxy_lock_get(nghttp2 version nghttp2_version)
 mediaproxy_lock_get(libpng url libpng_url)
 mediaproxy_lock_get(libpng sha256 libpng_sha256)
 mediaproxy_lock_get(libpng version libpng_version)
+mediaproxy_lock_get(libwebp url libwebp_url)
+mediaproxy_lock_get(libwebp sha256 libwebp_sha256)
+mediaproxy_lock_get(libwebp version libwebp_version)
 mediaproxy_lock_get(zlib url zlib_url)
 mediaproxy_lock_get(zlib sha256 zlib_sha256)
 mediaproxy_lock_get(zlib version zlib_version)
@@ -364,6 +367,97 @@ ExternalProject_Add(libpng
         "${libpng_include_dir}/png.h"
         "${libpng_include_dir}/pngconf.h"
         "${libpng_include_dir}/pnglibconf.h"
+)
+
+set(libwebp_binary_directory "${CMAKE_BINARY_DIR}/libwebp-static-build")
+set(libwebp_sharpyuv_library "${sysroot}/usr/lib/libsharpyuv.a")
+set(libwebp_library "${sysroot}/usr/lib/libwebp.a")
+set(libwebp_demux_library "${sysroot}/usr/lib/libwebpdemux.a")
+set(libwebp_mux_library "${sysroot}/usr/lib/libwebpmux.a")
+set(libwebp_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(libwebp
+    DEPENDS fortify_headers
+    URL "${libwebp_url}"
+    URL_HASH "SHA256=${libwebp_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "libwebp-${libwebp_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${libwebp_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -Wall -Wextra -Werror"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_OpenGL=TRUE"
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DWEBP_LINK_STATIC=ON"
+        "-DWEBP_ENABLE_SIMD=ON"
+        "-DWEBP_USE_THREAD=ON"
+        "-DWEBP_NEAR_LOSSLESS=OFF"
+        "-DWEBP_ENABLE_SWAP_16BIT_CSP=OFF"
+        "-DWEBP_BITTRACE=0"
+        "-DWEBP_ENABLE_WUNUSED_RESULT=OFF"
+        "-DWEBP_BUILD_LIBWEBPMUX=ON"
+        "-DWEBP_BUILD_ANIM_UTILS=OFF"
+        "-DWEBP_BUILD_CWEBP=OFF"
+        "-DWEBP_BUILD_DWEBP=OFF"
+        "-DWEBP_BUILD_GIF2WEBP=OFF"
+        "-DWEBP_BUILD_IMG2WEBP=OFF"
+        "-DWEBP_BUILD_VWEBP=OFF"
+        "-DWEBP_BUILD_WEBPINFO=OFF"
+        "-DWEBP_BUILD_WEBPMUX=OFF"
+        "-DWEBP_BUILD_EXTRAS=OFF"
+        "-DWEBP_BUILD_WEBP_JS=OFF"
+        "-DWEBP_BUILD_FUZZTEST=OFF"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target sharpyuv webp webpdemux libwebpmux
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${libwebp_include_dir}/webp/sharpyuv" "${sysroot}/usr/lib"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/src/webp/decode.h
+        <SOURCE_DIR>/src/webp/encode.h
+        <SOURCE_DIR>/src/webp/types.h
+        <SOURCE_DIR>/src/webp/demux.h
+        <SOURCE_DIR>/src/webp/mux.h
+        <SOURCE_DIR>/src/webp/mux_types.h
+        "${libwebp_include_dir}/webp"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/sharpyuv/sharpyuv.h
+        <SOURCE_DIR>/sharpyuv/sharpyuv_csp.h
+        "${libwebp_include_dir}/webp/sharpyuv"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libsharpyuv.a "${libwebp_sharpyuv_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libwebp.a "${libwebp_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libwebpdemux.a "${libwebp_demux_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libwebpmux.a "${libwebp_mux_library}"
+    BUILD_BYPRODUCTS
+        "${libwebp_sharpyuv_library}"
+        "${libwebp_library}"
+        "${libwebp_demux_library}"
+        "${libwebp_mux_library}"
+        "${libwebp_include_dir}/webp/decode.h"
+        "${libwebp_include_dir}/webp/encode.h"
+        "${libwebp_include_dir}/webp/demux.h"
+        "${libwebp_include_dir}/webp/mux.h"
+        "${libwebp_include_dir}/webp/sharpyuv/sharpyuv.h"
 )
 
 set(yyjson_binary_directory "${CMAKE_BINARY_DIR}/yyjson-build")
@@ -707,7 +801,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers libpng llvm_runtimes nghttp2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers libpng libwebp llvm_runtimes nghttp2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -751,6 +845,13 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBPNG_LIBRARY=${libpng_library}"
         "-DMEDIAPROXY_LIBPNG_COMPILE_COMMANDS=${libpng_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_LIBPNG_CONFIG_HEADER=${libpng_binary_directory}/pnglibconf.h"
+        "-DMEDIAPROXY_LIBWEBP_INCLUDE_DIR=${libwebp_include_dir}"
+        "-DMEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY=${libwebp_sharpyuv_library}"
+        "-DMEDIAPROXY_LIBWEBP_LIBRARY=${libwebp_library}"
+        "-DMEDIAPROXY_LIBWEBP_DEMUX_LIBRARY=${libwebp_demux_library}"
+        "-DMEDIAPROXY_LIBWEBP_MUX_LIBRARY=${libwebp_mux_library}"
+        "-DMEDIAPROXY_LIBWEBP_COMPILE_COMMANDS=${libwebp_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBWEBP_CONFIG_HEADER=${libwebp_binary_directory}/src/webp/config.h"
         "-DMEDIAPROXY_ZLIB_INCLUDE_DIR=${zlib_include_dir}"
         "-DMEDIAPROXY_ZLIB_LIBRARY=${zlib_library}"
         "-DMEDIAPROXY_ZLIB_COMPILE_COMMANDS=${zlib_binary_directory}/compile_commands.json"

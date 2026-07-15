@@ -189,6 +189,30 @@
             "reason": "Pinned PNG decode/encode primitives for static images and the first-party APNG pipeline"
         },
         {
+            "name": "libwebp",
+            "version": "1.6.0",
+            "revision": "4fa21912338357f89e4fd51cf2368325b59e9bd9",
+            "url": "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.6.0.tar.gz",
+            "sha256": "e4ab7009bf0629fd11982d4c2aa83964cf244cffba7347ecd39019a9e38c4564",
+            "license": "BSD-3-Clause",
+            "buildOptions": [
+                "BUILD_SHARED_LIBS=OFF",
+                "WEBP_LINK_STATIC=ON",
+                "WEBP_BUILD_LIBWEBPMUX=ON",
+                "WEBP_BUILD_ANIM_UTILS=OFF",
+                "all command-line tools, examples, extras, JavaScript, and fuzztest targets disabled",
+                "image-library and OpenGL discovery disabled",
+                "WEBP_ENABLE_SIMD=ON with runtime dispatch",
+                "WEBP_USE_THREAD=ON using musl pthread support",
+                "near-lossless encoding, 16-bit colorspace swapping, and bit tracing disabled",
+                "libsharpyuv, libwebp, libwebpdemux, and libwebpmux static archives only",
+                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "warnings as errors",
+                "LLVM tools only"
+            ],
+            "reason": "Pinned WebP encode/decode and animation mux/demux primitives for static output and the first-party APNG pipeline"
+        },
+        {
             "name": "yyjson",
             "version": "0.12.0",
             "revision": "8b4a38dc994a110abaec8a400615567bd996105f",

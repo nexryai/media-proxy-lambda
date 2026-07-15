@@ -52,6 +52,22 @@ foreach(required_libpng_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_libwebp_artifact IN ITEMS
+        "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/decode.h"
+        "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/encode.h"
+        "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/demux.h"
+        "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/mux.h"
+        "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/sharpyuv/sharpyuv.h"
+        "${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
+        "${MEDIAPROXY_LIBWEBP_LIBRARY}"
+        "${MEDIAPROXY_LIBWEBP_DEMUX_LIBRARY}"
+        "${MEDIAPROXY_LIBWEBP_MUX_LIBRARY}")
+    if(NOT EXISTS "${required_libwebp_artifact}")
+        message(FATAL_ERROR
+            "Pinned libwebp artifact is absent: ${required_libwebp_artifact}")
+    endif()
+endforeach()
+
 foreach(required_zlib_artifact IN ITEMS
         "${MEDIAPROXY_ZLIB_INCLUDE_DIR}/zlib.h"
         "${MEDIAPROXY_ZLIB_LIBRARY}")
@@ -93,6 +109,26 @@ set_target_properties(mediaproxy_libpng PROPERTIES
     INTERFACE_LINK_LIBRARIES mediaproxy_zlib
 )
 
+add_library(mediaproxy_libwebp_sharpyuv STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libwebp_sharpyuv PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
+)
+add_library(mediaproxy_libwebp STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libwebp PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_LIBRARY}"
+    INTERFACE_LINK_LIBRARIES mediaproxy_libwebp_sharpyuv
+)
+add_library(mediaproxy_libwebp_demux STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libwebp_demux PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_DEMUX_LIBRARY}"
+    INTERFACE_LINK_LIBRARIES mediaproxy_libwebp
+)
+add_library(mediaproxy_libwebp_mux STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libwebp_mux PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_MUX_LIBRARY}"
+    INTERFACE_LINK_LIBRARIES mediaproxy_libwebp
+)
+
 add_library(mediaproxy_curl STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_curl PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_CURL_LIBRARY}"
@@ -109,6 +145,8 @@ target_link_libraries(bootstrap
         mediaproxy_curl
         mediaproxy_boringssl_ssl
         mediaproxy_libpng
+        mediaproxy_libwebp_demux
+        mediaproxy_libwebp_mux
         mediaproxy_nghttp2
         mediaproxy_yyjson
         mediaproxy_zlib
@@ -151,6 +189,8 @@ if(BUILD_TESTING)
             mediaproxy_curl
             mediaproxy_boringssl_ssl
             mediaproxy_libpng
+            mediaproxy_libwebp_demux
+            mediaproxy_libwebp_mux
             mediaproxy_nghttp2
             mediaproxy_yyjson
             mediaproxy_zlib
@@ -267,6 +307,24 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/ZlibBuildTest.cmake"
+    )
+    add_test(
+        NAME libwebp-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBWEBP_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_LIBWEBP_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DSHARPYUV_ARCHIVE=${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
+            "-DWEBP_ARCHIVE=${MEDIAPROXY_LIBWEBP_LIBRARY}"
+            "-DWEBPDEMUX_ARCHIVE=${MEDIAPROXY_LIBWEBP_DEMUX_LIBRARY}"
+            "-DWEBPMUX_ARCHIVE=${MEDIAPROXY_LIBWEBP_MUX_LIBRARY}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibWebPBuildTest.cmake"
     )
     add_test(
         NAME hardening-flags
