@@ -51,6 +51,9 @@ mediaproxy_lock_get(llvm-runtimes sha256 llvm_sha256)
 mediaproxy_lock_get(boringssl url boringssl_url)
 mediaproxy_lock_get(boringssl sha256 boringssl_sha256)
 mediaproxy_lock_get(boringssl version boringssl_version)
+mediaproxy_lock_get(curl url curl_url)
+mediaproxy_lock_get(curl sha256 curl_sha256)
+mediaproxy_lock_get(curl version curl_version)
 mediaproxy_lock_get(nghttp2 url nghttp2_url)
 mediaproxy_lock_get(nghttp2 sha256 nghttp2_sha256)
 mediaproxy_lock_get(nghttp2 version nghttp2_version)
@@ -521,9 +524,127 @@ ExternalProject_Add(boringssl
         "${boringssl_include_dir}/openssl/ssl.h"
 )
 
+set(curl_binary_directory "${CMAKE_BINARY_DIR}/curl-static-build")
+set(curl_library "${sysroot}/usr/lib/libcurl.a")
+set(curl_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(curl
+    DEPENDS boringssl fortify_headers nghttp2 zlib
+    URL "${curl_url}"
+    URL_HASH "SHA256=${curl_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "curl-${curl_version}.tar.xz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${curl_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DMEDIAPROXY_TARGET_TRIPLE=${target_triple}"
+        "-DMEDIAPROXY_TARGET_PROCESSOR=${target_processor}"
+        "-DMEDIAPROXY_COMPILER_RT_ARCH=${compiler_rt_arch}"
+        "-DMEDIAPROXY_SYSROOT=${sysroot}"
+        "-DMEDIAPROXY_CLANG=${host_clang}"
+        "-DMEDIAPROXY_CLANGXX=${host_clangxx}"
+        "-DMEDIAPROXY_LLD=${host_lld}"
+        "-DMEDIAPROXY_AR=${host_ar}"
+        "-DMEDIAPROXY_RANLIB=${host_ranlib}"
+        "-DMEDIAPROXY_NM=${host_nm}"
+        "-DMEDIAPROXY_STRIP=${host_strip}"
+        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags}"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DCMAKE_DISABLE_FIND_PACKAGE_Perl=TRUE"
+        "-DCURL_USE_PKGCONFIG=OFF"
+        "-DCURL_USE_CMAKECONFIG=OFF"
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DBUILD_STATIC_LIBS=ON"
+        "-DBUILD_CURL_EXE=OFF"
+        "-DBUILD_TESTING=OFF"
+        "-DBUILD_EXAMPLES=OFF"
+        "-DBUILD_LIBCURL_DOCS=OFF"
+        "-DBUILD_MISC_DOCS=OFF"
+        "-DENABLE_CURL_MANUAL=OFF"
+        "-DCURL_DISABLE_INSTALL=ON"
+        "-DCURL_ENABLE_EXPORT_TARGET=OFF"
+        "-DCURL_WERROR=ON"
+        "-DPICKY_COMPILER=ON"
+        "-DHTTP_ONLY=ON"
+        "-DCURL_ENABLE_SSL=ON"
+        "-DCURL_USE_OPENSSL=ON"
+        "-DCURL_USE_MBEDTLS=OFF"
+        "-DCURL_USE_WOLFSSL=OFF"
+        "-DCURL_USE_GNUTLS=OFF"
+        "-DCURL_USE_RUSTLS=OFF"
+        "-DCURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG=ON"
+        "-DOPENSSL_INCLUDE_DIR=${boringssl_include_dir}"
+        "-DOPENSSL_SSL_LIBRARY=${boringssl_ssl_library}"
+        "-DOPENSSL_CRYPTO_LIBRARY=${boringssl_crypto_library}"
+        "-DHAVE_BORINGSSL=ON"
+        "-DCURL_ZLIB=ON"
+        "-DZLIB_INCLUDE_DIR=${zlib_include_dir}"
+        "-DZLIB_LIBRARY=${zlib_library}"
+        "-DCURL_BROTLI=OFF"
+        "-DCURL_ZSTD=OFF"
+        "-DUSE_NGHTTP2=ON"
+        "-DNGHTTP2_USE_STATIC_LIBS=ON"
+        "-DNGHTTP2_INCLUDE_DIR=${nghttp2_include_dir}"
+        "-DNGHTTP2_LIBRARY=${nghttp2_library}"
+        "-DUSE_NGTCP2=OFF"
+        "-DUSE_QUICHE=OFF"
+        "-DUSE_HTTPSRR=OFF"
+        "-DUSE_ECH=OFF"
+        "-DUSE_SSLS_EXPORT=OFF"
+        "-DUSE_PROXY_HTTP3=OFF"
+        "-DUSE_LIBIDN2=OFF"
+        "-DCURL_USE_LIBPSL=OFF"
+        "-DCURL_USE_LIBSSH2=OFF"
+        "-DCURL_USE_LIBSSH=OFF"
+        "-DCURL_USE_GSASL=OFF"
+        "-DCURL_USE_GSSAPI=OFF"
+        "-DCURL_USE_LIBBACKTRACE=OFF"
+        "-DENABLE_ARES=OFF"
+        "-DENABLE_THREADED_RESOLVER=OFF"
+        "-DENABLE_UNIX_SOCKETS=OFF"
+        "-DCURL_DISABLE_ALTSVC=ON"
+        "-DCURL_DISABLE_SRP=ON"
+        "-DCURL_DISABLE_COOKIES=ON"
+        "-DCURL_DISABLE_HTTP_AUTH=ON"
+        "-DCURL_DISABLE_DOH=ON"
+        "-DCURL_DISABLE_GETOPTIONS=ON"
+        "-DCURL_DISABLE_HEADERS_API=ON"
+        "-DCURL_DISABLE_HSTS=ON"
+        "-DCURL_DISABLE_MIME=ON"
+        "-DCURL_DISABLE_BINDLOCAL=ON"
+        "-DCURL_DISABLE_NETRC=ON"
+        "-DCURL_DISABLE_PARSEDATE=ON"
+        "-DCURL_DISABLE_PROGRESS_METER=ON"
+        "-DCURL_DISABLE_PROXY=ON"
+        "-DCURL_DISABLE_SHUFFLE_DNS=ON"
+        "-DCURL_DISABLE_SOCKETPAIR=ON"
+        "-DCURL_CA_NATIVE=OFF"
+        "-DCURL_CA_FALLBACK=OFF"
+        "-DCURL_CA_BUNDLE=none"
+        "-DCURL_CA_PATH=none"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target libcurl_static
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${curl_include_dir}/curl" "${sysroot}/usr/lib"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        <SOURCE_DIR>/include/curl "${curl_include_dir}/curl"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/lib/libcurl.a "${curl_library}"
+    BUILD_BYPRODUCTS
+        "${curl_library}"
+        "${curl_include_dir}/curl/curl.h"
+)
+
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl fortify_headers llvm_runtimes nghttp2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers llvm_runtimes nghttp2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -555,6 +676,10 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_BORINGSSL_CRYPTO_LIBRARY=${boringssl_crypto_library}"
         "-DMEDIAPROXY_BORINGSSL_SSL_LIBRARY=${boringssl_ssl_library}"
         "-DMEDIAPROXY_BORINGSSL_COMPILE_COMMANDS=${boringssl_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_CURL_INCLUDE_DIR=${curl_include_dir}"
+        "-DMEDIAPROXY_CURL_LIBRARY=${curl_library}"
+        "-DMEDIAPROXY_CURL_COMPILE_COMMANDS=${curl_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_CURL_CONFIG_HEADER=${curl_binary_directory}/lib/curl_config.h"
         "-DMEDIAPROXY_NGHTTP2_INCLUDE_DIR=${nghttp2_include_dir}"
         "-DMEDIAPROXY_NGHTTP2_LIBRARY=${nghttp2_library}"
         "-DMEDIAPROXY_NGHTTP2_COMPILE_COMMANDS=${nghttp2_binary_directory}/compile_commands.json"

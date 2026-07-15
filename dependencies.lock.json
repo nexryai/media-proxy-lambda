@@ -121,6 +121,32 @@
             "reason": "HTTP/2 framing and HPACK support for curl origin requests"
         },
         {
+            "name": "curl",
+            "version": "8.21.0",
+            "revision": "68720b4837284335b2d63cb358f8f6ce65f5bc55",
+            "url": "https://curl.se/download/curl-8.21.0.tar.xz",
+            "sha256": "aa1b66a70eace83dc624508745646c08ae561de512ab403adffb93ac87fc72e6",
+            "license": "curl",
+            "buildOptions": [
+                "HTTP_ONLY=ON",
+                "BUILD_SHARED_LIBS=OFF",
+                "BUILD_STATIC_LIBS=ON",
+                "BUILD_CURL_EXE=OFF",
+                "BUILD_TESTING=OFF",
+                "CURL_USE_OPENSSL=ON with the pinned BoringSSL archives",
+                "CURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG=ON",
+                "USE_NGHTTP2=ON with the pinned static nghttp2 archive",
+                "CURL_ZLIB=ON with the pinned static zlib archive",
+                "brotli, zstd, libpsl, IDN, SSH, GSSAPI, and HTTP/3 disabled",
+                "cookies, authentication, proxy, netrc, alt-svc, HSTS, DoH, MIME, and WebSocket support disabled",
+                "no default CA bundle or CA directory; callers supply embedded trust data",
+                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "warnings as errors",
+                "LLVM tools only"
+            ],
+            "reason": "Bounded HTTP/HTTPS transport for the Lambda Runtime API and validated origins"
+        },
+        {
             "name": "zlib",
             "version": "1.3.2",
             "revision": "da607da739fa6047df13e66a2af6b8bec7c2a498",

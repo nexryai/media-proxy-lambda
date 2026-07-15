@@ -24,6 +24,15 @@ foreach(required_boringssl_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_curl_artifact IN ITEMS
+        "${MEDIAPROXY_CURL_INCLUDE_DIR}/curl/curl.h"
+        "${MEDIAPROXY_CURL_LIBRARY}")
+    if(NOT EXISTS "${required_curl_artifact}")
+        message(FATAL_ERROR
+            "Pinned curl artifact is absent: ${required_curl_artifact}")
+    endif()
+endforeach()
+
 foreach(required_nghttp2_artifact IN ITEMS
         "${MEDIAPROXY_NGHTTP2_INCLUDE_DIR}/nghttp2/nghttp2.h"
         "${MEDIAPROXY_NGHTTP2_LIBRARY}")
@@ -68,11 +77,20 @@ set_target_properties(mediaproxy_zlib PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_ZLIB_LIBRARY}"
 )
 
+add_library(mediaproxy_curl STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_curl PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_CURL_LIBRARY}"
+    INTERFACE_COMPILE_DEFINITIONS CURL_STATICLIB
+    INTERFACE_LINK_LIBRARIES
+        "mediaproxy_boringssl_ssl;mediaproxy_nghttp2;mediaproxy_zlib"
+)
+
 add_executable(bootstrap src/bootstrap.cpp)
 target_link_libraries(bootstrap
     PRIVATE
         mediaproxy_hardening
         mediaproxy_warnings
+        mediaproxy_curl
         mediaproxy_boringssl_ssl
         mediaproxy_nghttp2
         mediaproxy_yyjson
@@ -113,6 +131,7 @@ if(BUILD_TESTING)
         PRIVATE
             mediaproxy_hardening
             mediaproxy_warnings
+            mediaproxy_curl
             mediaproxy_boringssl_ssl
             mediaproxy_nghttp2
             mediaproxy_yyjson
@@ -121,7 +140,9 @@ if(BUILD_TESTING)
     )
 
     include(GoogleTest)
-    gtest_discover_tests(mediaproxy_smoke_test DISCOVERY_MODE PRE_TEST)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        gtest_discover_tests(mediaproxy_smoke_test DISCOVERY_MODE PRE_TEST)
+    endif()
 
     add_executable(mediaproxy_stack_smash_probe
         tests/hardening/stack_smash.cpp
@@ -157,6 +178,21 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/BoringSslBuildTest.cmake"
+    )
+    add_test(
+        NAME curl-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_CURL_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_CURL_CONFIG_HEADER}"
+            "-DCURL_ARCHIVE=${MEDIAPROXY_CURL_LIBRARY}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/CurlBuildTest.cmake"
     )
     add_test(
         NAME yyjson-build-policy
