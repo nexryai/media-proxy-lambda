@@ -69,6 +69,9 @@ mediaproxy_lock_get(libwebp version libwebp_version)
 mediaproxy_lock_get(libnsgif url libnsgif_url)
 mediaproxy_lock_get(libnsgif sha256 libnsgif_sha256)
 mediaproxy_lock_get(libnsgif version libnsgif_version)
+mediaproxy_lock_get(libexif url libexif_url)
+mediaproxy_lock_get(libexif sha256 libexif_sha256)
+mediaproxy_lock_get(libexif version libexif_version)
 mediaproxy_lock_get(lcms2 url lcms2_url)
 mediaproxy_lock_get(lcms2 sha256 lcms2_sha256)
 mediaproxy_lock_get(lcms2 version lcms2_version)
@@ -584,6 +587,61 @@ ExternalProject_Add(libnsgif
         "${libnsgif_include_dir}/nsgif.h"
 )
 
+set(libexif_binary_directory "${CMAKE_BINARY_DIR}/libexif-static-build")
+set(libexif_library "${sysroot}/usr/lib/libexif.a")
+set(libexif_include_dir "${sysroot}/usr/include")
+set(libexif_config_header "${libexif_binary_directory}/config.h")
+set(libexif_pkgconfig "${sysroot}/usr/lib/pkgconfig/libexif.pc")
+file(SHA256
+    "${CMAKE_SOURCE_DIR}/cmake/dependencies/libexif/CMakeLists.txt"
+    libexif_cmake_sha256)
+file(SHA256
+    "${CMAKE_SOURCE_DIR}/cmake/dependencies/libexif/config.h.in"
+    libexif_config_sha256)
+string(SHA256 libexif_build_definition_sha256
+    "${libexif_cmake_sha256};${libexif_config_sha256}")
+ExternalProject_Add(libexif
+    DEPENDS fortify_headers
+    URL "${libexif_url}"
+    URL_HASH "SHA256=${libexif_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "libexif-${libexif_version}.tar.xz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${libexif_binary_directory}"
+    CONFIGURE_COMMAND
+        "${CMAKE_COMMAND}"
+        -S "${CMAKE_SOURCE_DIR}/cmake/dependencies/libexif"
+        -B <BINARY_DIR>
+        -G Ninja
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -D_POSIX_C_SOURCE=200809L -ffp-contract=off"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DMEDIAPROXY_BUILD_DEFINITION_SHA256=${libexif_build_definition_sha256}"
+        "-DMEDIAPROXY_LIBEXIF_SOURCE_DIR=<SOURCE_DIR>"
+        "-DMEDIAPROXY_LIBEXIF_VERSION=${libexif_version}"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target exif
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" --install <BINARY_DIR>
+        --prefix "${sysroot}/usr"
+    BUILD_BYPRODUCTS
+        "${libexif_library}"
+        "${libexif_include_dir}/libexif/exif-data.h"
+        "${libexif_pkgconfig}"
+)
+
 set(lcms2_binary_directory "${CMAKE_BINARY_DIR}/lcms2-build")
 set(lcms2_library "${sysroot}/usr/lib/liblcms2.a")
 set(lcms2_include_dir "${sysroot}/usr/include")
@@ -981,7 +1039,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers lcms2 libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers lcms2 libexif libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -1040,6 +1098,11 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBNSGIF_INCLUDE_DIR=${libnsgif_include_dir}"
         "-DMEDIAPROXY_LIBNSGIF_LIBRARY=${libnsgif_library}"
         "-DMEDIAPROXY_LIBNSGIF_COMPILE_COMMANDS=${libnsgif_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBEXIF_INCLUDE_DIR=${libexif_include_dir}"
+        "-DMEDIAPROXY_LIBEXIF_LIBRARY=${libexif_library}"
+        "-DMEDIAPROXY_LIBEXIF_COMPILE_COMMANDS=${libexif_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBEXIF_CONFIG_HEADER=${libexif_config_header}"
+        "-DMEDIAPROXY_LIBEXIF_PKGCONFIG=${libexif_pkgconfig}"
         "-DMEDIAPROXY_LCMS2_INCLUDE_DIR=${lcms2_include_dir}"
         "-DMEDIAPROXY_LCMS2_LIBRARY=${lcms2_library}"
         "-DMEDIAPROXY_LCMS2_COMPILE_COMMANDS=${lcms2_binary_directory}/compile_commands.json"

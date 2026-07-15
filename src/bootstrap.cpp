@@ -5,6 +5,7 @@
 #include <curl/curl.h>
 #include <jpeglib.h>
 #include <lcms2.h>
+#include <libexif/exif-tag.h>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <png.h>
@@ -94,6 +95,13 @@ int main()
     }
     auto* volatile lcms_version_function = &cmsGetEncodedCMMversion;
     if (lcms_version_function() != 2190) {
+        return 1;
+    }
+    auto* volatile exif_tag_name_function = &exif_tag_get_name;
+    const char* const orientation_tag_name =
+        exif_tag_name_function(EXIF_TAG_ORIENTATION);
+    if (orientation_tag_name == nullptr
+        || std::string_view{orientation_tag_name} != "Orientation") {
         return 1;
     }
     constexpr int required_webp_version = 0x010600;

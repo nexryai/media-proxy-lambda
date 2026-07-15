@@ -74,6 +74,17 @@ foreach(required_libnsgif_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_libexif_artifact IN ITEMS
+        "${MEDIAPROXY_LIBEXIF_INCLUDE_DIR}/libexif/exif-data.h"
+        "${MEDIAPROXY_LIBEXIF_INCLUDE_DIR}/libexif/exif-tag.h"
+        "${MEDIAPROXY_LIBEXIF_LIBRARY}"
+        "${MEDIAPROXY_LIBEXIF_PKGCONFIG}")
+    if(NOT EXISTS "${required_libexif_artifact}")
+        message(FATAL_ERROR
+            "Pinned libexif artifact is absent: ${required_libexif_artifact}")
+    endif()
+endforeach()
+
 foreach(required_lcms2_artifact IN ITEMS
         "${MEDIAPROXY_LCMS2_INCLUDE_DIR}/lcms2.h"
         "${MEDIAPROXY_LCMS2_LIBRARY}")
@@ -150,6 +161,12 @@ set_target_properties(mediaproxy_libnsgif PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBNSGIF_LIBRARY}"
 )
 
+add_library(mediaproxy_libexif STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libexif PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBEXIF_LIBRARY}"
+    INTERFACE_LINK_LIBRARIES m
+)
+
 add_library(mediaproxy_lcms2 STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_lcms2 PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LCMS2_LIBRARY}"
@@ -191,6 +208,7 @@ target_link_libraries(bootstrap
         mediaproxy_curl
         mediaproxy_boringssl_ssl
         mediaproxy_lcms2
+        mediaproxy_libexif
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
         mediaproxy_libpng
@@ -235,6 +253,7 @@ if(BUILD_TESTING)
         tests/smoke/boringssl_test.cpp
         tests/smoke/curl_test.cpp
         tests/smoke/lcms2_test.cpp
+        tests/smoke/libexif_test.cpp
         tests/smoke/libjpeg_turbo_test.cpp
         tests/smoke/libnsgif_test.cpp
         tests/smoke/libpng_test.cpp
@@ -250,6 +269,7 @@ if(BUILD_TESTING)
             mediaproxy_curl
             mediaproxy_boringssl_ssl
             mediaproxy_lcms2
+            mediaproxy_libexif
             mediaproxy_libjpeg_turbo
             mediaproxy_libnsgif
             mediaproxy_libpng
@@ -387,6 +407,22 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibNsgifBuildTest.cmake"
+    )
+    add_test(
+        NAME libexif-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBEXIF_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_LIBEXIF_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLIBEXIF_ARCHIVE=${MEDIAPROXY_LIBEXIF_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DPKGCONFIG=${MEDIAPROXY_LIBEXIF_PKGCONFIG}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibExifBuildTest.cmake"
     )
     add_test(
         NAME lcms2-build-policy

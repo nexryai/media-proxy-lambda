@@ -263,6 +263,31 @@
             "reason": "Pinned GIF frame scanning, animation metadata, and decode primitives used by the libvips GIF loader"
         },
         {
+            "name": "libexif",
+            "version": "0.6.26",
+            "revision": "b2edc5a8adf4d1b79ce9413a9c9d8f3ab871c082",
+            "url": "https://github.com/libexif/libexif/releases/download/v0.6.26/libexif-0.6.26.tar.xz",
+            "sha256": "4a055ed6575e61ca46c3172be3c753cc16c9becd0f99ec71d58dd0e471476c0c",
+            "license": "LGPL-2.0-or-later",
+            "buildOptions": [
+                "first-party CMake adapter compiles exactly the 25 upstream library C sources",
+                "static libexif archive, public API headers, and libexif.pc only",
+                "Canon, Fuji, Olympus, and Pentax MakerNote parsers enabled",
+                "NLS, gettext, documentation, tests, examples, and tools excluded",
+                "HAVE_LOCALTIME_R=1 with _POSIX_C_SOURCE=200809L on musl",
+                "-ffp-contract=off for architecture-independent metadata formatting",
+                "-Wno-switch for upstream GPS tag macros intentionally outside the historical ExifTag enum",
+                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "warnings as errors",
+                "LGPL corresponding-source and relink artifacts required in the release compliance bundle",
+                "LLVM tools only"
+            ],
+            "securityNotes": [
+                "0.6.26 fixes CVE-2026-32775, CVE-2026-40385, and CVE-2026-40386 in MakerNote parsing"
+            ],
+            "reason": "Pinned EXIF metadata and orientation parsing for the libvips JPEG loader"
+        },
+        {
             "name": "lcms2",
             "version": "2.19.1",
             "revision": "21c582a594fe5279f90c0b93437c398f93bf62b0",
