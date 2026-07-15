@@ -85,6 +85,19 @@ foreach(required_libexif_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_libexpat_artifact IN ITEMS
+        "${MEDIAPROXY_LIBEXPAT_INCLUDE_DIR}/expat.h"
+        "${MEDIAPROXY_LIBEXPAT_INCLUDE_DIR}/expat_config.h"
+        "${MEDIAPROXY_LIBEXPAT_INCLUDE_DIR}/expat_external.h"
+        "${MEDIAPROXY_LIBEXPAT_LIBRARY}"
+        "${MEDIAPROXY_LIBEXPAT_PKGCONFIG}")
+    if(NOT EXISTS "${required_libexpat_artifact}")
+        message(FATAL_ERROR
+            "Pinned libexpat artifact is absent: "
+            "${required_libexpat_artifact}")
+    endif()
+endforeach()
+
 foreach(required_lcms2_artifact IN ITEMS
         "${MEDIAPROXY_LCMS2_INCLUDE_DIR}/lcms2.h"
         "${MEDIAPROXY_LCMS2_LIBRARY}")
@@ -167,6 +180,12 @@ set_target_properties(mediaproxy_libexif PROPERTIES
     INTERFACE_LINK_LIBRARIES m
 )
 
+add_library(mediaproxy_libexpat STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libexpat PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBEXPAT_LIBRARY}"
+    INTERFACE_COMPILE_DEFINITIONS XML_STATIC
+)
+
 add_library(mediaproxy_lcms2 STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_lcms2 PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LCMS2_LIBRARY}"
@@ -209,6 +228,7 @@ target_link_libraries(bootstrap
         mediaproxy_boringssl_ssl
         mediaproxy_lcms2
         mediaproxy_libexif
+        mediaproxy_libexpat
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
         mediaproxy_libpng
@@ -254,6 +274,7 @@ if(BUILD_TESTING)
         tests/smoke/curl_test.cpp
         tests/smoke/lcms2_test.cpp
         tests/smoke/libexif_test.cpp
+        tests/smoke/libexpat_test.cpp
         tests/smoke/libjpeg_turbo_test.cpp
         tests/smoke/libnsgif_test.cpp
         tests/smoke/libpng_test.cpp
@@ -270,6 +291,7 @@ if(BUILD_TESTING)
             mediaproxy_boringssl_ssl
             mediaproxy_lcms2
             mediaproxy_libexif
+            mediaproxy_libexpat
             mediaproxy_libjpeg_turbo
             mediaproxy_libnsgif
             mediaproxy_libpng
@@ -423,6 +445,22 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibExifBuildTest.cmake"
+    )
+    add_test(
+        NAME libexpat-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBEXPAT_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_LIBEXPAT_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLIBEXPAT_ARCHIVE=${MEDIAPROXY_LIBEXPAT_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DPKGCONFIG=${MEDIAPROXY_LIBEXPAT_PKGCONFIG}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibExpatBuildTest.cmake"
     )
     add_test(
         NAME lcms2-build-policy

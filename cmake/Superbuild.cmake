@@ -54,6 +54,9 @@ mediaproxy_lock_get(boringssl version boringssl_version)
 mediaproxy_lock_get(curl url curl_url)
 mediaproxy_lock_get(curl sha256 curl_sha256)
 mediaproxy_lock_get(curl version curl_version)
+mediaproxy_lock_get(libexpat url libexpat_url)
+mediaproxy_lock_get(libexpat sha256 libexpat_sha256)
+mediaproxy_lock_get(libexpat version libexpat_version)
 mediaproxy_lock_get(nghttp2 url nghttp2_url)
 mediaproxy_lock_get(nghttp2 sha256 nghttp2_sha256)
 mediaproxy_lock_get(nghttp2 version nghttp2_version)
@@ -665,7 +668,7 @@ ExternalProject_Add(lcms2
         "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
         "-DCMAKE_SYSROOT=${sysroot}"
         "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
-        "-DCMAKE_PROJECT_INCLUDE=${CMAKE_CURRENT_SOURCE_DIR}/cmake/Lcms2Cross.cmake"
+        "-DCMAKE_PROJECT_INCLUDE=${CMAKE_CURRENT_SOURCE_DIR}/cmake/LittleEndian64Cross.cmake"
         "-DCMAKE_AR=${host_ar}"
         "-DCMAKE_RANLIB=${host_ranlib}"
         "-DCMAKE_NM=${host_nm}"
@@ -696,6 +699,90 @@ ExternalProject_Add(lcms2
     BUILD_BYPRODUCTS
         "${lcms2_library}"
         "${lcms2_include_dir}/lcms2.h"
+)
+
+set(libexpat_binary_directory "${CMAKE_BINARY_DIR}/libexpat-static-build")
+set(libexpat_library "${sysroot}/usr/lib/libexpat.a")
+set(libexpat_include_dir "${sysroot}/usr/include")
+set(libexpat_config_header
+    "${libexpat_binary_directory}/expat_config.h")
+set(libexpat_pkgconfig "${sysroot}/usr/lib/pkgconfig/expat.pc")
+ExternalProject_Add(libexpat
+    DEPENDS fortify_headers
+    URL "${libexpat_url}"
+    URL_HASH "SHA256=${libexpat_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "expat-${libexpat_version}.tar.xz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${libexpat_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_PROJECT_INCLUDE=${CMAKE_CURRENT_SOURCE_DIR}/cmake/LittleEndian64Cross.cmake"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -Wall -Wextra -Werror -Wpedantic"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DEXPAT_SHARED_LIBS=OFF"
+        "-DEXPAT_BUILD_TOOLS=OFF"
+        "-DEXPAT_BUILD_EXAMPLES=OFF"
+        "-DEXPAT_BUILD_TESTS=OFF"
+        "-DEXPAT_BUILD_DOCS=OFF"
+        "-DEXPAT_BUILD_FUZZERS=OFF"
+        "-DEXPAT_OSSFUZZ_BUILD=OFF"
+        "-DEXPAT_BUILD_PKGCONFIG=ON"
+        "-DEXPAT_ENABLE_INSTALL=OFF"
+        "-DEXPAT_WARNINGS_AS_ERRORS=ON"
+        "-DEXPAT_CONTEXT_BYTES=1024"
+        "-DEXPAT_DTD=ON"
+        "-DEXPAT_GE=ON"
+        "-DEXPAT_NS=ON"
+        "-DEXPAT_ATTR_INFO=OFF"
+        "-DEXPAT_LARGE_SIZE=OFF"
+        "-DEXPAT_MIN_SIZE=OFF"
+        "-DEXPAT_CHAR_TYPE=char"
+        "-DEXPAT_DEV_URANDOM=OFF"
+        "-DEXPAT_WITH_ARC4RANDOM=OFF"
+        "-DEXPAT_WITH_ARC4RANDOM_BUF=OFF"
+        "-DEXPAT_WITH_GETENTROPY=OFF"
+        "-DEXPAT_WITH_GETRANDOM=ON"
+        "-DEXPAT_WITH_SYS_GETRANDOM=OFF"
+        "-DEXPAT_SYMBOL_VERSIONING=OFF"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target expat
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${libexpat_include_dir}" "${sysroot}/usr/lib/pkgconfig"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libexpat.a "${libexpat_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/lib/expat.h "${libexpat_include_dir}/expat.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/lib/expat_external.h
+        "${libexpat_include_dir}/expat_external.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/expat_config.h
+        "${libexpat_include_dir}/expat_config.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/Release/expat.pc "${libexpat_pkgconfig}"
+    BUILD_BYPRODUCTS
+        "${libexpat_library}"
+        "${libexpat_include_dir}/expat.h"
+        "${libexpat_include_dir}/expat_external.h"
+        "${libexpat_include_dir}/expat_config.h"
+        "${libexpat_pkgconfig}"
 )
 
 set(yyjson_binary_directory "${CMAKE_BINARY_DIR}/yyjson-build")
@@ -1039,7 +1126,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers lcms2 libexif libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers lcms2 libexif libexpat libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -1103,6 +1190,11 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBEXIF_COMPILE_COMMANDS=${libexif_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_LIBEXIF_CONFIG_HEADER=${libexif_config_header}"
         "-DMEDIAPROXY_LIBEXIF_PKGCONFIG=${libexif_pkgconfig}"
+        "-DMEDIAPROXY_LIBEXPAT_INCLUDE_DIR=${libexpat_include_dir}"
+        "-DMEDIAPROXY_LIBEXPAT_LIBRARY=${libexpat_library}"
+        "-DMEDIAPROXY_LIBEXPAT_COMPILE_COMMANDS=${libexpat_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBEXPAT_CONFIG_HEADER=${libexpat_config_header}"
+        "-DMEDIAPROXY_LIBEXPAT_PKGCONFIG=${libexpat_pkgconfig}"
         "-DMEDIAPROXY_LCMS2_INCLUDE_DIR=${lcms2_include_dir}"
         "-DMEDIAPROXY_LCMS2_LIBRARY=${lcms2_library}"
         "-DMEDIAPROXY_LCMS2_COMPILE_COMMANDS=${lcms2_binary_directory}/compile_commands.json"

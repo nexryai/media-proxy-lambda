@@ -3,6 +3,7 @@
 #include <string_view>
 
 #include <curl/curl.h>
+#include <expat.h>
 #include <jpeglib.h>
 #include <lcms2.h>
 #include <libexif/exif-tag.h>
@@ -102,6 +103,12 @@ int main()
         exif_tag_name_function(EXIF_TAG_ORIENTATION);
     if (orientation_tag_name == nullptr
         || std::string_view{orientation_tag_name} != "Orientation") {
+        return 1;
+    }
+    auto* volatile expat_version_function = &XML_ExpatVersion;
+    const XML_LChar* const expat_version = expat_version_function();
+    if (expat_version == nullptr
+        || std::string_view{expat_version} != "expat_2.8.2") {
         return 1;
     }
     constexpr int required_webp_version = 0x010600;
