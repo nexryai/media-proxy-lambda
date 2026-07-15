@@ -4,6 +4,7 @@
 #include <curl/curl.h>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
+#include <png.h>
 #include <zlib.h>
 
 namespace {
@@ -58,6 +59,10 @@ int main()
             || curl_version->ssl_version == nullptr
             || !std::string_view{curl_version->ssl_version}.starts_with(
                 "BoringSSL")) {
+        return 1;
+    }
+    auto* volatile png_version_function = &png_access_version_number;
+    if (png_version_function() != PNG_LIBPNG_VER) {
         return 1;
     }
     auto* volatile zlib_version_function = &zlibVersion;

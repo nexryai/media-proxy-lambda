@@ -42,6 +42,16 @@ foreach(required_nghttp2_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_libpng_artifact IN ITEMS
+        "${MEDIAPROXY_LIBPNG_INCLUDE_DIR}/png.h"
+        "${MEDIAPROXY_LIBPNG_INCLUDE_DIR}/pnglibconf.h"
+        "${MEDIAPROXY_LIBPNG_LIBRARY}")
+    if(NOT EXISTS "${required_libpng_artifact}")
+        message(FATAL_ERROR
+            "Pinned libpng artifact is absent: ${required_libpng_artifact}")
+    endif()
+endforeach()
+
 foreach(required_zlib_artifact IN ITEMS
         "${MEDIAPROXY_ZLIB_INCLUDE_DIR}/zlib.h"
         "${MEDIAPROXY_ZLIB_LIBRARY}")
@@ -77,6 +87,12 @@ set_target_properties(mediaproxy_zlib PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_ZLIB_LIBRARY}"
 )
 
+add_library(mediaproxy_libpng STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libpng PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBPNG_LIBRARY}"
+    INTERFACE_LINK_LIBRARIES mediaproxy_zlib
+)
+
 add_library(mediaproxy_curl STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_curl PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_CURL_LIBRARY}"
@@ -92,6 +108,7 @@ target_link_libraries(bootstrap
         mediaproxy_warnings
         mediaproxy_curl
         mediaproxy_boringssl_ssl
+        mediaproxy_libpng
         mediaproxy_nghttp2
         mediaproxy_yyjson
         mediaproxy_zlib
@@ -133,6 +150,7 @@ if(BUILD_TESTING)
             mediaproxy_warnings
             mediaproxy_curl
             mediaproxy_boringssl_ssl
+            mediaproxy_libpng
             mediaproxy_nghttp2
             mediaproxy_yyjson
             mediaproxy_zlib
@@ -220,6 +238,21 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/Nghttp2BuildTest.cmake"
+    )
+    add_test(
+        NAME libpng-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBPNG_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_LIBPNG_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLIBPNG_ARCHIVE=${MEDIAPROXY_LIBPNG_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibPngBuildTest.cmake"
     )
     add_test(
         NAME zlib-build-policy

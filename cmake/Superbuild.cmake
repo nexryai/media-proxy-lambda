@@ -57,6 +57,9 @@ mediaproxy_lock_get(curl version curl_version)
 mediaproxy_lock_get(nghttp2 url nghttp2_url)
 mediaproxy_lock_get(nghttp2 sha256 nghttp2_sha256)
 mediaproxy_lock_get(nghttp2 version nghttp2_version)
+mediaproxy_lock_get(libpng url libpng_url)
+mediaproxy_lock_get(libpng sha256 libpng_sha256)
+mediaproxy_lock_get(libpng version libpng_version)
 mediaproxy_lock_get(zlib url zlib_url)
 mediaproxy_lock_get(zlib sha256 zlib_sha256)
 mediaproxy_lock_get(zlib version zlib_version)
@@ -258,6 +261,7 @@ ExternalProject_Add(nghttp2
 set(zlib_binary_directory "${CMAKE_BINARY_DIR}/zlib-build")
 set(zlib_library "${sysroot}/usr/lib/libz.a")
 set(zlib_include_dir "${sysroot}/usr/include")
+set(zlib_vernum 0x1320)
 ExternalProject_Add(zlib
     DEPENDS fortify_headers
     URL "${zlib_url}"
@@ -301,6 +305,65 @@ ExternalProject_Add(zlib
         "${zlib_library}"
         "${zlib_include_dir}/zlib.h"
         "${zlib_include_dir}/zconf.h"
+)
+
+set(libpng_binary_directory "${CMAKE_BINARY_DIR}/libpng-static-build")
+set(libpng_library "${sysroot}/usr/lib/libpng16.a")
+set(libpng_include_dir "${sysroot}/usr/include")
+file(SHA256
+    "${CMAKE_SOURCE_DIR}/cmake/dependencies/libpng/CMakeLists.txt"
+    libpng_build_definition_sha256)
+ExternalProject_Add(libpng
+    DEPENDS fortify_headers zlib
+    URL "${libpng_url}"
+    URL_HASH "SHA256=${libpng_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "libpng-${libpng_version}.tar.xz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${libpng_binary_directory}"
+    CONFIGURE_COMMAND
+        "${CMAKE_COMMAND}"
+        -S "${CMAKE_SOURCE_DIR}/cmake/dependencies/libpng"
+        -B <BINARY_DIR>
+        -G Ninja
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=--target=${target_triple} ${dependency_hardening_c_flags} -Wall -Wextra -Werror"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DMEDIAPROXY_LIBPNG_SOURCE_DIR=<SOURCE_DIR>"
+        "-DMEDIAPROXY_BUILD_DEFINITION_SHA256=${libpng_build_definition_sha256}"
+        "-DMEDIAPROXY_TARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+        "-DMEDIAPROXY_ZLIB_INCLUDE_DIR=${zlib_include_dir}"
+        "-DMEDIAPROXY_ZLIB_VERNUM=${zlib_vernum}"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target png_static
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${libpng_include_dir}" "${sysroot}/usr/lib"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/png.h "${libpng_include_dir}/png.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/pngconf.h "${libpng_include_dir}/pngconf.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/pnglibconf.h "${libpng_include_dir}/pnglibconf.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libpng16.a "${libpng_library}"
+    BUILD_BYPRODUCTS
+        "${libpng_library}"
+        "${libpng_include_dir}/png.h"
+        "${libpng_include_dir}/pngconf.h"
+        "${libpng_include_dir}/pnglibconf.h"
 )
 
 set(yyjson_binary_directory "${CMAKE_BINARY_DIR}/yyjson-build")
@@ -644,7 +707,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers llvm_runtimes nghttp2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers libpng llvm_runtimes nghttp2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -684,6 +747,10 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_NGHTTP2_LIBRARY=${nghttp2_library}"
         "-DMEDIAPROXY_NGHTTP2_COMPILE_COMMANDS=${nghttp2_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_NGHTTP2_CONFIG_HEADER=${nghttp2_binary_directory}/config.h"
+        "-DMEDIAPROXY_LIBPNG_INCLUDE_DIR=${libpng_include_dir}"
+        "-DMEDIAPROXY_LIBPNG_LIBRARY=${libpng_library}"
+        "-DMEDIAPROXY_LIBPNG_COMPILE_COMMANDS=${libpng_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBPNG_CONFIG_HEADER=${libpng_binary_directory}/pnglibconf.h"
         "-DMEDIAPROXY_ZLIB_INCLUDE_DIR=${zlib_include_dir}"
         "-DMEDIAPROXY_ZLIB_LIBRARY=${zlib_library}"
         "-DMEDIAPROXY_ZLIB_COMPILE_COMMANDS=${zlib_binary_directory}/compile_commands.json"
