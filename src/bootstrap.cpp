@@ -4,6 +4,7 @@
 
 #include <curl/curl.h>
 #include <jpeglib.h>
+#include <lcms2.h>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <png.h>
@@ -89,6 +90,10 @@ int main()
     }
     auto* volatile nsgif_error_function = &nsgif_strerror;
     if (std::string_view{nsgif_error_function(NSGIF_OK)} != "Success") {
+        return 1;
+    }
+    auto* volatile lcms_version_function = &cmsGetEncodedCMMversion;
+    if (lcms_version_function() != 2190) {
         return 1;
     }
     constexpr int required_webp_version = 0x010600;

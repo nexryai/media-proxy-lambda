@@ -69,6 +69,9 @@ mediaproxy_lock_get(libwebp version libwebp_version)
 mediaproxy_lock_get(libnsgif url libnsgif_url)
 mediaproxy_lock_get(libnsgif sha256 libnsgif_sha256)
 mediaproxy_lock_get(libnsgif version libnsgif_version)
+mediaproxy_lock_get(lcms2 url lcms2_url)
+mediaproxy_lock_get(lcms2 sha256 lcms2_sha256)
+mediaproxy_lock_get(lcms2 version lcms2_version)
 mediaproxy_lock_get(zlib url zlib_url)
 mediaproxy_lock_get(zlib sha256 zlib_sha256)
 mediaproxy_lock_get(zlib version zlib_version)
@@ -581,6 +584,62 @@ ExternalProject_Add(libnsgif
         "${libnsgif_include_dir}/nsgif.h"
 )
 
+set(lcms2_binary_directory "${CMAKE_BINARY_DIR}/lcms2-build")
+set(lcms2_library "${sysroot}/usr/lib/liblcms2.a")
+set(lcms2_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(lcms2
+    DEPENDS fortify_headers
+    URL "${lcms2_url}"
+    URL_HASH "SHA256=${lcms2_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "lcms2-${lcms2_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${lcms2_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_PROJECT_INCLUDE=${CMAKE_CURRENT_SOURCE_DIR}/cmake/Lcms2Cross.cmake"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Werror -Wpedantic -std=c99 -ffp-contract=off"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DTHREADS_PREFER_PTHREAD_FLAG=ON"
+        "-DLCMS2_BUILD_SHARED=OFF"
+        "-DLCMS2_BUILD_STATIC=ON"
+        "-DLCMS2_BUILD_TOOLS=OFF"
+        "-DLCMS2_BUILD_TESTS=OFF"
+        "-DLCMS2_WITH_JPEG=OFF"
+        "-DLCMS2_WITH_TIFF=OFF"
+        "-DLCMS2_WITH_ZLIB=OFF"
+        "-DLCMS2_WITH_THREADS=ON"
+        "-DLCMS2_WITH_FASTFLOAT=OFF"
+        "-DLCMS2_WITH_THREADED_PLUGIN=OFF"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target lcms2
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${lcms2_include_dir}" "${sysroot}/usr/lib"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/liblcms2.a "${lcms2_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/include/lcms2.h "${lcms2_include_dir}/lcms2.h"
+    BUILD_BYPRODUCTS
+        "${lcms2_library}"
+        "${lcms2_include_dir}/lcms2.h"
+)
+
 set(yyjson_binary_directory "${CMAKE_BINARY_DIR}/yyjson-build")
 set(yyjson_library "${sysroot}/usr/lib/libyyjson.a")
 set(yyjson_include_dir "${sysroot}/usr/include")
@@ -922,7 +981,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers lcms2 libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -981,6 +1040,9 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBNSGIF_INCLUDE_DIR=${libnsgif_include_dir}"
         "-DMEDIAPROXY_LIBNSGIF_LIBRARY=${libnsgif_library}"
         "-DMEDIAPROXY_LIBNSGIF_COMPILE_COMMANDS=${libnsgif_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LCMS2_INCLUDE_DIR=${lcms2_include_dir}"
+        "-DMEDIAPROXY_LCMS2_LIBRARY=${lcms2_library}"
+        "-DMEDIAPROXY_LCMS2_COMPILE_COMMANDS=${lcms2_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_ZLIB_INCLUDE_DIR=${zlib_include_dir}"
         "-DMEDIAPROXY_ZLIB_LIBRARY=${zlib_library}"
         "-DMEDIAPROXY_ZLIB_COMPILE_COMMANDS=${zlib_binary_directory}/compile_commands.json"

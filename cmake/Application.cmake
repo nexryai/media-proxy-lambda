@@ -74,6 +74,15 @@ foreach(required_libnsgif_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_lcms2_artifact IN ITEMS
+        "${MEDIAPROXY_LCMS2_INCLUDE_DIR}/lcms2.h"
+        "${MEDIAPROXY_LCMS2_LIBRARY}")
+    if(NOT EXISTS "${required_lcms2_artifact}")
+        message(FATAL_ERROR
+            "Pinned lcms2 artifact is absent: ${required_lcms2_artifact}")
+    endif()
+endforeach()
+
 foreach(required_libwebp_artifact IN ITEMS
         "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/decode.h"
         "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/encode.h"
@@ -141,6 +150,11 @@ set_target_properties(mediaproxy_libnsgif PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBNSGIF_LIBRARY}"
 )
 
+add_library(mediaproxy_lcms2 STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_lcms2 PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LCMS2_LIBRARY}"
+)
+
 add_library(mediaproxy_libwebp_sharpyuv STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_libwebp_sharpyuv PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
@@ -176,6 +190,7 @@ target_link_libraries(bootstrap
         mediaproxy_warnings
         mediaproxy_curl
         mediaproxy_boringssl_ssl
+        mediaproxy_lcms2
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
         mediaproxy_libpng
@@ -219,6 +234,7 @@ if(BUILD_TESTING)
         tests/smoke/build_test.cpp
         tests/smoke/boringssl_test.cpp
         tests/smoke/curl_test.cpp
+        tests/smoke/lcms2_test.cpp
         tests/smoke/libjpeg_turbo_test.cpp
         tests/smoke/libnsgif_test.cpp
         tests/smoke/libpng_test.cpp
@@ -233,6 +249,7 @@ if(BUILD_TESTING)
             mediaproxy_warnings
             mediaproxy_curl
             mediaproxy_boringssl_ssl
+            mediaproxy_lcms2
             mediaproxy_libjpeg_turbo
             mediaproxy_libnsgif
             mediaproxy_libpng
@@ -370,6 +387,20 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibNsgifBuildTest.cmake"
+    )
+    add_test(
+        NAME lcms2-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LCMS2_COMPILE_COMMANDS}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLCMS2_ARCHIVE=${MEDIAPROXY_LCMS2_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/Lcms2BuildTest.cmake"
     )
     add_test(
         NAME zlib-build-policy

@@ -263,6 +263,38 @@
             "reason": "Pinned GIF frame scanning, animation metadata, and decode primitives used by the libvips GIF loader"
         },
         {
+            "name": "lcms2",
+            "version": "2.19.1",
+            "revision": "21c582a594fe5279f90c0b93437c398f93bf62b0",
+            "url": "https://github.com/mm2/Little-CMS/releases/download/lcms2.19.1/lcms2-2.19.1.tar.gz",
+            "sha256": "bfc54f7bab59fbc921012014a8032e4cba4abd46db47d46b76416a8c0b2815c8",
+            "license": "MIT",
+            "buildOptions": [
+                "LCMS2_BUILD_SHARED=OFF",
+                "LCMS2_BUILD_STATIC=ON",
+                "LCMS2_BUILD_TOOLS=OFF",
+                "LCMS2_BUILD_TESTS=OFF with a first-party bounded in-memory ICC round-trip test",
+                "LCMS2_WITH_JPEG=OFF",
+                "LCMS2_WITH_TIFF=OFF",
+                "LCMS2_WITH_ZLIB=OFF",
+                "LCMS2_WITH_THREADS=ON using musl pthread support",
+                "LCMS2_WITH_FASTFLOAT=OFF",
+                "LCMS2_WITH_THREADED_PLUGIN=OFF",
+                "CMAKE_C_BYTE_ORDER=LITTLE_ENDIAN for the two supported Lambda targets",
+                "CMAKE_SIZEOF_VOID_P=8 for the two supported 64-bit targets",
+                "_POSIX_C_SOURCE=200809L for the musl gmtime_r declaration",
+                "-ffp-contract=off for architecture-independent color calculations",
+                "lcms2 static archive and public API header only",
+                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "warnings as errors",
+                "LLVM tools only"
+            ],
+            "securityNotes": [
+                "2.19 includes the fix for CVE-2026-41254 and additional integer-overflow guards; 2.19.1 is the upstream hot-fix release"
+            ],
+            "reason": "Pinned ICC profile parsing, generation, and color transforms for the libvips media pipeline"
+        },
+        {
             "name": "yyjson",
             "version": "0.12.0",
             "revision": "8b4a38dc994a110abaec8a400615567bd996105f",
