@@ -14,6 +14,10 @@
 #include <webp/sharpyuv/sharpyuv.h>
 #include <zlib.h>
 
+extern "C" {
+#include <nsgif.h>
+}
+
 namespace {
 
 #define MEDIAPROXY_STRINGIFY_IMPL(value) #value
@@ -81,6 +85,10 @@ int main()
         MEDIAPROXY_STRINGIFY(LIBJPEG_TURBO_VERSION);
     if (jpeg_error_function(&jpeg_errors) != &jpeg_errors
             || required_jpeg_version != "3.1.4.1") {
+        return 1;
+    }
+    auto* volatile nsgif_error_function = &nsgif_strerror;
+    if (std::string_view{nsgif_error_function(NSGIF_OK)} != "Success") {
         return 1;
     }
     constexpr int required_webp_version = 0x010600;

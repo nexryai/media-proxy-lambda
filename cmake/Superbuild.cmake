@@ -66,6 +66,9 @@ mediaproxy_lock_get(libjpeg-turbo version libjpeg_turbo_version)
 mediaproxy_lock_get(libwebp url libwebp_url)
 mediaproxy_lock_get(libwebp sha256 libwebp_sha256)
 mediaproxy_lock_get(libwebp version libwebp_version)
+mediaproxy_lock_get(libnsgif url libnsgif_url)
+mediaproxy_lock_get(libnsgif sha256 libnsgif_sha256)
+mediaproxy_lock_get(libnsgif version libnsgif_version)
 mediaproxy_lock_get(zlib url zlib_url)
 mediaproxy_lock_get(zlib sha256 zlib_sha256)
 mediaproxy_lock_get(zlib version zlib_version)
@@ -532,6 +535,52 @@ ExternalProject_Add(libwebp
         "${libwebp_include_dir}/webp/sharpyuv/sharpyuv.h"
 )
 
+set(libnsgif_binary_directory "${CMAKE_BINARY_DIR}/libnsgif-build")
+set(libnsgif_library "${sysroot}/usr/lib/libnsgif.a")
+set(libnsgif_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(libnsgif
+    DEPENDS fortify_headers
+    URL "${libnsgif_url}"
+    URL_HASH "SHA256=${libnsgif_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "libnsgif-${libnsgif_version}-src.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${libnsgif_binary_directory}"
+    CONFIGURE_COMMAND
+        "${CMAKE_COMMAND}"
+        -S "${CMAKE_SOURCE_DIR}/cmake/dependencies/libnsgif"
+        -B <BINARY_DIR>
+        -G Ninja
+        "-DNSGIF_SOURCE_DIR=<SOURCE_DIR>"
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_C_COMPILER=${host_clang}"
+        "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags}"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target nsgif
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${libnsgif_include_dir}" "${sysroot}/usr/lib"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libnsgif.a "${libnsgif_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/include/nsgif.h "${libnsgif_include_dir}/nsgif.h"
+    BUILD_BYPRODUCTS
+        "${libnsgif_library}"
+        "${libnsgif_include_dir}/nsgif.h"
+)
+
 set(yyjson_binary_directory "${CMAKE_BINARY_DIR}/yyjson-build")
 set(yyjson_library "${sysroot}/usr/lib/libyyjson.a")
 set(yyjson_include_dir "${sysroot}/usr/include")
@@ -873,7 +922,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers libjpeg_turbo libpng libwebp llvm_runtimes nghttp2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -929,6 +978,9 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBWEBP_MUX_LIBRARY=${libwebp_mux_library}"
         "-DMEDIAPROXY_LIBWEBP_COMPILE_COMMANDS=${libwebp_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_LIBWEBP_CONFIG_HEADER=${libwebp_binary_directory}/src/webp/config.h"
+        "-DMEDIAPROXY_LIBNSGIF_INCLUDE_DIR=${libnsgif_include_dir}"
+        "-DMEDIAPROXY_LIBNSGIF_LIBRARY=${libnsgif_library}"
+        "-DMEDIAPROXY_LIBNSGIF_COMPILE_COMMANDS=${libnsgif_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_ZLIB_INCLUDE_DIR=${zlib_include_dir}"
         "-DMEDIAPROXY_ZLIB_LIBRARY=${zlib_library}"
         "-DMEDIAPROXY_ZLIB_COMPILE_COMMANDS=${zlib_binary_directory}/compile_commands.json"

@@ -65,6 +65,15 @@ foreach(required_libjpeg_turbo_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_libnsgif_artifact IN ITEMS
+        "${MEDIAPROXY_LIBNSGIF_INCLUDE_DIR}/nsgif.h"
+        "${MEDIAPROXY_LIBNSGIF_LIBRARY}")
+    if(NOT EXISTS "${required_libnsgif_artifact}")
+        message(FATAL_ERROR
+            "Pinned libnsgif artifact is absent: ${required_libnsgif_artifact}")
+    endif()
+endforeach()
+
 foreach(required_libwebp_artifact IN ITEMS
         "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/decode.h"
         "${MEDIAPROXY_LIBWEBP_INCLUDE_DIR}/webp/encode.h"
@@ -127,6 +136,11 @@ set_target_properties(mediaproxy_libjpeg_turbo PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBJPEG_TURBO_LIBRARY}"
 )
 
+add_library(mediaproxy_libnsgif STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libnsgif PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBNSGIF_LIBRARY}"
+)
+
 add_library(mediaproxy_libwebp_sharpyuv STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_libwebp_sharpyuv PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
@@ -163,6 +177,7 @@ target_link_libraries(bootstrap
         mediaproxy_curl
         mediaproxy_boringssl_ssl
         mediaproxy_libjpeg_turbo
+        mediaproxy_libnsgif
         mediaproxy_libpng
         mediaproxy_libwebp_demux
         mediaproxy_libwebp_mux
@@ -205,6 +220,7 @@ if(BUILD_TESTING)
         tests/smoke/boringssl_test.cpp
         tests/smoke/curl_test.cpp
         tests/smoke/libjpeg_turbo_test.cpp
+        tests/smoke/libnsgif_test.cpp
         tests/smoke/libpng_test.cpp
         tests/smoke/libwebp_test.cpp
         tests/smoke/nghttp2_test.cpp
@@ -218,6 +234,7 @@ if(BUILD_TESTING)
             mediaproxy_curl
             mediaproxy_boringssl_ssl
             mediaproxy_libjpeg_turbo
+            mediaproxy_libnsgif
             mediaproxy_libpng
             mediaproxy_libwebp_demux
             mediaproxy_libwebp_mux
@@ -339,6 +356,20 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibJpegTurboBuildTest.cmake"
+    )
+    add_test(
+        NAME libnsgif-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBNSGIF_COMPILE_COMMANDS}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLIBNSGIF_ARCHIVE=${MEDIAPROXY_LIBNSGIF_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibNsgifBuildTest.cmake"
     )
     add_test(
         NAME zlib-build-policy

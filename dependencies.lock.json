@@ -246,6 +246,23 @@
             "reason": "Pinned WebP encode/decode and animation mux/demux primitives for static output and the first-party APNG pipeline"
         },
         {
+            "name": "libnsgif",
+            "version": "1.0.0",
+            "revision": "e97bc7b86f19ace910a2c71025ad2d94a28a1d2e",
+            "url": "https://download.netsurf-browser.org/libs/releases/libnsgif-1.0.0-src.tar.gz",
+            "sha256": "6014c842f61454d2f5a0f8243d7a8d7bde9b7da3ccfdca2d346c7c0b2c4c061b",
+            "license": "MIT",
+            "buildOptions": [
+                "first-party CMake adapter compiles only src/gif.c and src/lzw.c",
+                "C99 static archive only",
+                "upstream examples, tests, fuzz corpora, documentation, and NetSurf buildsystem excluded",
+                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "strict upstream warning set with warnings as errors",
+                "LLVM tools only"
+            ],
+            "reason": "Pinned GIF frame scanning, animation metadata, and decode primitives used by the libvips GIF loader"
+        },
+        {
             "name": "yyjson",
             "version": "0.12.0",
             "revision": "8b4a38dc994a110abaec8a400615567bd996105f",
