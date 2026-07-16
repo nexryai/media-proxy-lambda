@@ -130,6 +130,18 @@ foreach(required_pcre2_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_pixman_artifact IN ITEMS
+        "${MEDIAPROXY_PIXMAN_INCLUDE_DIR}/pixman.h"
+        "${MEDIAPROXY_PIXMAN_INCLUDE_DIR}/pixman-version.h"
+        "${MEDIAPROXY_PIXMAN_LIBRARY}"
+        "${MEDIAPROXY_PIXMAN_PKGCONFIG}"
+        "${MEDIAPROXY_PIXMAN_LICENSE}")
+    if(NOT EXISTS "${required_pixman_artifact}")
+        message(FATAL_ERROR
+            "Pinned pixman artifact is absent: ${required_pixman_artifact}")
+    endif()
+endforeach()
+
 foreach(required_glib_artifact IN ITEMS
         "${MEDIAPROXY_GLIB_INCLUDE_DIR}/glib.h"
         "${MEDIAPROXY_GLIB_INCLUDE_DIR}/glib-object.h"
@@ -287,6 +299,13 @@ set_target_properties(mediaproxy_pcre2 PROPERTIES
     INTERFACE_COMPILE_DEFINITIONS "PCRE2_CODE_UNIT_WIDTH=8;PCRE2_STATIC"
 )
 
+add_library(mediaproxy_pixman STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_pixman PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_PIXMAN_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${MEDIAPROXY_PIXMAN_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES m
+)
+
 add_library(mediaproxy_glib STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_glib PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_GLIB_LIBRARY}"
@@ -400,6 +419,7 @@ target_link_libraries(bootstrap
         mediaproxy_libaom
         mediaproxy_libheif
         mediaproxy_pcre2
+        mediaproxy_pixman
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
         mediaproxy_libpng
@@ -453,6 +473,7 @@ if(BUILD_TESTING)
         tests/smoke/libheif_test.cpp
         tests/smoke/libvips_test.cpp
         tests/smoke/pcre2_test.cpp
+        tests/smoke/pixman_test.cpp
         tests/smoke/libjpeg_turbo_test.cpp
         tests/smoke/libnsgif_test.cpp
         tests/smoke/libpng_test.cpp
@@ -478,6 +499,7 @@ if(BUILD_TESTING)
             mediaproxy_libaom
             mediaproxy_libheif
             mediaproxy_pcre2
+            mediaproxy_pixman
             mediaproxy_libjpeg_turbo
             mediaproxy_libnsgif
             mediaproxy_libpng
@@ -698,6 +720,23 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/Pcre2BuildTest.cmake"
+    )
+    add_test(
+        NAME pixman-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_PIXMAN_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_PIXMAN_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLICENSE_FILE=${MEDIAPROXY_PIXMAN_LICENSE}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DPIXMAN_ARCHIVE=${MEDIAPROXY_PIXMAN_LIBRARY}"
+            "-DPKGCONFIG=${MEDIAPROXY_PIXMAN_PKGCONFIG}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/PixmanBuildTest.cmake"
     )
     add_test(
         NAME glib-build-policy

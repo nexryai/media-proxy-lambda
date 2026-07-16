@@ -275,6 +275,41 @@
             "reason": "Bounded HTTP content decoding and PNG/codec compression support"
         },
         {
+            "name": "pixman",
+            "version": "0.46.4",
+            "revision": "9cc163c9da0fb4da430641715313d95a6ec466d9",
+            "url": "https://gitlab.freedesktop.org/pixman/pixman/-/archive/pixman-0.46.4/pixman-pixman-0.46.4.tar.gz",
+            "sha256": "1b8288086e5da0ec5cb95cf174a919cc6fe4548f10dc3cd873b3bb1d9e8fdeab",
+            "license": "MIT",
+            "buildOptions": [
+                "Meson cross build driven by the CMake superbuild",
+                "default_library=static and b_staticpic=true",
+                "generic C pixel-compositing implementation only",
+                "MMX, SSE2, SSSE3, ARM SIMD, NEON, AArch64 NEON, MIPS DSPr2, Loongson MMI, VMX, and RISC-V Vector optimized paths disabled",
+                "GNU inline assembly disabled so every production object remains under ThinLTO and trapping CFI",
+                "thread-local storage retained; OpenMP excluded",
+                "tests, demos, GTK, libpng test support, timers, and gnuplot output disabled",
+                "static libpixman-1 archive, public headers, pixman-1.pc, and MIT notice only",
+                "production hardening flags including fortify, split-unit ThinLTO, trapping CFI, stack protection, zero initialization, hidden visibility, deterministic floating-point contraction, and architecture branch protection",
+                "warning level 3 with warnings as errors except intentional partial sentinel initializers, legacy signed-size comparisons, and unused mask parameters in upstream format-specific scanline callbacks",
+                "LLVM tools only"
+            ],
+            "patches": [
+                {
+                    "path": "cmake/patches/pixman-0.46.4-clang-22-warnings.patch",
+                    "sha256": "7e54fd0566792f64b2ebc8bcadfb35b4156e121e5e0d9b7e5ebd006eaad4bb0b",
+                    "upstreamCommit": null,
+                    "reason": "Make an internal prototype, generated accessor parameter use, sentinel initialization, unsigned all-bits-set comparisons, and the x86-only stack-alignment attribute explicit so Clang 22 warning level 3 remains clean under warnings as errors on every target"
+                }
+            ],
+            "securityNotes": [
+                "no runtime module or dynamic-library loading interface is present",
+                "CPU-specific assembly and intrinsic dispatch can be reconsidered only with equivalent hardening and cross-architecture image-golden evidence",
+                "first-party media code remains responsible for checked dimensions and bounded pixel buffers before invoking pixman through Cairo"
+            ],
+            "reason": "Pinned low-level raster compositing foundation for the static Cairo and SVG rendering closure"
+        },
+        {
             "name": "glib",
             "version": "2.88.2",
             "revision": "07233788db387cc362f09c4882ce4838f4a553a4",

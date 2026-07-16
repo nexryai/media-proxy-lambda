@@ -238,8 +238,10 @@ The pinned graph is expected to include:
   and reject HEIF/HEIC input;
 - nsgif or giflib, selected and pinned with libvips;
 - Highway or ORC when enabled in the pinned libvips graph;
-- librsvg plus Cairo, pixman, libxml2, freetype, fontconfig, harfbuzz, and any
-  required Pango/fribidi closure for deterministic SVG output;
+- librsvg plus Cairo, the pinned generic-C pixman build, libxml2, freetype,
+  fontconfig, harfbuzz, and any required Pango/fribidi closure for
+  deterministic SVG output; pixman's architecture SIMD and inline assembly
+  remain disabled until equivalent hardening and golden-output evidence exists;
 - lcms2 and libexif if enabled for the golden media graph;
 - Ada URL's standalone IDNA translation unit, built without the full URL parser
   or simdutf, for pinned Unicode 17.0.0 UTS #46 nontransitional conversion;
