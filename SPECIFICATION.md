@@ -234,9 +234,9 @@ control bytes are `0x00..0x08`, `0x0b`, `0x0e..0x1a`, and `0x1c..0x1f`.
   Parameters or case variants do not trigger the override.
 - If sniffing returns `application/octet-stream` and bytes 4 through 11 are
   exactly `ftypavif`, use `image/avif`.
-- No analogous override exists for other AVIF brands or HEIF. Although
-  `image/heif` is in the convertible set, it is reachable only if the defined
-  sniffer produces that MIME in a future explicitly versioned specification.
+- No analogous override exists for other AVIF brands or HEIF. HEIF/HEIC is
+  intentionally unsupported; the pinned media graph provides AVIF through
+  libheif's built-in libaom backend without any HEVC decoder or encoder.
 
 ## 6. Media classification and output selection
 
@@ -245,7 +245,6 @@ Convertible MIME values are exactly:
 - `image/avif`
 - `image/ico`
 - `image/jpeg`
-- `image/heif`
 - `image/png`
 - `image/webp`
 - `image/gif`
@@ -337,6 +336,9 @@ remain unresized when the width limit is non-zero.
 - A static request for an animation encodes only the first decoded page.
 
 Pin libvips, libwebp, libheif, libaom, and every decoding/resampling dependency.
+Build libheif with only its built-in libaom AV1 decoder and encoder. Disable
+libde265, x265, every other HEVC backend, and plugin loading. An HEIF/HEIC input
+is not convertible even if libheif can parse generic ISO base-media metadata.
 Encoded bytes, metadata, orientation, profiles, alpha, dimensions, frame pixels,
 frame delays, and loop behavior are all compatibility surfaces.
 

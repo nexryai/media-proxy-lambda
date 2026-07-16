@@ -1,0 +1,24 @@
+[binaries]
+c = ['@HOST_CLANG@', '--target=@TARGET_TRIPLE@', '--sysroot=@SYSROOT@']
+cpp = ['@HOST_CLANGXX@', '--target=@TARGET_TRIPLE@', '--sysroot=@SYSROOT@']
+ar = '@HOST_AR@'
+strip = '@HOST_STRIP@'
+pkg-config = '@HOST_PKGCONF@'
+
+[host_machine]
+system = 'linux'
+cpu_family = '@TARGET_PROCESSOR@'
+cpu = '@TARGET_PROCESSOR@'
+endian = 'little'
+
+[properties]
+sys_root = '@SYSROOT@'
+pkg_config_libdir = '@SYSROOT@/usr/lib/pkgconfig'
+
+[built-in options]
+c_std = 'gnu99'
+cpp_std = 'c++20'
+c_args = ['-D_FORTIFY_SOURCE=3', '-isystem', '@FORTIFY_INCLUDE_DIR@', '-O2', '-fPIC', '-fstack-protector-strong', '-ftrivial-auto-var-init=zero', '-fvisibility=hidden', '-ffunction-sections', '-fdata-sections', '-flto=thin', '-fsplit-lto-unit', '-fsanitize=cfi', '-fno-sanitize=cfi-icall', '-fsanitize-trap=cfi', '-fno-sanitize-recover=cfi', @ARCH_HARDENING_FLAGS@]
+cpp_args = ['-nostdinc++', '-isystem', '@SYSROOT@/usr/include/c++/v1', '-isystem', '@FORTIFY_INCLUDE_DIR@', '-D_FORTIFY_SOURCE=3', '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST', '-O2', '-fPIC', '-fstack-protector-strong', '-ftrivial-auto-var-init=zero', '-fvisibility=hidden', '-fvisibility-inlines-hidden', '-ffunction-sections', '-fdata-sections', '-flto=thin', '-fsplit-lto-unit', '-fsanitize=cfi', '-fno-sanitize=cfi-icall', '-fsanitize-trap=cfi', '-fno-sanitize-recover=cfi', @ARCH_HARDENING_FLAGS@]
+c_link_args = ['-fuse-ld=lld', '-static-pie', '-nostdlib', '@SYSROOT@/usr/lib/rcrt1.o', '@SYSROOT@/usr/lib/crti.o', '@COMPILER_RT_CRTBEGIN@', '-lc', '@COMPILER_RT_LIBRARY@', '@COMPILER_RT_CRTEND@', '@SYSROOT@/usr/lib/crtn.o']
+cpp_link_args = ['-fuse-ld=lld', '-static-pie', '-nostdlib', '@SYSROOT@/usr/lib/rcrt1.o', '@SYSROOT@/usr/lib/crti.o', '@COMPILER_RT_CRTBEGIN@', '-lc++', '-lc++abi', '-lunwind', '-lc', '@COMPILER_RT_LIBRARY@', '@COMPILER_RT_CRTEND@', '@SYSROOT@/usr/lib/crtn.o']

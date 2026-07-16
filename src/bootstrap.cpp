@@ -16,6 +16,7 @@
 #include <jpeglib.h>
 #include <lcms2.h>
 #include <libexif/exif-tag.h>
+#include <libheif/heif.h>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <pcre2.h>
@@ -25,6 +26,7 @@
 #include <webp/encode.h>
 #include <webp/mux.h>
 #include <webp/sharpyuv/sharpyuv.h>
+#include <vips/vips.h>
 #include <zlib.h>
 
 extern "C" {
@@ -168,6 +170,31 @@ int main()
                 != AOM_CODEC_OK) {
         return 1;
     }
+    auto* volatile heif_version_function = &heif_get_version_number;
+    auto* volatile heif_init_function = &heif_init;
+    auto* volatile heif_deinit_function = &heif_deinit;
+    auto* volatile heif_decoder_function = &heif_have_decoder_for_format;
+    auto* volatile heif_encoder_function = &heif_have_encoder_for_format;
+    if (heif_version_function() != LIBHEIF_NUMERIC_VERSION
+            || heif_init_function(nullptr).code != heif_error_Ok
+            || heif_decoder_function(heif_compression_AV1) == 0
+            || heif_encoder_function(heif_compression_AV1) == 0
+            || heif_decoder_function(heif_compression_HEVC) != 0
+            || heif_encoder_function(heif_compression_HEVC) != 0) {
+        return 1;
+    }
+    heif_deinit_function();
+    if (vips_init("mediaproxy-bootstrap") != 0) {
+        return 1;
+    }
+    if (vips_type_find("VipsOperation", "heifload") == 0
+            || vips_type_find("VipsOperation", "heifsave") == 0
+            || vips_type_find("VipsOperation", "tiffload") != 0
+            || vips_type_find("VipsOperation", "magickload") != 0) {
+        vips_shutdown();
+        return 1;
+    }
+    vips_shutdown();
     auto* volatile pcre2_config_function = &pcre2_config;
     PCRE2_UCHAR pcre2_version[32] = {};
     if (pcre2_config_function(PCRE2_CONFIG_VERSION, pcre2_version) < 0

@@ -320,6 +320,80 @@
             "reason": "Pinned AV1 decode and encode implementation for no-plugin libheif AVIF support"
         },
         {
+            "name": "libheif",
+            "version": "1.22.2",
+            "revision": "763bc8bb87788d64d39ece623ceed988de12dc5b",
+            "url": "https://github.com/strukturag/libheif/releases/download/v1.22.2/libheif-1.22.2.tar.gz",
+            "sha256": "eea48e4841f83fbe51d029337ffd2d14512d0203015dad40b90213d872958af3",
+            "license": "LGPL-3.0-or-later",
+            "buildOptions": [
+                "BUILD_SHARED_LIBS=OFF",
+                "ENABLE_PLUGIN_LOADING=OFF and every codec plugin option disabled",
+                "built-in AOM AV1 decoder and encoder only",
+                "libsharpyuv color conversion from the pinned libwebp build",
+                "libde265, x265, kvazaar, FFmpeg, and WebCodecs HEVC paths disabled",
+                "AVC, VVC, JPEG, JPEG 2000, JPEG 2000 HT, and uncompressed codec paths disabled",
+                "examples, development tools, GDK Pixbuf plugin, documentation, tests, and fuzzers disabled",
+                "experimental features and header compression disabled",
+                "multithreading and bounded parallel tile decoding retained",
+                "production hardening flags including fortify, ThinLTO, trapping CFI except cfi-icall, stack protection, zero initialization, and architecture branch protection",
+                "cfi-icall alone disabled for libheif's public versioned writer and built-in codec-backend callback tables; plugin loading remains compiled out",
+                "reduced visibility and warnings as errors",
+                "LLVM tools only"
+            ],
+            "patches": [
+                {
+                    "path": "cmake/patches/libheif-1.22.2-use-cross-aom-discovery.patch",
+                    "sha256": "396d9ef983774908ce6259216ff68172d0e50bb5d6c97413f8d1b03ab97d4e68",
+                    "upstreamCommit": null,
+                    "reason": "Use libheif's rooted FindAOM fallback while cross-compiling so the imported AOM target cannot place musl C headers before libc++ wrapper headers, and explicitly discard the result of completed parallel tile jobs under Clang's nodiscard diagnostics"
+                }
+            ],
+            "securityNotes": [
+                "HEIC decode and encode report unavailable at runtime because no HEVC codec backend is linked",
+                "plugin loading is compiled out, so codec shared objects cannot extend the deployment graph",
+                "generic HEIF container parsing remains in libheif but image/heif is rejected by first-party MIME policy",
+                "first-party media code must apply checked dimensions, frame counts, and resource limits before invoking libheif",
+                "static LGPL distribution requires the corresponding-source and relinking compliance bundle defined by the release plan"
+            ],
+            "reason": "Pinned AVIF container decode and encode for libvips without libde265, HEVC, or HEIC support"
+        },
+        {
+            "name": "libvips",
+            "version": "8.18.2",
+            "revision": "17ad2f62dda7e39985955da189183e594683d45e",
+            "url": "https://github.com/libvips/libvips/releases/download/v8.18.2/vips-8.18.2.tar.xz",
+            "sha256": "a30d4aede16f1c2899c1a2241870f8a7409feafa38484bcdcdac113d6d6f8ff5",
+            "license": "LGPL-2.1-or-later",
+            "buildOptions": [
+                "Meson cross-build with --default-library=static and b_staticpic=true",
+                "C API only; C++ bindings, examples, tools installation, documentation, introspection, VAPI, deprecated API, tests, and fuzzers excluded",
+                "dynamic modules disabled and the libheif loader compiled into libvips",
+                "JPEG, PNG, WebP, GIF through the separately pinned libnsgif archive, EXIF, lcms2, zlib, and AVIF through the pinned AVIF-only libheif enabled",
+                "libde265, x265, HEVC plugins, and every other libheif codec backend absent from the dependency graph",
+                "ImageMagick, GraphicsMagick, TIFF, OpenEXR, JPEG XL, JPEG 2000, PDF, video, RAW, SVG, font, archive, FFT, ORC, and Highway integrations disabled",
+                "PPM, Analyze7, and Radiance loaders disabled to reduce attack surface",
+                "production hardening flags including fortify, ThinLTO, trapping CFI except cfi-icall, stack protection, zero initialization, hidden visibility, and architecture branch protection",
+                "cfi-icall alone disabled for libvips because GObject operation registration uses the same generic callback conversions as the approved GLib ABI exception",
+                "warnings as errors and LLVM tools only"
+            ],
+            "patches": [
+                {
+                    "path": "cmake/patches/libvips-8.18.2-use-pinned-libnsgif.patch",
+                    "sha256": "4920de2dd9c000807ba6e37796fa20ca4685d860648100ec0bc227a889086c5a",
+                    "upstreamCommit": null,
+                    "reason": "Replace libvips' bundled libnsgif copy with the separately pinned, hardened static libnsgif archive"
+                }
+            ],
+            "securityNotes": [
+                "libvips exposes its HEIF foreign operation because AVIF and HEIC share libheif container APIs; first-party MIME policy rejects image/heif before dispatch",
+                "runtime module loading is compiled out and no shared codec module is produced or installed",
+                "final-binary policy rejects libde265, x265, dynamic-loader references, and unexpected codec archives",
+                "static LGPL distribution requires the corresponding-source and relinking compliance bundle defined by the release plan"
+            ],
+            "reason": "Pinned static media operation graph with AVIF support and no HEVC implementation"
+        },
+        {
             "name": "libpng",
             "version": "1.6.58",
             "revision": "3061454d980de7d53608f594194cfac722721d2a",
@@ -432,7 +506,8 @@
                 "HAVE_LOCALTIME_R=1 with _POSIX_C_SOURCE=200809L on musl",
                 "-ffp-contract=off for architecture-independent metadata formatting",
                 "-Wno-switch for upstream GPS tag macros intentionally outside the historical ExifTag enum",
-                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "production hardening flags including fortify, ThinLTO, trapping CFI except cfi-icall, stack protection, zero initialization, hidden visibility, and architecture branch protection",
+                "cfi-icall alone disabled because libexif's public callback traversal ABI is invoked through generic callback conversions after ThinLTO; libvips retains the same narrow exception",
                 "warnings as errors",
                 "LGPL corresponding-source and relink artifacts required in the release compliance bundle",
                 "LLVM tools only"

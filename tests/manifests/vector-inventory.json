@@ -348,7 +348,7 @@
                 "SVG parameters do not override",
                 "SVG case variant does not override",
                 "exact ftypavif at bytes 4 through 11 overrides octet stream",
-                "other AVIF or HEIF brands do not override",
+                "other AVIF or HEIF brands do not override and HEIF remains unsupported",
                 "override precondition MIME must match"
             ]
         },
@@ -356,7 +356,7 @@
             "id": "media.convertible-mimes",
             "sections": ["6"],
             "suite": "media-classification",
-            "variants": ["AVIF", "ICO", "JPEG", "HEIF", "PNG", "WebP", "GIF", "SVG", "x-icon", "all other MIME rejected"]
+            "variants": ["AVIF", "ICO", "JPEG", "PNG", "WebP", "GIF", "SVG", "x-icon", "HEIF rejected", "all other MIME rejected"]
         },
         {
             "id": "media.animation-classification",

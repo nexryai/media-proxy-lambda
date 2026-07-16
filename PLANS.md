@@ -161,15 +161,22 @@ or equivalent coverage requires compatible instrumentation. Any dependency
 exception must be explicit, justified, and tested; flags must never silently
 disappear because a compiler probe failed.
 
-GLib, GObject, GModule, and GIO are the single approved dependency-level CFI
+GLib, GObject, GModule, and GIO are the approved full dependency-level CFI
 exception. Their public generic callback ABI intentionally permits pervasive
 function-pointer conversions which trapping Clang CFI rejects during ordinary
 GObject class initialization, interface initialization, and destroy callbacks.
 Build these archives without CFI instrumentation while retaining fortify,
 ThinLTO, stack protection, zero initialization, hidden visibility, warning
-errors, and architecture branch protection. A build-policy test must enforce
-both the narrow absence of GLib CFI and the presence of every retained
-hardening flag; first-party code and compatible dependencies keep trapping CFI.
+errors, and architecture branch protection. libvips uses the same generic
+GObject callback conventions throughout operation registration. libexif also
+passes public callback functions through internal generic traversal helpers;
+ThinLTO exposes those conversions to whole-program CFI when libvips invokes the
+EXIF traversal API. libheif's public versioned writer and codec-backend tables
+similarly cross the C/C++ callback boundary. Disable only `cfi-icall` for the
+pinned libvips, libexif, and libheif archives while retaining their other CFI
+classes and every other hardening control. Build-policy tests must enforce each
+narrow exception and every retained flag; first-party code and compatible
+dependencies, including libaom, keep full trapping CFI.
 
 The production and test baseline includes:
 
@@ -226,8 +233,9 @@ The pinned graph is expected to include:
 - GLib, GObject, GIO, libffi, PCRE2, libexpat;
 - zlib and libpng;
 - libjpeg-turbo;
-- libheif, libaom, and libde265 where the specified AVIF/HEIF operations require
-  them;
+- libheif and libaom for AVIF decode and encode, with libheif's HEVC decoders,
+  HEVC encoders, and plugin loading disabled; do not include libde265 or x265,
+  and reject HEIF/HEIC input;
 - nsgif or giflib, selected and pinned with libvips;
 - Highway or ORC when enabled in the pinned libvips graph;
 - librsvg plus Cairo, pixman, libxml2, freetype, fontconfig, harfbuzz, and any
@@ -508,7 +516,8 @@ format set is explicitly revised.
 ### 4. Static plugin registration can fail silently
 
 libvips, GLib, libheif, and font systems commonly discover runtime modules.
-Explicit registration and final-binary operation enumeration are release tests.
+Build libheif without plugin loading, use only its built-in libaom backend, and
+make explicit registration and final-binary operation enumeration release tests.
 
 ### 5. Streaming cannot change HTTP status after headers begin
 

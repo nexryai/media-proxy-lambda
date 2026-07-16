@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libpng
+Description: PNG reference library
+Version: @MEDIAPROXY_LIBPNG_VERSION@
+Requires.private: zlib
+Libs: -L${libdir} -lpng16
+Cflags: -I${includedir}

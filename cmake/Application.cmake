@@ -148,6 +148,29 @@ foreach(required_libaom_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_libheif_artifact IN ITEMS
+        "${MEDIAPROXY_LIBHEIF_INCLUDE_DIR}/libheif/heif.h"
+        "${MEDIAPROXY_LIBHEIF_INCLUDE_DIR}/libheif/heif_version.h"
+        "${MEDIAPROXY_LIBHEIF_LIBRARY}"
+        "${MEDIAPROXY_LIBHEIF_PKGCONFIG}")
+    if(NOT EXISTS "${required_libheif_artifact}")
+        message(FATAL_ERROR
+            "Pinned libheif artifact is absent: ${required_libheif_artifact}")
+    endif()
+endforeach()
+
+foreach(required_libvips_artifact IN ITEMS
+        "${MEDIAPROXY_LIBVIPS_INCLUDE_DIR}/vips/vips.h"
+        "${MEDIAPROXY_LIBVIPS_INCLUDE_DIR}/vips/version.h"
+        "${MEDIAPROXY_LIBVIPS_INCLUDE_DIR}/vips/enumtypes.h"
+        "${MEDIAPROXY_LIBVIPS_LIBRARY}"
+        "${MEDIAPROXY_LIBVIPS_PKGCONFIG}")
+    if(NOT EXISTS "${required_libvips_artifact}")
+        message(FATAL_ERROR
+            "Pinned libvips artifact is absent: ${required_libvips_artifact}")
+    endif()
+endforeach()
+
 foreach(required_lcms2_artifact IN ITEMS
         "${MEDIAPROXY_LCMS2_INCLUDE_DIR}/lcms2.h"
         "${MEDIAPROXY_LCMS2_LIBRARY}")
@@ -290,6 +313,12 @@ add_library(mediaproxy_libwebp_sharpyuv STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_libwebp_sharpyuv PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
 )
+add_library(mediaproxy_libheif STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libheif PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBHEIF_LIBRARY}"
+    INTERFACE_LINK_LIBRARIES
+        "mediaproxy_libaom;mediaproxy_libwebp_sharpyuv"
+)
 add_library(mediaproxy_libwebp STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_libwebp PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_LIBRARY}"
@@ -306,6 +335,15 @@ set_target_properties(mediaproxy_libwebp_mux PROPERTIES
     INTERFACE_LINK_LIBRARIES mediaproxy_libwebp
 )
 
+add_library(mediaproxy_libvips STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libvips PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBVIPS_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES
+        "${MEDIAPROXY_GLIB_INCLUDE_DIR};${MEDIAPROXY_GLIB_CONFIG_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES
+        "mediaproxy_libheif;mediaproxy_libaom;mediaproxy_libwebp_mux;mediaproxy_libwebp_demux;mediaproxy_libpng;mediaproxy_libjpeg_turbo;mediaproxy_lcms2;mediaproxy_libexif;mediaproxy_libexpat;mediaproxy_gio;mediaproxy_gobject;mediaproxy_gthread;mediaproxy_glib;mediaproxy_zlib;m"
+)
+
 add_library(mediaproxy_curl STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_curl PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_CURL_LIBRARY}"
@@ -319,6 +357,7 @@ target_link_libraries(bootstrap
     PRIVATE
         mediaproxy_hardening
         mediaproxy_warnings
+        mediaproxy_libvips
         mediaproxy_curl
         mediaproxy_boringssl_ssl
         mediaproxy_lcms2
@@ -328,6 +367,7 @@ target_link_libraries(bootstrap
         mediaproxy_gio
         mediaproxy_gthread
         mediaproxy_libaom
+        mediaproxy_libheif
         mediaproxy_pcre2
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
@@ -378,6 +418,8 @@ if(BUILD_TESTING)
         tests/smoke/libffi_test.cpp
         tests/smoke/glib_test.cpp
         tests/smoke/libaom_test.cpp
+        tests/smoke/libheif_test.cpp
+        tests/smoke/libvips_test.cpp
         tests/smoke/pcre2_test.cpp
         tests/smoke/libjpeg_turbo_test.cpp
         tests/smoke/libnsgif_test.cpp
@@ -391,6 +433,7 @@ if(BUILD_TESTING)
         PRIVATE
             mediaproxy_hardening
             mediaproxy_warnings
+            mediaproxy_libvips
             mediaproxy_curl
             mediaproxy_boringssl_ssl
             mediaproxy_lcms2
@@ -400,6 +443,7 @@ if(BUILD_TESTING)
             mediaproxy_gio
             mediaproxy_gthread
             mediaproxy_libaom
+            mediaproxy_libheif
             mediaproxy_pcre2
             mediaproxy_libjpeg_turbo
             mediaproxy_libnsgif
@@ -644,6 +688,42 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibaomBuildTest.cmake"
+    )
+    add_test(
+        NAME libheif-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCMAKE_CACHE=${MEDIAPROXY_LIBHEIF_CMAKE_CACHE}"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBHEIF_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_LIBHEIF_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLIBAOM_ARCHIVE=${MEDIAPROXY_LIBAOM_LIBRARY}"
+            "-DLIBHEIF_ARCHIVE=${MEDIAPROXY_LIBHEIF_LIBRARY}"
+            "-DLIBSHARPYUV_ARCHIVE=${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DPKGCONFIG=${MEDIAPROXY_LIBHEIF_PKGCONFIG}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibheifBuildTest.cmake"
+    )
+    add_test(
+        NAME libvips-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DBUILD_DIRECTORY=${MEDIAPROXY_LIBVIPS_BUILD_DIRECTORY}"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBVIPS_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_LIBVIPS_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLIBVIPS_ARCHIVE=${MEDIAPROXY_LIBVIPS_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DPKGCONFIG=${MEDIAPROXY_LIBVIPS_PKGCONFIG}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibvipsBuildTest.cmake"
     )
     add_test(
         NAME lcms2-build-policy

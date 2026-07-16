@@ -1,0 +1,24 @@
+diff --git a/cmake/modules/FindAOM.cmake b/cmake/modules/FindAOM.cmake
+index bd2ee61..42e013a 100644
+--- a/cmake/modules/FindAOM.cmake
++++ b/cmake/modules/FindAOM.cmake
+@@ -3,6 +3,9 @@
+-if(TARGET AOM::aom)
++if(TARGET AOM::aom AND NOT CMAKE_SYSROOT)
+   if(NOT AOM_FIND_QUIETLY)
+     message(STATUS "Found AOM: ${AOM_DIR}")
+   endif()
+ else()
++  unset(AOM_FOUND)
++  unset(AOM_INCLUDE_DIRS)
++  unset(AOM_LIBRARIES)
+   include(LibFindMacros)
+diff --git a/libheif/image-items/grid.cc b/libheif/image-items/grid.cc
+index b14489d..d58e3fb 100644
+--- a/libheif/image-items/grid.cc
++++ b/libheif/image-items/grid.cc
+@@ -243,3 +243,3 @@
+   while (!jobs->empty()) {
+-    jobs->front().get();
++    (void) jobs->front().get();
+     jobs->pop_front();

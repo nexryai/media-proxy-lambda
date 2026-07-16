@@ -1,0 +1,15 @@
+diff --git a/libvips/foreign/libnsgif/meson.build b/libvips/foreign/libnsgif/meson.build
+index 215181c7b..1aa3d900d 100644
+--- a/libvips/foreign/libnsgif/meson.build
++++ b/libvips/foreign/libnsgif/meson.build
+@@ -1,8 +1,2 @@
+-nsgif_lib = static_library('nsgif',
+-    'nsgif.h',
+-    'gif.c',
+-    'lzw.c',
+-    'lzw.h',
+-)
+-
+-libvips_components += nsgif_lib
++nsgif_dep = cc.find_library('nsgif', required: true)
++libvips_deps += nsgif_dep

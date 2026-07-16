@@ -73,6 +73,16 @@ mediaproxy_lock_get(libaom sha256 libaom_sha256)
 mediaproxy_lock_get(libaom version libaom_version)
 mediaproxy_lock_get_patch(libaom 0 path libaom_patch_relative)
 mediaproxy_lock_get_patch(libaom 0 sha256 libaom_patch_sha256)
+mediaproxy_lock_get(libheif url libheif_url)
+mediaproxy_lock_get(libheif sha256 libheif_sha256)
+mediaproxy_lock_get(libheif version libheif_version)
+mediaproxy_lock_get_patch(libheif 0 path libheif_patch_relative)
+mediaproxy_lock_get_patch(libheif 0 sha256 libheif_patch_sha256)
+mediaproxy_lock_get(libvips url libvips_url)
+mediaproxy_lock_get(libvips sha256 libvips_sha256)
+mediaproxy_lock_get(libvips version libvips_version)
+mediaproxy_lock_get_patch(libvips 0 path libvips_patch_relative)
+mediaproxy_lock_get_patch(libvips 0 sha256 libvips_patch_sha256)
 mediaproxy_lock_get(pcre2 url pcre2_url)
 mediaproxy_lock_get(pcre2 sha256 pcre2_sha256)
 mediaproxy_lock_get(pcre2 version pcre2_version)
@@ -122,6 +132,18 @@ set(libaom_patch "${CMAKE_SOURCE_DIR}/${libaom_patch_relative}")
 file(SHA256 "${libaom_patch}" actual_libaom_patch_sha256)
 if(NOT actual_libaom_patch_sha256 STREQUAL libaom_patch_sha256)
     message(FATAL_ERROR "libaom hardening patch does not match dependencies.lock.json")
+endif()
+
+set(libheif_patch "${CMAKE_SOURCE_DIR}/${libheif_patch_relative}")
+file(SHA256 "${libheif_patch}" actual_libheif_patch_sha256)
+if(NOT actual_libheif_patch_sha256 STREQUAL libheif_patch_sha256)
+    message(FATAL_ERROR "libheif build patch does not match dependencies.lock.json")
+endif()
+
+set(libvips_patch "${CMAKE_SOURCE_DIR}/${libvips_patch_relative}")
+file(SHA256 "${libvips_patch}" actual_libvips_patch_sha256)
+if(NOT actual_libvips_patch_sha256 STREQUAL libvips_patch_sha256)
+    message(FATAL_ERROR "libvips build patch does not match dependencies.lock.json")
 endif()
 
 ExternalProject_Add(linux_headers
@@ -240,6 +262,7 @@ else()
     set(ARCH_HARDENING_FLAGS "'-mbranch-protection=standard'")
 endif()
 set(HOST_CLANG "${host_clang}")
+set(HOST_CLANGXX "${host_clangxx}")
 set(HOST_AR "${host_ar}")
 set(HOST_STRIP "${host_strip}")
 set(HOST_PKGCONF "${host_pkgconf}")
@@ -257,6 +280,15 @@ set(glib_cross_file "${CMAKE_BINARY_DIR}/glib-cross.ini")
 configure_file(
     "${glib_cross_template}"
     "${glib_cross_file}"
+    @ONLY
+)
+set(libvips_cross_template
+    "${CMAKE_SOURCE_DIR}/cmake/dependencies/libvips/meson-cross.ini.in")
+file(SHA256 "${libvips_cross_template}" libvips_cross_template_sha256)
+set(libvips_cross_file "${CMAKE_BINARY_DIR}/libvips-cross.ini")
+configure_file(
+    "${libvips_cross_template}"
+    "${libvips_cross_file}"
     @ONLY
 )
 
@@ -388,6 +420,14 @@ ExternalProject_Add(zlib
 set(libpng_binary_directory "${CMAKE_BINARY_DIR}/libpng-static-build")
 set(libpng_library "${sysroot}/usr/lib/libpng16.a")
 set(libpng_include_dir "${sysroot}/usr/include")
+set(libpng_pkgconfig "${sysroot}/usr/lib/pkgconfig/libpng.pc")
+set(MEDIAPROXY_LIBPNG_VERSION "${libpng_version}")
+set(libpng_generated_pkgconfig "${CMAKE_BINARY_DIR}/libpng.pc")
+configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/dependencies/libpng/libpng.pc.in"
+    "${libpng_generated_pkgconfig}"
+    @ONLY
+)
 file(SHA256
     "${CMAKE_SOURCE_DIR}/cmake/dependencies/libpng/CMakeLists.txt"
     libpng_build_definition_sha256)
@@ -437,17 +477,23 @@ ExternalProject_Add(libpng
         <BINARY_DIR>/pnglibconf.h "${libpng_include_dir}/pnglibconf.h"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         <BINARY_DIR>/libpng16.a "${libpng_library}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "${sysroot}/usr/lib/pkgconfig"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${libpng_generated_pkgconfig}" "${libpng_pkgconfig}"
     BUILD_BYPRODUCTS
         "${libpng_library}"
         "${libpng_include_dir}/png.h"
         "${libpng_include_dir}/pngconf.h"
         "${libpng_include_dir}/pnglibconf.h"
+        "${libpng_pkgconfig}"
 )
 
 set(libjpeg_turbo_binary_directory
     "${CMAKE_BINARY_DIR}/libjpeg-turbo-static-build")
 set(libjpeg_turbo_library "${sysroot}/usr/lib/libjpeg.a")
 set(libjpeg_turbo_include_dir "${sysroot}/usr/include")
+set(libjpeg_turbo_pkgconfig "${sysroot}/usr/lib/pkgconfig/libjpeg.pc")
 ExternalProject_Add(libjpeg_turbo
     DEPENDS fortify_headers
     URL "${libjpeg_turbo_url}"
@@ -505,12 +551,17 @@ ExternalProject_Add(libjpeg_turbo
         <SOURCE_DIR>/src/jmorecfg.h
         <SOURCE_DIR>/src/jpeglib.h
         "${libjpeg_turbo_include_dir}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "${sysroot}/usr/lib/pkgconfig"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/pkgscripts/libjpeg.pc "${libjpeg_turbo_pkgconfig}"
     BUILD_BYPRODUCTS
         "${libjpeg_turbo_library}"
         "${libjpeg_turbo_include_dir}/jconfig.h"
         "${libjpeg_turbo_include_dir}/jerror.h"
         "${libjpeg_turbo_include_dir}/jmorecfg.h"
         "${libjpeg_turbo_include_dir}/jpeglib.h"
+        "${libjpeg_turbo_pkgconfig}"
 )
 
 set(libwebp_binary_directory "${CMAKE_BINARY_DIR}/libwebp-static-build")
@@ -519,6 +570,10 @@ set(libwebp_library "${sysroot}/usr/lib/libwebp.a")
 set(libwebp_demux_library "${sysroot}/usr/lib/libwebpdemux.a")
 set(libwebp_mux_library "${sysroot}/usr/lib/libwebpmux.a")
 set(libwebp_include_dir "${sysroot}/usr/include")
+set(libwebp_pkgconfig "${sysroot}/usr/lib/pkgconfig/libwebp.pc")
+set(libwebp_demux_pkgconfig "${sysroot}/usr/lib/pkgconfig/libwebpdemux.pc")
+set(libwebp_mux_pkgconfig "${sysroot}/usr/lib/pkgconfig/libwebpmux.pc")
+set(libwebp_sharpyuv_pkgconfig "${sysroot}/usr/lib/pkgconfig/libsharpyuv.pc")
 ExternalProject_Add(libwebp
     DEPENDS fortify_headers
     URL "${libwebp_url}"
@@ -592,6 +647,16 @@ ExternalProject_Add(libwebp
         <BINARY_DIR>/libwebpdemux.a "${libwebp_demux_library}"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         <BINARY_DIR>/libwebpmux.a "${libwebp_mux_library}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "${sysroot}/usr/lib/pkgconfig"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/src/libwebp.pc "${libwebp_pkgconfig}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/src/demux/libwebpdemux.pc "${libwebp_demux_pkgconfig}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/src/mux/libwebpmux.pc "${libwebp_mux_pkgconfig}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/sharpyuv/libsharpyuv.pc "${libwebp_sharpyuv_pkgconfig}"
     BUILD_BYPRODUCTS
         "${libwebp_sharpyuv_library}"
         "${libwebp_library}"
@@ -602,6 +667,10 @@ ExternalProject_Add(libwebp
         "${libwebp_include_dir}/webp/demux.h"
         "${libwebp_include_dir}/webp/mux.h"
         "${libwebp_include_dir}/webp/sharpyuv/sharpyuv.h"
+        "${libwebp_pkgconfig}"
+        "${libwebp_demux_pkgconfig}"
+        "${libwebp_mux_pkgconfig}"
+        "${libwebp_sharpyuv_pkgconfig}"
 )
 
 set(libnsgif_binary_directory "${CMAKE_BINARY_DIR}/libnsgif-build")
@@ -640,14 +709,18 @@ ExternalProject_Add(libnsgif
         --parallel 2 --target nsgif
     INSTALL_COMMAND
         "${CMAKE_COMMAND}" -E make_directory
-        "${libnsgif_include_dir}" "${sysroot}/usr/lib"
+        "${libnsgif_include_dir}/libnsgif" "${sysroot}/usr/lib"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         <BINARY_DIR>/libnsgif.a "${libnsgif_library}"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         <SOURCE_DIR>/include/nsgif.h "${libnsgif_include_dir}/nsgif.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/include/nsgif.h
+        "${libnsgif_include_dir}/libnsgif/nsgif.h"
     BUILD_BYPRODUCTS
         "${libnsgif_library}"
         "${libnsgif_include_dir}/nsgif.h"
+        "${libnsgif_include_dir}/libnsgif/nsgif.h"
 )
 
 set(libexif_binary_directory "${CMAKE_BINARY_DIR}/libexif-static-build")
@@ -662,7 +735,7 @@ file(SHA256
     "${CMAKE_SOURCE_DIR}/cmake/dependencies/libexif/config.h.in"
     libexif_config_sha256)
 string(SHA256 libexif_build_definition_sha256
-    "${libexif_cmake_sha256};${libexif_config_sha256}")
+    "${libexif_cmake_sha256};${libexif_config_sha256};no-cfi-icall-for-callback-abi-v1")
 ExternalProject_Add(libexif
     DEPENDS fortify_headers
     URL "${libexif_url}"
@@ -688,7 +761,7 @@ ExternalProject_Add(libexif
         "-DCMAKE_RANLIB=${host_ranlib}"
         "-DCMAKE_NM=${host_nm}"
         "-DCMAKE_LINKER=${host_lld}"
-        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -D_POSIX_C_SOURCE=200809L -ffp-contract=off"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -fno-sanitize=cfi-icall -D_POSIX_C_SOURCE=200809L -ffp-contract=off"
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
         "-DMEDIAPROXY_BUILD_DEFINITION_SHA256=${libexif_build_definition_sha256}"
         "-DMEDIAPROXY_LIBEXIF_SOURCE_DIR=<SOURCE_DIR>"
@@ -708,6 +781,7 @@ ExternalProject_Add(libexif
 set(lcms2_binary_directory "${CMAKE_BINARY_DIR}/lcms2-build")
 set(lcms2_library "${sysroot}/usr/lib/liblcms2.a")
 set(lcms2_include_dir "${sysroot}/usr/include")
+set(lcms2_pkgconfig "${sysroot}/usr/lib/pkgconfig/lcms2.pc")
 ExternalProject_Add(lcms2
     DEPENDS fortify_headers
     URL "${lcms2_url}"
@@ -756,9 +830,14 @@ ExternalProject_Add(lcms2
         <BINARY_DIR>/liblcms2.a "${lcms2_library}"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         <SOURCE_DIR>/include/lcms2.h "${lcms2_include_dir}/lcms2.h"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "${sysroot}/usr/lib/pkgconfig"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/lcms2.pc "${lcms2_pkgconfig}"
     BUILD_BYPRODUCTS
         "${lcms2_library}"
         "${lcms2_include_dir}/lcms2.h"
+        "${lcms2_pkgconfig}"
 )
 
 set(libexpat_binary_directory "${CMAKE_BINARY_DIR}/libexpat-static-build")
@@ -1169,13 +1248,17 @@ ExternalProject_Add(llvm_runtimes
         "${sysroot}/usr/lib/libunwind.a"
 )
 
-string(SUBSTRING "${libaom_patch_sha256}" 0 12 libaom_patch_build_id)
+string(SHA256 libaom_build_configuration_sha256
+    "${libaom_patch_sha256}")
+string(SUBSTRING "${libaom_build_configuration_sha256}" 0 12
+    libaom_patch_build_id)
 set(libaom_prefix_directory
     "${CMAKE_BINARY_DIR}/libaom-${libaom_version}-${libaom_patch_build_id}-prefix")
 set(libaom_binary_directory
     "${CMAKE_BINARY_DIR}/libaom-${libaom_version}-${libaom_patch_build_id}-static-build")
 set(libaom_library "${sysroot}/usr/lib/libaom.a")
 set(libaom_include_dir "${sysroot}/usr/include")
+set(libaom_libheif_include_dir "${sysroot}/usr/include/libheif-aom")
 set(libaom_pkgconfig "${sysroot}/usr/lib/pkgconfig/aom.pc")
 ExternalProject_Add(libaom
     DEPENDS fortify_headers llvm_runtimes
@@ -1233,12 +1316,139 @@ ExternalProject_Add(libaom
     INSTALL_COMMAND
         "${CMAKE_COMMAND}" -E env "DESTDIR=${sysroot}"
         "${CMAKE_COMMAND}" --install <BINARY_DIR> --config Release
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "${libaom_libheif_include_dir}/aom"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${libaom_include_dir}/aom" "${libaom_libheif_include_dir}/aom"
     BUILD_BYPRODUCTS
         "${libaom_library}"
         "${libaom_include_dir}/aom/aom.h"
         "${libaom_include_dir}/aom/aomcx.h"
         "${libaom_include_dir}/aom/aomdx.h"
+        "${libaom_libheif_include_dir}/aom/aom.h"
         "${libaom_pkgconfig}"
+)
+
+string(SHA256 libheif_build_configuration_sha256
+    "${libheif_patch_sha256}:no-cfi-icall-for-writer-backend-abi-v2")
+string(SUBSTRING "${libheif_build_configuration_sha256}" 0 12
+    libheif_patch_build_id)
+set(libheif_prefix_directory
+    "${CMAKE_BINARY_DIR}/libheif-${libheif_version}-${libheif_patch_build_id}-prefix")
+set(libheif_binary_directory
+    "${CMAKE_BINARY_DIR}/libheif-${libheif_version}-${libheif_patch_build_id}-static-build")
+set(libheif_library "${sysroot}/usr/lib/libheif.a")
+set(libheif_include_dir "${sysroot}/usr/include")
+set(libheif_pkgconfig "${sysroot}/usr/lib/pkgconfig/libheif.pc")
+set(libheif_config_header
+    "${libheif_binary_directory}/libheif/heif_version.h")
+ExternalProject_Add(libheif
+    DEPENDS fortify_headers libaom libwebp llvm_runtimes
+    PREFIX "${libheif_prefix_directory}"
+    URL "${libheif_url}"
+    URL_HASH "SHA256=${libheif_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "libheif-${libheif_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    PATCH_COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "GIT_CEILING_DIRECTORIES=${CMAKE_BINARY_DIR}"
+        "${host_git}" apply "${libheif_patch}"
+    BINARY_DIR "${libheif_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DMEDIAPROXY_TARGET_TRIPLE=${target_triple}"
+        "-DMEDIAPROXY_TARGET_PROCESSOR=${target_processor}"
+        "-DMEDIAPROXY_COMPILER_RT_ARCH=${compiler_rt_arch}"
+        "-DMEDIAPROXY_SYSROOT=${sysroot}"
+        "-DMEDIAPROXY_CLANG=${host_clang}"
+        "-DMEDIAPROXY_CLANGXX=${host_clangxx}"
+        "-DMEDIAPROXY_LLD=${host_lld}"
+        "-DMEDIAPROXY_AR=${host_ar}"
+        "-DMEDIAPROXY_RANLIB=${host_ranlib}"
+        "-DMEDIAPROXY_NM=${host_nm}"
+        "-DMEDIAPROXY_STRIP=${host_strip}"
+        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags}"
+        "-DCMAKE_CXX_FLAGS=${dependency_hardening_cxx_flags} -fno-sanitize=cfi-icall"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+        "-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES="
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DENABLE_PLUGIN_LOADING=OFF"
+        "-DWITH_AOM_DECODER=ON"
+        "-DWITH_AOM_DECODER_PLUGIN=OFF"
+        "-DWITH_AOM_ENCODER=ON"
+        "-DWITH_AOM_ENCODER_PLUGIN=OFF"
+        "-DAOM_INCLUDE_DIR=${libaom_libheif_include_dir}"
+        "-DAOM_LIBRARY=${libaom_library}"
+        "-DWITH_LIBSHARPYUV=ON"
+        "-DWITH_LIBSHARPYUV_INTERNAL=OFF"
+        "-DLIBSHARPYUV_INCLUDE_DIR=${libwebp_include_dir}/webp"
+        "-DLIBSHARPYUV_LIBRARY=${libwebp_sharpyuv_library}"
+        "-DWITH_LIBDE265=OFF"
+        "-DWITH_LIBDE265_PLUGIN=OFF"
+        "-DWITH_X265=OFF"
+        "-DWITH_X265_PLUGIN=OFF"
+        "-DWITH_KVAZAAR=OFF"
+        "-DWITH_KVAZAAR_PLUGIN=OFF"
+        "-DWITH_FFMPEG_DECODER=OFF"
+        "-DWITH_FFMPEG_DECODER_PLUGIN=OFF"
+        "-DWITH_WEBCODECS=OFF"
+        "-DWITH_X264=OFF"
+        "-DWITH_X264_PLUGIN=OFF"
+        "-DWITH_OpenH264_DECODER=OFF"
+        "-DWITH_OpenH264_DECODER_PLUGIN=OFF"
+        "-DWITH_UVG266=OFF"
+        "-DWITH_UVG266_PLUGIN=OFF"
+        "-DWITH_VVDEC=OFF"
+        "-DWITH_VVDEC_PLUGIN=OFF"
+        "-DWITH_VVENC=OFF"
+        "-DWITH_VVENC_PLUGIN=OFF"
+        "-DWITH_DAV1D=OFF"
+        "-DWITH_DAV1D_PLUGIN=OFF"
+        "-DWITH_SvtEnc=OFF"
+        "-DWITH_SvtEnc_PLUGIN=OFF"
+        "-DWITH_RAV1E=OFF"
+        "-DWITH_RAV1E_PLUGIN=OFF"
+        "-DWITH_JPEG_DECODER=OFF"
+        "-DWITH_JPEG_DECODER_PLUGIN=OFF"
+        "-DWITH_JPEG_ENCODER=OFF"
+        "-DWITH_JPEG_ENCODER_PLUGIN=OFF"
+        "-DWITH_OpenJPEG_DECODER=OFF"
+        "-DWITH_OpenJPEG_DECODER_PLUGIN=OFF"
+        "-DWITH_OpenJPEG_ENCODER=OFF"
+        "-DWITH_OpenJPEG_ENCODER_PLUGIN=OFF"
+        "-DWITH_OPENJPH_ENCODER=OFF"
+        "-DWITH_OPENJPH_ENCODER_PLUGIN=OFF"
+        "-DWITH_UNCOMPRESSED_CODEC=OFF"
+        "-DWITH_HEADER_COMPRESSION=OFF"
+        "-DENABLE_EXPERIMENTAL_FEATURES=OFF"
+        "-DENABLE_MULTITHREADING_SUPPORT=ON"
+        "-DENABLE_PARALLEL_TILE_DECODING=ON"
+        "-DWITH_REDUCED_VISIBILITY=ON"
+        "-DWITH_EXAMPLES=OFF"
+        "-DWITH_EXAMPLE_HEIF_THUMB=OFF"
+        "-DWITH_EXAMPLE_HEIF_VIEW=OFF"
+        "-DWITH_GDK_PIXBUF=OFF"
+        "-DBUILD_DEVELOPMENT_TOOLS=OFF"
+        "-DBUILD_DOCUMENTATION=OFF"
+        "-DBUILD_TESTING=OFF"
+        "-DWITH_FUZZERS=OFF"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR> --parallel 2 --target heif
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E env "DESTDIR=${sysroot}"
+        "${CMAKE_COMMAND}" --install <BINARY_DIR> --config Release
+    BUILD_BYPRODUCTS
+        "${libheif_library}"
+        "${libheif_include_dir}/libheif/heif.h"
+        "${libheif_include_dir}/libheif/heif_version.h"
+        "${libheif_pkgconfig}"
 )
 
 string(SHA256 glib_build_configuration_sha256
@@ -1324,6 +1534,12 @@ ExternalProject_Add(glib
         --no-rebuild
         "--destdir=${sysroot}"
         --tags=devel
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "${sysroot}/usr/bin"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/gobject/glib-mkenums
+        <BINARY_DIR>/gobject/glib-genmarshal
+        "${sysroot}/usr/bin"
     BUILD_BYPRODUCTS
         "${glib_library}"
         "${gobject_library}"
@@ -1339,6 +1555,105 @@ ExternalProject_Add(glib
         "${gthread_pkgconfig}"
         "${gmodule_pkgconfig}"
         "${gio_pkgconfig}"
+        "${sysroot}/usr/bin/glib-mkenums"
+        "${sysroot}/usr/bin/glib-genmarshal"
+)
+
+string(SHA256 libvips_build_configuration_sha256
+    "${libvips_sha256}:${libvips_cross_template_sha256}:${libvips_patch_sha256}")
+string(SUBSTRING "${libvips_build_configuration_sha256}" 0 12
+    libvips_build_id)
+set(libvips_prefix_directory
+    "${CMAKE_BINARY_DIR}/libvips-${libvips_version}-${libvips_build_id}-prefix")
+set(libvips_binary_directory
+    "${CMAKE_BINARY_DIR}/libvips-${libvips_version}-${libvips_build_id}-static-build")
+set(libvips_library "${sysroot}/usr/lib/libvips.a")
+set(libvips_include_dir "${sysroot}/usr/include")
+set(libvips_pkgconfig "${sysroot}/usr/lib/pkgconfig/vips.pc")
+set(libvips_config_header "${libvips_binary_directory}/config.h")
+ExternalProject_Add(libvips
+    DEPENDS
+        fortify_headers
+        glib
+        lcms2
+        libexif
+        libexpat
+        libheif
+        libjpeg_turbo
+        libnsgif
+        libpng
+        libwebp
+        llvm_runtimes
+        zlib
+    PREFIX "${libvips_prefix_directory}"
+    URL "${libvips_url}"
+    URL_HASH "SHA256=${libvips_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "vips-${libvips_version}.tar.xz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    PATCH_COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "GIT_CEILING_DIRECTORIES=${CMAKE_BINARY_DIR}"
+        "${host_git}" apply "${libvips_patch}"
+    BINARY_DIR "${libvips_binary_directory}"
+    CONFIGURE_COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "PKG_CONFIG_LIBDIR=${sysroot}/usr/lib/pkgconfig"
+        "PKG_CONFIG_SYSROOT_DIR=${sysroot}"
+        "${host_meson}" setup <BINARY_DIR> <SOURCE_DIR>
+        "--cross-file=${libvips_cross_file}"
+        --prefix=/usr
+        --libdir=lib
+        --buildtype=release
+        --default-library=static
+        --wrap-mode=nodownload
+        --auto-features=disabled
+        -Db_staticpic=true
+        -Db_lto=false
+        -Dwerror=true
+        -Ddeprecated=false
+        -Dexamples=false
+        -Dcplusplus=false
+        -Dcpp-docs=false
+        -Ddocs=false
+        -Dmodules=disabled
+        -Dintrospection=disabled
+        -Dvapi=false
+        -Dexif=enabled
+        -Dheif=enabled
+        -Dheif-module=disabled
+        -Djpeg=enabled
+        -Dlcms=enabled
+        -Dpng=enabled
+        -Dwebp=enabled
+        -Dzlib=enabled
+        -Dnsgif=true
+        -Dppm=false
+        -Danalyze=false
+        -Dradiance=false
+        -Dfuzzing_engine=none
+    BUILD_COMMAND
+        "${host_ninja}" -C <BINARY_DIR> libvips/libvips.a
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${libvips_include_dir}/vips" "${sysroot}/usr/lib/pkgconfig"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        <SOURCE_DIR>/libvips/include/vips "${libvips_include_dir}/vips"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libvips/include/vips/enumtypes.h
+        <BINARY_DIR>/libvips/include/vips/version.h
+        "${libvips_include_dir}/vips"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/libvips/libvips.a "${libvips_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/meson-private/vips.pc "${libvips_pkgconfig}"
+    BUILD_BYPRODUCTS
+        "${libvips_library}"
+        "${libvips_include_dir}/vips/vips.h"
+        "${libvips_include_dir}/vips/version.h"
+        "${libvips_include_dir}/vips/enumtypes.h"
+        "${libvips_pkgconfig}"
 )
 
 set(boringssl_binary_directory "${CMAKE_BINARY_DIR}/boringssl-build")
@@ -1516,7 +1831,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers glib lcms2 libaom libexif libexpat libffi libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -1610,6 +1925,18 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBAOM_COMPILE_COMMANDS=${libaom_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_LIBAOM_CONFIG_HEADER=${libaom_binary_directory}/config/aom_config.h"
         "-DMEDIAPROXY_LIBAOM_PKGCONFIG=${libaom_pkgconfig}"
+        "-DMEDIAPROXY_LIBHEIF_INCLUDE_DIR=${libheif_include_dir}"
+        "-DMEDIAPROXY_LIBHEIF_LIBRARY=${libheif_library}"
+        "-DMEDIAPROXY_LIBHEIF_COMPILE_COMMANDS=${libheif_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBHEIF_CONFIG_HEADER=${libheif_config_header}"
+        "-DMEDIAPROXY_LIBHEIF_CMAKE_CACHE=${libheif_binary_directory}/CMakeCache.txt"
+        "-DMEDIAPROXY_LIBHEIF_PKGCONFIG=${libheif_pkgconfig}"
+        "-DMEDIAPROXY_LIBVIPS_INCLUDE_DIR=${libvips_include_dir}"
+        "-DMEDIAPROXY_LIBVIPS_LIBRARY=${libvips_library}"
+        "-DMEDIAPROXY_LIBVIPS_COMPILE_COMMANDS=${libvips_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBVIPS_CONFIG_HEADER=${libvips_config_header}"
+        "-DMEDIAPROXY_LIBVIPS_PKGCONFIG=${libvips_pkgconfig}"
+        "-DMEDIAPROXY_LIBVIPS_BUILD_DIRECTORY=${libvips_binary_directory}"
         "-DMEDIAPROXY_PCRE2_INCLUDE_DIR=${pcre2_include_dir}"
         "-DMEDIAPROXY_PCRE2_LIBRARY=${pcre2_library}"
         "-DMEDIAPROXY_PCRE2_COMPILE_COMMANDS=${pcre2_binary_directory}/compile_commands.json"

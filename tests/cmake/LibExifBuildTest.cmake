@@ -151,6 +151,7 @@ foreach(required_source IN LISTS required_sources)
         -fvisibility=hidden
         -flto=thin
         -fsanitize=cfi
+        -fno-sanitize=cfi-icall
         -fsanitize-trap=cfi
         -fno-sanitize-recover=cfi
         -ffp-contract=off
@@ -183,7 +184,6 @@ foreach(required_source IN LISTS required_sources)
     foreach(forbidden_flag IN ITEMS
             -DENABLE_NLS
             -fno-lto
-            -fno-sanitize=cfi
             -fno-sanitize-trap=cfi
             -fno-stack-protector
             -ffast-math)
@@ -193,6 +193,11 @@ foreach(required_source IN LISTS required_sources)
                 "${required_source} contains forbidden ${forbidden_flag}")
         endif()
     endforeach()
+    if(matching_command MATCHES
+            "(^|[ ])-fno-sanitize=cfi($|[ ])")
+        message(FATAL_ERROR
+            "${required_source} contains forbidden -fno-sanitize=cfi")
+    endif()
 endforeach()
 
 math(EXPR last_command "${command_count} - 1")
