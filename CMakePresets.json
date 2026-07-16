@@ -50,6 +50,13 @@
             "output": {
                 "outputOnFailure": true
             }
+        },
+        {
+            "name": "arm64-release",
+            "configurePreset": "arm64-release",
+            "output": {
+                "outputOnFailure": true
+            }
         }
     ]
 }
