@@ -12,7 +12,11 @@ set(replacement [=[Requires: glib-2.0, gobject-2.0, gmodule-no-export-2.0, zlib
 Libs: -L${libdir} -lgio-2.0]=])
 string(REPLACE "${original}" "${replacement}" normalized "${contents}")
 if(normalized STREQUAL contents)
-    message(FATAL_ERROR
-        "GIO pkg-config dependency layout changed upstream: ${GIO_PKGCONFIG}")
+    string(FIND "${contents}" "${replacement}" replacement_offset)
+    if(replacement_offset EQUAL -1)
+        message(FATAL_ERROR
+            "GIO pkg-config dependency layout changed upstream: "
+            "${GIO_PKGCONFIG}")
+    endif()
 endif()
 file(WRITE "${GIO_PKGCONFIG}" "${normalized}")
