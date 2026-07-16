@@ -68,6 +68,11 @@ mediaproxy_lock_get(glib sha256 glib_sha256)
 mediaproxy_lock_get(glib version glib_version)
 mediaproxy_lock_get_patch(glib 0 path glib_patch_relative)
 mediaproxy_lock_get_patch(glib 0 sha256 glib_patch_sha256)
+mediaproxy_lock_get(libaom url libaom_url)
+mediaproxy_lock_get(libaom sha256 libaom_sha256)
+mediaproxy_lock_get(libaom version libaom_version)
+mediaproxy_lock_get_patch(libaom 0 path libaom_patch_relative)
+mediaproxy_lock_get_patch(libaom 0 sha256 libaom_patch_sha256)
 mediaproxy_lock_get(pcre2 url pcre2_url)
 mediaproxy_lock_get(pcre2 sha256 pcre2_sha256)
 mediaproxy_lock_get(pcre2 version pcre2_version)
@@ -111,6 +116,12 @@ set(glib_patch "${CMAKE_SOURCE_DIR}/${glib_patch_relative}")
 file(SHA256 "${glib_patch}" actual_glib_patch_sha256)
 if(NOT actual_glib_patch_sha256 STREQUAL glib_patch_sha256)
     message(FATAL_ERROR "GLib hardening patch does not match dependencies.lock.json")
+endif()
+
+set(libaom_patch "${CMAKE_SOURCE_DIR}/${libaom_patch_relative}")
+file(SHA256 "${libaom_patch}" actual_libaom_patch_sha256)
+if(NOT actual_libaom_patch_sha256 STREQUAL libaom_patch_sha256)
+    message(FATAL_ERROR "libaom hardening patch does not match dependencies.lock.json")
 endif()
 
 ExternalProject_Add(linux_headers
@@ -1158,6 +1169,78 @@ ExternalProject_Add(llvm_runtimes
         "${sysroot}/usr/lib/libunwind.a"
 )
 
+string(SUBSTRING "${libaom_patch_sha256}" 0 12 libaom_patch_build_id)
+set(libaom_prefix_directory
+    "${CMAKE_BINARY_DIR}/libaom-${libaom_version}-${libaom_patch_build_id}-prefix")
+set(libaom_binary_directory
+    "${CMAKE_BINARY_DIR}/libaom-${libaom_version}-${libaom_patch_build_id}-static-build")
+set(libaom_library "${sysroot}/usr/lib/libaom.a")
+set(libaom_include_dir "${sysroot}/usr/include")
+set(libaom_pkgconfig "${sysroot}/usr/lib/pkgconfig/aom.pc")
+ExternalProject_Add(libaom
+    DEPENDS fortify_headers llvm_runtimes
+    PREFIX "${libaom_prefix_directory}"
+    URL "${libaom_url}"
+    URL_HASH "SHA256=${libaom_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "libaom-${libaom_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    PATCH_COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "GIT_CEILING_DIRECTORIES=${CMAKE_BINARY_DIR}"
+        "${host_git}" apply "${libaom_patch}"
+    BINARY_DIR "${libaom_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DMEDIAPROXY_TARGET_TRIPLE=${target_triple}"
+        "-DMEDIAPROXY_TARGET_PROCESSOR=${target_processor}"
+        "-DMEDIAPROXY_COMPILER_RT_ARCH=${compiler_rt_arch}"
+        "-DMEDIAPROXY_SYSROOT=${sysroot}"
+        "-DMEDIAPROXY_CLANG=${host_clang}"
+        "-DMEDIAPROXY_CLANGXX=${host_clangxx}"
+        "-DMEDIAPROXY_LLD=${host_lld}"
+        "-DMEDIAPROXY_AR=${host_ar}"
+        "-DMEDIAPROXY_RANLIB=${host_ranlib}"
+        "-DMEDIAPROXY_NM=${host_nm}"
+        "-DMEDIAPROXY_STRIP=${host_strip}"
+        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags}"
+        "-DCMAKE_CXX_FLAGS=${dependency_hardening_cxx_flags}"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DAOM_TARGET_CPU=generic"
+        "-DCONFIG_PIC=1"
+        "-DCONFIG_AV1_DECODER=1"
+        "-DCONFIG_AV1_ENCODER=1"
+        "-DCONFIG_AV1_HIGHBITDEPTH=1"
+        "-DCONFIG_MULTITHREAD=1"
+        "-DCONFIG_RUNTIME_CPU_DETECT=0"
+        "-DCONFIG_WEBM_IO=0"
+        "-DCONFIG_LIBYUV=0"
+        "-DENABLE_DOCS=OFF"
+        "-DENABLE_EXAMPLES=OFF"
+        "-DENABLE_TESTDATA=OFF"
+        "-DENABLE_TESTS=OFF"
+        "-DENABLE_TOOLS=OFF"
+        "-DENABLE_WERROR=ON"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target aom aom_pc
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E env "DESTDIR=${sysroot}"
+        "${CMAKE_COMMAND}" --install <BINARY_DIR> --config Release
+    BUILD_BYPRODUCTS
+        "${libaom_library}"
+        "${libaom_include_dir}/aom/aom.h"
+        "${libaom_include_dir}/aom/aomcx.h"
+        "${libaom_include_dir}/aom/aomdx.h"
+        "${libaom_pkgconfig}"
+)
+
 string(SHA256 glib_build_configuration_sha256
     "${glib_patch_sha256}:${glib_cross_template_sha256}")
 string(SUBSTRING "${glib_build_configuration_sha256}" 0 12
@@ -1433,7 +1516,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers glib lcms2 libexif libexpat libffi libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers glib lcms2 libaom libexif libexpat libffi libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -1522,6 +1605,11 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_GTHREAD_PKGCONFIG=${gthread_pkgconfig}"
         "-DMEDIAPROXY_GMODULE_PKGCONFIG=${gmodule_pkgconfig}"
         "-DMEDIAPROXY_GIO_PKGCONFIG=${gio_pkgconfig}"
+        "-DMEDIAPROXY_LIBAOM_INCLUDE_DIR=${libaom_include_dir}"
+        "-DMEDIAPROXY_LIBAOM_LIBRARY=${libaom_library}"
+        "-DMEDIAPROXY_LIBAOM_COMPILE_COMMANDS=${libaom_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBAOM_CONFIG_HEADER=${libaom_binary_directory}/config/aom_config.h"
+        "-DMEDIAPROXY_LIBAOM_PKGCONFIG=${libaom_pkgconfig}"
         "-DMEDIAPROXY_PCRE2_INCLUDE_DIR=${pcre2_include_dir}"
         "-DMEDIAPROXY_PCRE2_LIBRARY=${pcre2_library}"
         "-DMEDIAPROXY_PCRE2_COMPILE_COMMANDS=${pcre2_binary_directory}/compile_commands.json"

@@ -136,6 +136,18 @@ foreach(required_glib_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_libaom_artifact IN ITEMS
+        "${MEDIAPROXY_LIBAOM_INCLUDE_DIR}/aom/aom.h"
+        "${MEDIAPROXY_LIBAOM_INCLUDE_DIR}/aom/aomcx.h"
+        "${MEDIAPROXY_LIBAOM_INCLUDE_DIR}/aom/aomdx.h"
+        "${MEDIAPROXY_LIBAOM_LIBRARY}"
+        "${MEDIAPROXY_LIBAOM_PKGCONFIG}")
+    if(NOT EXISTS "${required_libaom_artifact}")
+        message(FATAL_ERROR
+            "Pinned libaom artifact is absent: ${required_libaom_artifact}")
+    endif()
+endforeach()
+
 foreach(required_lcms2_artifact IN ITEMS
         "${MEDIAPROXY_LCMS2_INCLUDE_DIR}/lcms2.h"
         "${MEDIAPROXY_LCMS2_LIBRARY}")
@@ -264,6 +276,11 @@ set_target_properties(mediaproxy_gio PROPERTIES
         "mediaproxy_gmodule;mediaproxy_gobject;mediaproxy_glib;mediaproxy_zlib"
 )
 
+add_library(mediaproxy_libaom STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libaom PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBAOM_LIBRARY}"
+)
+
 add_library(mediaproxy_lcms2 STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_lcms2 PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LCMS2_LIBRARY}"
@@ -310,6 +327,7 @@ target_link_libraries(bootstrap
         mediaproxy_libffi
         mediaproxy_gio
         mediaproxy_gthread
+        mediaproxy_libaom
         mediaproxy_pcre2
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
@@ -359,6 +377,7 @@ if(BUILD_TESTING)
         tests/smoke/libexpat_test.cpp
         tests/smoke/libffi_test.cpp
         tests/smoke/glib_test.cpp
+        tests/smoke/libaom_test.cpp
         tests/smoke/pcre2_test.cpp
         tests/smoke/libjpeg_turbo_test.cpp
         tests/smoke/libnsgif_test.cpp
@@ -380,6 +399,7 @@ if(BUILD_TESTING)
             mediaproxy_libffi
             mediaproxy_gio
             mediaproxy_gthread
+            mediaproxy_libaom
             mediaproxy_pcre2
             mediaproxy_libjpeg_turbo
             mediaproxy_libnsgif
@@ -608,6 +628,22 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/GlibBuildTest.cmake"
+    )
+    add_test(
+        NAME libaom-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_LIBAOM_COMPILE_COMMANDS}"
+            "-DCONFIG_HEADER=${MEDIAPROXY_LIBAOM_CONFIG_HEADER}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLIBAOM_ARCHIVE=${MEDIAPROXY_LIBAOM_LIBRARY}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DPKGCONFIG=${MEDIAPROXY_LIBAOM_PKGCONFIG}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibaomBuildTest.cmake"
     )
     add_test(
         NAME lcms2-build-policy

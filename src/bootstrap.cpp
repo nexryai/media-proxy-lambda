@@ -2,6 +2,10 @@
 #include <memory>
 #include <string_view>
 
+#include <aom/aom_codec.h>
+#include <aom/aom_encoder.h>
+#include <aom/aomcx.h>
+#include <aom/aomdx.h>
 #include <curl/curl.h>
 #include <expat.h>
 #include <ffi.h>
@@ -147,6 +151,21 @@ int main()
                 != static_cast<gssize>(sizeof(glib_buffer))
             || std::string_view{glib_buffer, sizeof(glib_buffer)}
                 != glib_probe) {
+        return 1;
+    }
+    auto* volatile aom_version_function = &aom_codec_version;
+    auto* volatile aom_encoder_interface_function = &aom_codec_av1_cx;
+    auto* volatile aom_decoder_interface_function = &aom_codec_av1_dx;
+    auto* volatile aom_encoder_config_function = &aom_codec_enc_config_default;
+    aom_codec_iface_t* const aom_encoder_interface =
+        aom_encoder_interface_function();
+    aom_codec_enc_cfg_t aom_encoder_config{};
+    if (aom_version_function() != ((3 << 16) | (14 << 8) | 1)
+            || aom_encoder_interface == nullptr
+            || aom_decoder_interface_function() == nullptr
+            || aom_encoder_config_function(aom_encoder_interface,
+                   &aom_encoder_config, AOM_USAGE_ALL_INTRA)
+                != AOM_CODEC_OK) {
         return 1;
     }
     auto* volatile pcre2_config_function = &pcre2_config;

@@ -287,6 +287,39 @@
             "reason": "Pinned GLib, GObject, and GIO foundation required by libvips"
         },
         {
+            "name": "libaom",
+            "version": "3.14.1",
+            "revision": "03087864cf4bea6abb0d28f95cf7843511413d8f",
+            "url": "https://aomedia.googlesource.com/aom/+archive/refs/tags/v3.14.1.tar.gz",
+            "sha256": "90d7272148f671951894ed379b1b8a1fde48690cf5aeb0d2f8eecf601db36f47",
+            "license": "BSD-2-Clause AND LicenseRef-AOM-Patent-License-1.0",
+            "buildOptions": [
+                "static libaom archive with PIC",
+                "AV1 decoder and encoder with high-bit-depth support",
+                "generic C target with runtime CPU detection and architecture SIMD disabled",
+                "multithreading retained for bounded image encode/decode work",
+                "WebM I/O and bundled libyuv disabled",
+                "examples, tools, tests, test data, and documentation disabled",
+                "production hardening flags including fortify, ThinLTO, trapping CFI, stack protection, zero initialization, and architecture branch protection",
+                "warnings as errors",
+                "LLVM tools only"
+            ],
+            "patches": [
+                {
+                    "path": "cmake/patches/libaom-3.14.1-preserve-fortify.patch",
+                    "sha256": "32eafecf0cdc20a822f6c5a3f18c3ee122d52220e6df7bd42b294084e2601672",
+                    "upstreamCommit": null,
+                    "reason": "Preserve the superbuild's _FORTIFY_SOURCE=3 setting in Release builds instead of overriding it with _FORTIFY_SOURCE=0"
+                }
+            ],
+            "securityNotes": [
+                "generic target removes assembly and runtime CPU dispatch from the static deployment graph",
+                "no plugin or runtime codec-loading interface is built",
+                "first-party media code must apply checked dimension and resource limits before invoking libaom"
+            ],
+            "reason": "Pinned AV1 decode and encode implementation for no-plugin libheif AVIF support"
+        },
+        {
             "name": "libpng",
             "version": "1.6.58",
             "revision": "3061454d980de7d53608f594194cfac722721d2a",

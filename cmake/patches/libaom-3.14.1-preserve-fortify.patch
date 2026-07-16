@@ -1,0 +1,9 @@
+diff --git a/cmake/aom_configure.cmake b/cmake/aom_configure.cmake
+index 66163ce..274b7bf 100644
+--- a/cmake/aom_configure.cmake
++++ b/cmake/aom_configure.cmake
+@@ -405,4 +405 @@ macro(aom_configure)
+-  if(build_type_lowercase MATCHES "rel")
+-    add_compiler_flag_if_supported("-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0")
+-  endif()
+   add_compiler_flag_if_supported("-D_LARGEFILE_SOURCE")
