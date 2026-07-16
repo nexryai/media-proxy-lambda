@@ -33,6 +33,9 @@ find_program(host_strip NAMES llvm-strip-22 REQUIRED)
 find_program(host_readelf NAMES llvm-readelf-22 REQUIRED)
 find_program(host_make NAMES make REQUIRED)
 find_program(host_git NAMES git REQUIRED)
+find_program(host_meson NAMES meson REQUIRED)
+find_program(host_ninja NAMES ninja REQUIRED)
+find_program(host_pkgconf NAMES pkgconf REQUIRED)
 
 set(source_cache "${CMAKE_SOURCE_DIR}/.cache/sources")
 set(sysroot "${CMAKE_BINARY_DIR}/sysroot")
@@ -60,6 +63,11 @@ mediaproxy_lock_get(libexpat version libexpat_version)
 mediaproxy_lock_get(libffi url libffi_url)
 mediaproxy_lock_get(libffi sha256 libffi_sha256)
 mediaproxy_lock_get(libffi version libffi_version)
+mediaproxy_lock_get(glib url glib_url)
+mediaproxy_lock_get(glib sha256 glib_sha256)
+mediaproxy_lock_get(glib version glib_version)
+mediaproxy_lock_get_patch(glib 0 path glib_patch_relative)
+mediaproxy_lock_get_patch(glib 0 sha256 glib_patch_sha256)
 mediaproxy_lock_get(pcre2 url pcre2_url)
 mediaproxy_lock_get(pcre2 sha256 pcre2_sha256)
 mediaproxy_lock_get(pcre2 version pcre2_version)
@@ -97,6 +105,12 @@ set(musl_patch "${CMAKE_SOURCE_DIR}/${musl_patch_relative}")
 file(SHA256 "${musl_patch}" actual_musl_patch_sha256)
 if(NOT actual_musl_patch_sha256 STREQUAL musl_patch_sha256)
     message(FATAL_ERROR "musl security patch does not match dependencies.lock.json")
+endif()
+
+set(glib_patch "${CMAKE_SOURCE_DIR}/${glib_patch_relative}")
+file(SHA256 "${glib_patch}" actual_glib_patch_sha256)
+if(NOT actual_glib_patch_sha256 STREQUAL glib_patch_sha256)
+    message(FATAL_ERROR "GLib hardening patch does not match dependencies.lock.json")
 endif()
 
 ExternalProject_Add(linux_headers
@@ -207,6 +221,33 @@ string(JOIN " " dependency_hardening_cxx_flags
     ${dependency_hardening_cxx_flags_list})
 string(JOIN " " dependency_hardening_asm_flags
     -fPIC ${dependency_arch_hardening_flags})
+
+if(MEDIAPROXY_TARGET_ARCH STREQUAL "x86_64")
+    set(ARCH_HARDENING_FLAGS
+        "'-fstack-clash-protection', '-fcf-protection=full'")
+else()
+    set(ARCH_HARDENING_FLAGS "'-mbranch-protection=standard'")
+endif()
+set(HOST_CLANG "${host_clang}")
+set(HOST_AR "${host_ar}")
+set(HOST_STRIP "${host_strip}")
+set(HOST_PKGCONF "${host_pkgconf}")
+set(TARGET_TRIPLE "${target_triple}")
+set(TARGET_PROCESSOR "${target_processor}")
+set(SYSROOT "${sysroot}")
+set(FORTIFY_INCLUDE_DIR "${fortify_headers_include_dir}")
+set(COMPILER_RT_LIBRARY "${compiler_rt_library}")
+set(COMPILER_RT_CRTBEGIN "${compiler_rt_crtbegin}")
+set(COMPILER_RT_CRTEND "${compiler_rt_crtend}")
+set(glib_cross_template
+    "${CMAKE_SOURCE_DIR}/cmake/dependencies/glib/meson-cross.ini.in")
+file(SHA256 "${glib_cross_template}" glib_cross_template_sha256)
+set(glib_cross_file "${CMAKE_BINARY_DIR}/glib-cross.ini")
+configure_file(
+    "${glib_cross_template}"
+    "${glib_cross_file}"
+    @ONLY
+)
 
 set(nghttp2_binary_directory "${CMAKE_BINARY_DIR}/nghttp2-build")
 set(nghttp2_library "${sysroot}/usr/lib/libnghttp2.a")
@@ -1117,6 +1158,106 @@ ExternalProject_Add(llvm_runtimes
         "${sysroot}/usr/lib/libunwind.a"
 )
 
+string(SHA256 glib_build_configuration_sha256
+    "${glib_patch_sha256}:${glib_cross_template_sha256}")
+string(SUBSTRING "${glib_build_configuration_sha256}" 0 12
+    glib_patch_build_id)
+set(glib_prefix_directory
+    "${CMAKE_BINARY_DIR}/glib-${glib_version}-${glib_patch_build_id}-prefix")
+set(glib_binary_directory
+    "${CMAKE_BINARY_DIR}/glib-${glib_version}-${glib_patch_build_id}-static-build")
+set(glib_include_dir "${sysroot}/usr/include/glib-2.0")
+set(glib_config_include_dir "${sysroot}/usr/lib/glib-2.0/include")
+set(glib_library "${sysroot}/usr/lib/libglib-2.0.a")
+set(gobject_library "${sysroot}/usr/lib/libgobject-2.0.a")
+set(gthread_library "${sysroot}/usr/lib/libgthread-2.0.a")
+set(gmodule_library "${sysroot}/usr/lib/libgmodule-2.0.a")
+set(gio_library "${sysroot}/usr/lib/libgio-2.0.a")
+set(glib_pkgconfig "${sysroot}/usr/lib/pkgconfig/glib-2.0.pc")
+set(gobject_pkgconfig "${sysroot}/usr/lib/pkgconfig/gobject-2.0.pc")
+set(gthread_pkgconfig "${sysroot}/usr/lib/pkgconfig/gthread-2.0.pc")
+set(gmodule_pkgconfig
+    "${sysroot}/usr/lib/pkgconfig/gmodule-no-export-2.0.pc")
+set(gio_pkgconfig "${sysroot}/usr/lib/pkgconfig/gio-2.0.pc")
+ExternalProject_Add(glib
+    DEPENDS compiler_rt fortify_headers libffi pcre2 zlib
+    PREFIX "${glib_prefix_directory}"
+    URL "${glib_url}"
+    URL_HASH "SHA256=${glib_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "glib-${glib_version}.tar.xz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    PATCH_COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "GIT_CEILING_DIRECTORIES=${CMAKE_BINARY_DIR}"
+        "${host_git}" apply "${glib_patch}"
+    BINARY_DIR "${glib_binary_directory}"
+    CONFIGURE_COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "PKG_CONFIG_LIBDIR=${sysroot}/usr/lib/pkgconfig"
+        "PKG_CONFIG_SYSROOT_DIR=${sysroot}"
+        "${host_meson}" setup <BINARY_DIR> <SOURCE_DIR>
+        "--cross-file=${glib_cross_file}"
+        --prefix=/usr
+        --libdir=lib
+        --buildtype=release
+        --default-library=static
+        --wrap-mode=nodownload
+        --auto-features=disabled
+        -Db_staticpic=true
+        -Db_lto=false
+        -Dwerror=true
+        -Dtests=false
+        -Dinstalled_tests=false
+        -Dintrospection=disabled
+        -Ddocumentation=false
+        -Dman-pages=disabled
+        -Dnls=disabled
+        -Dselinux=disabled
+        -Dlibmount=disabled
+        -Dxattr=false
+        -Dlibelf=disabled
+        -Ddtrace=disabled
+        -Dsystemtap=disabled
+        -Dsysprof=disabled
+        -Doss_fuzz=disabled
+        -Dglib_debug=disabled
+        -Dglib_assert=true
+        -Dglib_checks=true
+        -Dbsymbolic_functions=false
+        -Dmultiarch=false
+        -Dfile_monitor_backend=inotify
+        -Dgio_module_dir=lib/mediaproxy-gio-modules-disabled
+    BUILD_COMMAND
+        "${host_ninja}" -C <BINARY_DIR>
+        glib/libglib-2.0.a
+        gobject/libgobject-2.0.a
+        gthread/libgthread-2.0.a
+        gmodule/libgmodule-2.0.a
+        gio/libgio-2.0.a
+    INSTALL_COMMAND
+        "${host_meson}" install -C <BINARY_DIR>
+        --no-rebuild
+        "--destdir=${sysroot}"
+        --tags=devel
+    BUILD_BYPRODUCTS
+        "${glib_library}"
+        "${gobject_library}"
+        "${gthread_library}"
+        "${gmodule_library}"
+        "${gio_library}"
+        "${glib_include_dir}/glib.h"
+        "${glib_include_dir}/glib-object.h"
+        "${glib_include_dir}/gio/gio.h"
+        "${glib_config_include_dir}/glibconfig.h"
+        "${glib_pkgconfig}"
+        "${gobject_pkgconfig}"
+        "${gthread_pkgconfig}"
+        "${gmodule_pkgconfig}"
+        "${gio_pkgconfig}"
+)
+
 set(boringssl_binary_directory "${CMAKE_BINARY_DIR}/boringssl-build")
 set(boringssl_crypto_library "${sysroot}/usr/lib/libcrypto.a")
 set(boringssl_ssl_library "${sysroot}/usr/lib/libssl.a")
@@ -1292,7 +1433,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers lcms2 libexif libexpat libffi libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
+    DEPENDS boringssl curl fortify_headers glib lcms2 libexif libexpat libffi libjpeg_turbo libnsgif libpng libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -1366,6 +1507,21 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_LIBFFI_COMPILE_COMMANDS=${libffi_cmake_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_LIBFFI_CONFIG_HEADER=${libffi_config_header}"
         "-DMEDIAPROXY_LIBFFI_PKGCONFIG=${libffi_pkgconfig}"
+        "-DMEDIAPROXY_GLIB_INCLUDE_DIR=${glib_include_dir}"
+        "-DMEDIAPROXY_GLIB_CONFIG_INCLUDE_DIR=${glib_config_include_dir}"
+        "-DMEDIAPROXY_GLIB_LIBRARY=${glib_library}"
+        "-DMEDIAPROXY_GOBJECT_LIBRARY=${gobject_library}"
+        "-DMEDIAPROXY_GTHREAD_LIBRARY=${gthread_library}"
+        "-DMEDIAPROXY_GMODULE_LIBRARY=${gmodule_library}"
+        "-DMEDIAPROXY_GIO_LIBRARY=${gio_library}"
+        "-DMEDIAPROXY_GLIB_COMPILE_COMMANDS=${glib_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_GLIB_CONFIG_HEADER=${glib_binary_directory}/glib/glibconfig.h"
+        "-DMEDIAPROXY_GMODULE_CONFIG_HEADER=${glib_binary_directory}/gmodule/gmoduleconf.h"
+        "-DMEDIAPROXY_GLIB_PKGCONFIG=${glib_pkgconfig}"
+        "-DMEDIAPROXY_GOBJECT_PKGCONFIG=${gobject_pkgconfig}"
+        "-DMEDIAPROXY_GTHREAD_PKGCONFIG=${gthread_pkgconfig}"
+        "-DMEDIAPROXY_GMODULE_PKGCONFIG=${gmodule_pkgconfig}"
+        "-DMEDIAPROXY_GIO_PKGCONFIG=${gio_pkgconfig}"
         "-DMEDIAPROXY_PCRE2_INCLUDE_DIR=${pcre2_include_dir}"
         "-DMEDIAPROXY_PCRE2_LIBRARY=${pcre2_library}"
         "-DMEDIAPROXY_PCRE2_COMPILE_COMMANDS=${pcre2_binary_directory}/compile_commands.json"

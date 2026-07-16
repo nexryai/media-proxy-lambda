@@ -161,6 +161,16 @@ or equivalent coverage requires compatible instrumentation. Any dependency
 exception must be explicit, justified, and tested; flags must never silently
 disappear because a compiler probe failed.
 
+GLib, GObject, GModule, and GIO are the single approved dependency-level CFI
+exception. Their public generic callback ABI intentionally permits pervasive
+function-pointer conversions which trapping Clang CFI rejects during ordinary
+GObject class initialization, interface initialization, and destroy callbacks.
+Build these archives without CFI instrumentation while retaining fortify,
+ThinLTO, stack protection, zero initialization, hidden visibility, warning
+errors, and architecture branch protection. A build-policy test must enforce
+both the narrow absence of GLib CFI and the presence of every retained
+hardening flag; first-party code and compatible dependencies keep trapping CFI.
+
 The production and test baseline includes:
 
 - `-fstack-protector-strong`, `-ftrivial-auto-var-init=zero`, and

@@ -250,6 +250,43 @@
             "reason": "Bounded HTTP content decoding and PNG/codec compression support"
         },
         {
+            "name": "glib",
+            "version": "2.88.2",
+            "revision": "07233788db387cc362f09c4882ce4838f4a553a4",
+            "url": "https://download.gnome.org/sources/glib/2.88/glib-2.88.2.tar.xz",
+            "sha256": "cf3f215a640c8a4257f14317586b8f1fdd25a10a93cb4bdda147c0f9ad88e74f",
+            "license": "LGPL-2.1-or-later",
+            "buildOptions": [
+                "Meson cross build driven by the CMake superbuild",
+                "default_library=static and b_staticpic=true",
+                "GLib, GObject, GThread, GModule stub, and GIO static archives only",
+                "GModule dynamic loading disabled for the static build and GIO modules cannot load shared objects",
+                "tests, installed tests, tools, documentation, man pages, introspection, GIRepository, translations, and fuzz targets excluded",
+                "SELinux, libmount, xattr, libelf, DTrace, SystemTap, and sysprof integrations disabled",
+                "debug infrastructure disabled while GLib assertions and API checks remain enabled",
+                "pinned static PCRE2, libffi, and zlib dependencies from the target sysroot",
+                "production hardening flags including fortify, split-unit ThinLTO, stack protection, zero initialization, and architecture branch protection",
+                "explicit CFI exception for GLib's pervasive documented generic callback ABI; all other hardening remains enabled",
+                "upstream warning level 3 with warnings as errors",
+                "development headers and pkg-config metadata installed without target utilities or shared libraries",
+                "LLVM tools only"
+            ],
+            "patches": [
+                {
+                    "path": "cmake/patches/glib-2.88.2-disable-static-dlopen.patch",
+                    "sha256": "a6103ea35c5ccdea9f56d08bded4d9c8c74b01776834a7d996d86ba7b5b5a95a",
+                    "upstreamCommit": null,
+                    "reason": "Disable dlopen-backed GModule, omit GIRepository when introspection is disabled, make Clang 22 conversions and fallthrough explicit in target-specific paths, use the signed gint8 range on unsigned-char arm64, and scope a musl CMSG_NXTHDR sign warning in the deployment-only static build"
+                }
+            ],
+            "securityNotes": [
+                "GIO environment and compiled module paths cannot load code because G_MODULE_SUPPORTED is false",
+                "GLib is the sole CFI dependency exception because its public generic callback ABI intentionally permits function-pointer conversions rejected by Clang CFI; first-party code and compatible dependencies retain trapping CFI",
+                "static LGPL distribution requires the corresponding-source and relinking compliance bundle defined by the release plan"
+            ],
+            "reason": "Pinned GLib, GObject, and GIO foundation required by libvips"
+        },
+        {
             "name": "libpng",
             "version": "1.6.58",
             "revision": "3061454d980de7d53608f594194cfac722721d2a",

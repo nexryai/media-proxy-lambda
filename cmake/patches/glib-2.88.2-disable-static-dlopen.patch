@@ -1,0 +1,132 @@
+diff --git a/meson.build b/meson.build
+index e3808f7..bf8640e 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1143,13 +1143,6 @@ int main (void)
+ }'''
+ libdl_dep = []
+-if cc.links(dlopen_dlsym_test_code, name : 'dlopen() and dlsym() in system libraries')
+-  have_dlopen_dlsym = true
+-elif cc.links(dlopen_dlsym_test_code, args : '-ldl', name : 'dlopen() and dlsym() in libdl')
+-  have_dlopen_dlsym = true
+-  libdl_dep = cc.find_library('dl')
+-else
+-  have_dlopen_dlsym = false
+-endif
++have_dlopen_dlsym = false
+ 
+ # if statfs() takes 2 arguments (Posix) or 4 (Solaris)
+ if have_func_statfs
+@@ -2735,7 +2728,9 @@ subdir('gobject')
+ subdir('gthread')
+ subdir('gmodule')
+ subdir('gio')
+-subdir('girepository')
++if get_option('introspection').allowed()
++  subdir('girepository')
++endif
+ subdir('fuzzing')
+ if get_option('tests')
+   subdir('tests')
+diff --git a/glib/glib-private.h b/glib/glib-private.h
+index 0cbf8ad..f60014c 100644
+--- a/glib/glib-private.h
++++ b/glib/glib-private.h
+@@ -100,7 +100,7 @@ g_leak_sanitizer_is_supported (void)
+ #if defined (_GLIB_ADDRESS_SANITIZER)
+   return TRUE;
+ #elif defined (HAS_DYNAMIC_ASAN_LOADING)
+-  return G_UNLIKELY (__lsan_enable != NULL && __lsan_ignore_object != NULL);
++  return (gboolean) G_UNLIKELY (__lsan_enable != NULL && __lsan_ignore_object != NULL);
+ #else
+   return FALSE;
+ #endif
+diff --git a/gobject/gmarshal.c b/gobject/gmarshal.c
+index b4468a3..6567d9e 100644
+--- a/gobject/gmarshal.c
++++ b/gobject/gmarshal.c
+@@ -56,8 +56,8 @@
+ #define g_marshal_value_peek_ulong(v)    (v)->data[0].v_ulong
+ #define g_marshal_value_peek_int64(v)    (v)->data[0].v_int64
+ #define g_marshal_value_peek_uint64(v)   (v)->data[0].v_uint64
+-#define g_marshal_value_peek_enum(v)     (v)->data[0].v_long
+-#define g_marshal_value_peek_flags(v)    (v)->data[0].v_ulong
++#define g_marshal_value_peek_enum(v)     (gint) (v)->data[0].v_long
++#define g_marshal_value_peek_flags(v)    (guint) (v)->data[0].v_ulong
+ #define g_marshal_value_peek_float(v)    (v)->data[0].v_float
+ #define g_marshal_value_peek_double(v)   (v)->data[0].v_double
+ #define g_marshal_value_peek_string(v)   (v)->data[0].v_pointer
+diff --git a/gobject/gparamspecs.c b/gobject/gparamspecs.c
+index 7231087..e74bd87 100644
+--- a/gobject/gparamspecs.c
++++ b/gobject/gparamspecs.c
+@@ -47,8 +47,8 @@ param_char_init (GParamSpec *pspec)
+ {
+   GParamSpecChar *cspec = G_PARAM_SPEC_CHAR (pspec);
+   
+-  cspec->minimum = CHAR_MIN;
+-  cspec->maximum = CHAR_MAX;
++  cspec->minimum = G_MININT8;
++  cspec->maximum = G_MAXINT8;
+   cspec->default_value = 0;
+ }
+ 
+diff --git a/gio/gsocket.c b/gio/gsocket.c
+index 202f46d..71902ef 100644
+--- a/gio/gsocket.c
++++ b/gio/gsocket.c
+@@ -4771,6 +4771,12 @@ block_on_timeout (GSocket       *socket,
+ 
+ #ifndef G_OS_WIN32
+ 
++/* musl's CMSG_NXTHDR compares size_t with a pointer difference. */
++#ifdef __clang__
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wsign-compare"
++#endif
++
+ #ifdef HAVE_QNX
+ /* QNX has this weird upper limit, or at least used to back in the 6.x days.
+  * This was discovered empirically and doesn't appear to be mentioned in any
+@@ -5626,6 +5632,10 @@ g_socket_send_messages_with_timeout (GSocket        *socket,
+ #endif
+ }
+ 
++#ifdef __clang__
++#pragma clang diagnostic pop
++#endif
++
+ static GSocketAddress *
+ cache_recv_address (GSocket *socket, struct sockaddr *native, size_t native_len)
+ {
+diff --git a/glib/gnulib/vasnprintf.c b/glib/gnulib/vasnprintf.c
+index 7533425..70d2d2b 100644
+--- a/glib/gnulib/vasnprintf.c
++++ b/glib/gnulib/vasnprintf.c
+@@ -4849,7 +4849,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
+                     *fbp++ = 'l';
+ # endif
+ #endif
+-                    FALLTHROUGH;
++                    __attribute__ ((__fallthrough__));
+                   case TYPE_LONGINT:
+                   case TYPE_ULONGINT:
+ #if HAVE_WINT_T
+@@ -5332,7 +5332,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
+ #endif
+ 
+ #if !USE_SNPRINTF
+-                    if (count >= tmp_length)
++                    if ((size_t) count >= tmp_length)
+                       /* tmp_length was incorrectly calculated - fix the
+                          code above!  */
+                       abort ();
+@@ -5423,7 +5423,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
+ 
+ #if DCHAR_IS_TCHAR && !USE_SNPRINTF
+                     /* Make room for the result.  */
+-                    if (count > allocated - length)
++                    if ((size_t) count > allocated - length)
+                       {
+                         /* Need at least count elements.  But allocate
+                            proportionally.  */

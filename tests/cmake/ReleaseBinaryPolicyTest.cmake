@@ -38,7 +38,14 @@ foreach(forbidden_pattern IN LISTS forbidden_symbol_patterns)
 endforeach()
 
 file(READ "${LINK_MAP}" link_map)
-set(forbidden_test_patterns gtest gmock "testing::")
+# Avoid matching GLib's production gtestutils.c implementation. These patterns
+# identify GoogleTest/GoogleMock archives, source trees, and C++ symbols.
+set(forbidden_test_patterns
+    libgtest
+    libgmock
+    googletest-src
+    googlemock-src
+    "testing::")
 foreach(forbidden_pattern IN LISTS forbidden_test_patterns)
     if(link_map MATCHES "${forbidden_pattern}")
         message(FATAL_ERROR

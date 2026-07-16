@@ -5,6 +5,10 @@
 #include <curl/curl.h>
 #include <expat.h>
 #include <ffi.h>
+#include <gio/gio.h>
+#include <glib.h>
+#include <glib-object.h>
+#include <gmodule.h>
 #include <jpeglib.h>
 #include <lcms2.h>
 #include <libexif/exif-tag.h>
@@ -123,6 +127,26 @@ int main()
             || ffi_prepare_function(&ffi_call_interface, FFI_DEFAULT_ABI,
                 2, &ffi_type_sint32, ffi_argument_types)
                 != FFI_OK) {
+        return 1;
+    }
+    if (glib_major_version != GLIB_MAJOR_VERSION
+            || glib_minor_version != GLIB_MINOR_VERSION
+            || glib_micro_version != GLIB_MICRO_VERSION
+            || g_module_supported()) {
+        return 1;
+    }
+    constexpr std::string_view glib_probe = "gio";
+    std::unique_ptr<GInputStream, decltype(&g_object_unref)> glib_stream(
+        g_memory_input_stream_new_from_data(
+            glib_probe.data(), glib_probe.size(), nullptr),
+        &g_object_unref);
+    char glib_buffer[3]{};
+    if (glib_stream == nullptr
+            || g_input_stream_read(glib_stream.get(), glib_buffer,
+                   sizeof(glib_buffer), nullptr, nullptr)
+                != static_cast<gssize>(sizeof(glib_buffer))
+            || std::string_view{glib_buffer, sizeof(glib_buffer)}
+                != glib_probe) {
         return 1;
     }
     auto* volatile pcre2_config_function = &pcre2_config;
