@@ -80,11 +80,6 @@ mediaproxy_lock_get(glib sha256 glib_sha256)
 mediaproxy_lock_get(glib version glib_version)
 mediaproxy_lock_get_patch(glib 0 path glib_patch_relative)
 mediaproxy_lock_get_patch(glib 0 sha256 glib_patch_sha256)
-mediaproxy_lock_get(pixman url pixman_url)
-mediaproxy_lock_get(pixman sha256 pixman_sha256)
-mediaproxy_lock_get(pixman version pixman_version)
-mediaproxy_lock_get_patch(pixman 0 path pixman_patch_relative)
-mediaproxy_lock_get_patch(pixman 0 sha256 pixman_patch_sha256)
 mediaproxy_lock_get(libaom url libaom_url)
 mediaproxy_lock_get(libaom sha256 libaom_sha256)
 mediaproxy_lock_get(libaom version libaom_version)
@@ -161,12 +156,6 @@ set(libvips_patch "${CMAKE_SOURCE_DIR}/${libvips_patch_relative}")
 file(SHA256 "${libvips_patch}" actual_libvips_patch_sha256)
 if(NOT actual_libvips_patch_sha256 STREQUAL libvips_patch_sha256)
     message(FATAL_ERROR "libvips build patch does not match dependencies.lock.json")
-endif()
-
-set(pixman_patch "${CMAKE_SOURCE_DIR}/${pixman_patch_relative}")
-file(SHA256 "${pixman_patch}" actual_pixman_patch_sha256)
-if(NOT actual_pixman_patch_sha256 STREQUAL pixman_patch_sha256)
-    message(FATAL_ERROR "pixman build patch does not match dependencies.lock.json")
 endif()
 
 ExternalProject_Add(linux_headers
@@ -314,16 +303,6 @@ configure_file(
     "${libvips_cross_file}"
     @ONLY
 )
-set(pixman_cross_template
-    "${CMAKE_SOURCE_DIR}/cmake/dependencies/pixman/meson-cross.ini.in")
-file(SHA256 "${pixman_cross_template}" pixman_cross_template_sha256)
-set(pixman_cross_file "${CMAKE_BINARY_DIR}/pixman-cross.ini")
-configure_file(
-    "${pixman_cross_template}"
-    "${pixman_cross_file}"
-    @ONLY
-)
-
 set(nghttp2_binary_directory "${CMAKE_BINARY_DIR}/nghttp2-build")
 set(nghttp2_library "${sysroot}/usr/lib/libnghttp2.a")
 set(nghttp2_include_dir "${sysroot}/usr/include")
@@ -1333,87 +1312,6 @@ ExternalProject_Add(ada_idna
         "${ada_idna_license}"
 )
 
-string(SHA256 pixman_build_configuration_sha256
-    "${pixman_sha256}:${pixman_cross_template_sha256}:${pixman_patch_sha256}:generic-c-v1")
-string(SUBSTRING "${pixman_build_configuration_sha256}" 0 12
-    pixman_build_id)
-set(pixman_prefix_directory
-    "${CMAKE_BINARY_DIR}/pixman-${pixman_version}-${pixman_build_id}-prefix")
-set(pixman_binary_directory
-    "${CMAKE_BINARY_DIR}/pixman-${pixman_version}-${pixman_build_id}-static-build")
-set(pixman_library "${sysroot}/usr/lib/libpixman-1.a")
-set(pixman_include_dir "${sysroot}/usr/include/pixman-1")
-set(pixman_pkgconfig "${sysroot}/usr/lib/pkgconfig/pixman-1.pc")
-set(pixman_config_header
-    "${pixman_binary_directory}/pixman/pixman-config.h")
-set(pixman_license "${sysroot}/usr/share/licenses/pixman/COPYING")
-ExternalProject_Add(pixman
-    DEPENDS compiler_rt fortify_headers llvm_runtimes
-    PREFIX "${pixman_prefix_directory}"
-    URL "${pixman_url}"
-    URL_HASH "SHA256=${pixman_sha256}"
-    DOWNLOAD_DIR "${source_cache}"
-    DOWNLOAD_NAME "pixman-${pixman_version}.tar.gz"
-    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
-    UPDATE_DISCONNECTED TRUE
-    PATCH_COMMAND
-        "${CMAKE_COMMAND}" -E env
-        "GIT_CEILING_DIRECTORIES=${CMAKE_BINARY_DIR}"
-        "${host_git}" apply --unidiff-zero "${pixman_patch}"
-    BINARY_DIR "${pixman_binary_directory}"
-    CONFIGURE_COMMAND
-        "${CMAKE_COMMAND}" -E env
-        "PKG_CONFIG_LIBDIR=${sysroot}/usr/lib/pkgconfig"
-        "PKG_CONFIG_SYSROOT_DIR=${sysroot}"
-        "${host_meson}" setup <BINARY_DIR> <SOURCE_DIR>
-        "--cross-file=${pixman_cross_file}"
-        --prefix=/usr
-        --libdir=lib
-        --buildtype=release
-        --default-library=static
-        --wrap-mode=nodownload
-        --auto-features=disabled
-        --warnlevel=3
-        -Db_staticpic=true
-        -Db_lto=false
-        -Dwerror=true
-        -Dloongson-mmi=disabled
-        -Dmmx=disabled
-        -Dsse2=disabled
-        -Dssse3=disabled
-        -Dvmx=disabled
-        -Darm-simd=disabled
-        -Dneon=disabled
-        -Da64-neon=disabled
-        -Dmips-dspr2=disabled
-        -Drvv=disabled
-        -Dgnu-inline-asm=disabled
-        -Dtls=enabled
-        -Dopenmp=disabled
-        -Dtimers=false
-        -Dgnuplot=false
-        -Dgtk=disabled
-        -Dlibpng=disabled
-        -Dtests=disabled
-        -Ddemos=disabled
-    BUILD_COMMAND
-        "${host_ninja}" -C <BINARY_DIR> pixman/libpixman-1.a
-    INSTALL_COMMAND
-        "${host_meson}" install -C <BINARY_DIR>
-        --no-rebuild
-        "--destdir=${sysroot}"
-        COMMAND "${CMAKE_COMMAND}" -E make_directory
-        "${sysroot}/usr/share/licenses/pixman"
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-        <SOURCE_DIR>/COPYING "${pixman_license}"
-    BUILD_BYPRODUCTS
-        "${pixman_library}"
-        "${pixman_include_dir}/pixman.h"
-        "${pixman_include_dir}/pixman-version.h"
-        "${pixman_pkgconfig}"
-        "${pixman_license}"
-)
-
 string(SHA256 libaom_build_configuration_sha256
     "${libaom_patch_sha256}")
 string(SUBSTRING "${libaom_build_configuration_sha256}" 0 12
@@ -1731,7 +1629,7 @@ ExternalProject_Add(glib
 )
 
 string(SHA256 libvips_build_configuration_sha256
-    "${libvips_sha256}:${libvips_cross_template_sha256}:${libvips_patch_sha256}")
+    "${libvips_sha256}:${libvips_cross_template_sha256}:${libvips_patch_sha256}:no-svg-font-v1")
 string(SUBSTRING "${libvips_build_configuration_sha256}" 0 12
     libvips_build_id)
 set(libvips_prefix_directory
@@ -1791,6 +1689,9 @@ ExternalProject_Add(libvips
         -Dmodules=disabled
         -Dintrospection=disabled
         -Dvapi=false
+        -Drsvg=disabled
+        -Dpangocairo=disabled
+        -Dfontconfig=disabled
         -Dexif=enabled
         -Dheif=enabled
         -Dheif-module=disabled
@@ -2002,7 +1903,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS ada_idna boringssl curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 pixman yyjson zlib
+    DEPENDS ada_idna boringssl curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -2031,12 +1932,6 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_ADA_IDNA_LIBRARY=${ada_idna_library}"
         "-DMEDIAPROXY_ADA_IDNA_COMPILE_COMMANDS=${ada_idna_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_ADA_IDNA_LICENSE=${ada_idna_license}"
-        "-DMEDIAPROXY_PIXMAN_INCLUDE_DIR=${pixman_include_dir}"
-        "-DMEDIAPROXY_PIXMAN_LIBRARY=${pixman_library}"
-        "-DMEDIAPROXY_PIXMAN_COMPILE_COMMANDS=${pixman_binary_directory}/compile_commands.json"
-        "-DMEDIAPROXY_PIXMAN_CONFIG_HEADER=${pixman_config_header}"
-        "-DMEDIAPROXY_PIXMAN_PKGCONFIG=${pixman_pkgconfig}"
-        "-DMEDIAPROXY_PIXMAN_LICENSE=${pixman_license}"
         "-DMEDIAPROXY_YYJSON_INCLUDE_DIR=${yyjson_include_dir}"
         "-DMEDIAPROXY_YYJSON_LIBRARY=${yyjson_library}"
         "-DMEDIAPROXY_YYJSON_COMPILE_COMMANDS=${yyjson_binary_directory}/compile_commands.json"

@@ -145,9 +145,6 @@ evidence that these exceptions introduce no runtime shared dependency.
   object-size checks that the pinned musl headers do not provide themselves
 - CMake and Ninja
 - Python, Meson, and pkgconf for libvips/GLib-family builds
-- Rust/Cargo only for a pinned librsvg build if required; CMake remains the
-  public/orchestrating build and target native code must use the selected LLVM
-  toolchain
 
 ### Clang hardening profiles
 
@@ -238,16 +235,15 @@ The pinned graph is expected to include:
   and reject HEIF/HEIC input;
 - nsgif or giflib, selected and pinned with libvips;
 - Highway or ORC when enabled in the pinned libvips graph;
-- librsvg plus Cairo, the pinned generic-C pixman build, libxml2, freetype,
-  fontconfig, harfbuzz, and any required Pango/fribidi closure for
-  deterministic SVG output; pixman's architecture SIMD and inline assembly
-  remain disabled until equivalent hardening and golden-output evidence exists;
+- SVG is intentionally unsupported; keep librsvg, Cairo, pixman, libxml2,
+  FreeType, fontconfig, HarfBuzz, Pango, and fribidi outside the dependency
+  graph unless a future specification revision restores SVG input;
 - lcms2 and libexif if enabled for the golden media graph;
 - Ada URL's standalone IDNA translation unit, built without the full URL parser
   or simdutf, for pinned Unicode 17.0.0 UTS #46 nontransitional conversion;
   first-party validation supplies strict STD3, hyphen, and DNS-length checks,
   and libidn2/libunistring/ICU remain outside the dependency graph;
-- an embedded CA bundle and pinned embedded fonts/font configuration.
+- an embedded CA bundle.
 
 No separate APNG library is required. Implement the specified parser/compositor
 in first-party C++ using zlib/libpng primitives and libwebp. This avoids adopting
@@ -308,12 +304,12 @@ Deliverables:
 - Add a dependency lock and CMake `ExternalProject`/`FetchContent`
   orchestration with source hashes and offline rebuild support.
 - Build compiler-rt, libc++, libc++abi, and libunwind for musl; force Clang,
-  LLD, and LLVM binutils into nested CMake/Meson/Cargo builds.
+  LLD, and LLVM binutils into nested CMake/Meson builds.
 - Build BoringSSL, curl, nghttp2, yyjson, libvips, and the minimal codec closure
   as static PIC/LTO-compatible archives.
 - Disable loadable modules and explicitly register required libvips, GLib, and
   codec operations.
-- Generate embedded CA and deterministic font/configuration data.
+- Generate embedded CA data.
 - Add `bootstrap` packaging, link map, SBOM, notices/source bundle, relink
   bundle, and static ELF verification targets.
 - Add GoogleTest at a pinned revision as a test-only CMake dependency behind
@@ -411,8 +407,9 @@ Exit criteria:
 
 Deliverables:
 
-- Implement the 512-byte signature priority, binary fallback, SVG override,
-  and exact AVIF brand check from specification section 5.
+- Implement the 512-byte signature priority, binary fallback, deliberate
+  absence of an SVG override, and exact AVIF brand check from specification
+  section 5.
 - Initialize libvips once with concurrency/cache settings from section 7.
 - Implement supported MIME classification, all-pages loading, ICO first-entry
   fallback, 5120 rejection, and static/animated resize formulas.
@@ -468,8 +465,7 @@ Deliverables:
 - Add CloudFormation/SAM for custom `provided.al2023`, Function URL
   `InvokeMode: RESPONSE_STREAM`, parameterized auth, memory, timeout, ephemeral
   storage, concurrency, logs, and alarms.
-- Package only `bootstrap` and notices; CA/font/configuration data is compiled
-  in.
+- Package only `bootstrap` and notices; CA data is compiled in.
 - Document optional CloudFront use without changing specified cache headers.
 
 Exit criteria:
@@ -493,8 +489,7 @@ Deliverables:
   agreed duration; retain failures as regression inputs.
 - Publish a report containing specification revision, fixture count, hashes,
   security exceptions, performance, maximum memory, and binary size.
-- Document dependency, CA, and font refresh procedures with required golden
-  review.
+- Document dependency and CA refresh procedures with required golden review.
 
 Exit criteria:
 
@@ -514,21 +509,21 @@ hashes and crossed blend/dispose fixtures are mandatory.
 
 ### 2. Encoded byte identity requires a pinned codec graph
 
-libvips, libwebp, libheif, libaom, SIMD choices, fonts, and profiles can alter
-bytes or pixels. The lock and golden manifest, not a distribution's current
-packages, define the release graph.
+libvips, libwebp, libheif, libaom, SIMD choices, and profiles can alter bytes or
+pixels. The lock and golden manifest, not a distribution's current packages,
+define the release graph.
 
-### 3. SVG parity conflicts with a small binary
+### 3. SVG is intentionally outside the format set
 
-Deterministic SVG text can require librsvg, a large static rendering closure,
-and embedded fonts. Include and measure the pinned stack unless the normative
-format set is explicitly revised.
+Do not add librsvg, Cairo, pixman, font or text-rendering libraries as dormant
+future support. The MIME vectors must prove that even an exact
+`image/svg+xml` origin type does not activate an SVG loader.
 
 ### 4. Static plugin registration can fail silently
 
-libvips, GLib, libheif, and font systems commonly discover runtime modules.
-Build libheif without plugin loading, use only its built-in libaom backend, and
-make explicit registration and final-binary operation enumeration release tests.
+libvips, GLib, and libheif commonly discover runtime modules. Build libheif
+without plugin loading, use only its built-in libaom backend, and make explicit
+registration and final-binary operation enumeration release tests.
 
 ### 5. Streaming cannot change HTTP status after headers begin
 
@@ -551,7 +546,6 @@ treating them as manual follow-up.
 
 - Primary performance architecture; both `arm64` and `x86_64` remain required
   until scope is narrowed.
-- The exact embedded font corpus for deterministic SVG text.
 - Direct public Function URL versus CloudFront fronting it.
 - Memory, timeout, ephemeral storage, and reserved concurrency values after
   benchmark data exists.

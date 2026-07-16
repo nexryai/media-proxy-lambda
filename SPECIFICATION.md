@@ -8,10 +8,11 @@ process must not require a legacy source tree or a separately downloaded
 reference implementation. Historical projects may be cited as provenance, but
 the behavior to implement is completely stated here.
 
-The only intentional media-behavior correction in the initial C++ release is
-the APNG `BLEND_OP_OVER` fix in section 8. All unrelated legacy behavior,
-including unusual resize decisions, fixed-offset format checks, APNG first-frame
-handling, and response content-type selection, remains part of this contract.
+The intentional media changes in the initial C++ release are the APNG
+`BLEND_OP_OVER` fix in section 8 and removal of SVG input support. All other
+unrelated legacy behavior, including unusual resize decisions, fixed-offset
+format checks, APNG first-frame handling, and response content-type selection,
+remains part of this contract.
 
 Where this document labels a rule as a security exception, the safer rule is
 normative even if a historical implementation accepted more input.
@@ -256,9 +257,9 @@ control bytes are `0x00..0x08`, `0x0b`, `0x0e..0x1a`, and `0x1c..0x1f`.
 
 ### 5.2 Overrides
 
-- If sniffing returns `text/plain; charset=utf-8` and the origin
-  `Content-Type` value is exactly `image/svg+xml`, use `image/svg+xml`.
-  Parameters or case variants do not trigger the override.
+- SVG has no origin `Content-Type` override. SVG-looking text remains
+  `text/plain; charset=utf-8`, including when the origin value is exactly
+  `image/svg+xml`, and is rejected as unsupported media.
 - If sniffing returns `application/octet-stream` and bytes 4 through 11 are
   exactly `ftypavif`, use `image/avif`.
 - No analogous override exists for other AVIF brands or HEIF. HEIF/HEIC is
@@ -275,7 +276,6 @@ Convertible MIME values are exactly:
 - `image/png`
 - `image/webp`
 - `image/gif`
-- `image/svg+xml`
 - `image/x-icon`
 
 Every other MIME is a conversion failure.
@@ -293,8 +293,8 @@ output remains WebP even when the successful response header is selected as
 `image/avif` under section 2.4.
 
 Load images from the in-memory body with all pages enabled. No loader may make
-network requests or read arbitrary external files. SVG external resources are
-disabled.
+network requests or read arbitrary external files. No SVG loader or rendering
+stack is present.
 
 ## 7. General image conversion
 

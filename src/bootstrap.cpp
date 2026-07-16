@@ -21,7 +21,6 @@
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <pcre2.h>
-#include <pixman.h>
 #include <png.h>
 #include <webp/decode.h>
 #include <webp/demux.h>
@@ -80,7 +79,6 @@ int main()
     if (runtime_name.empty()
             || !idna_hostname
             || idna_hostname.ascii != "xn--bcher-kva.example"
-            || pixman_version() != PIXMAN_VERSION
             || !curl_global.ok()
             || tls_context == nullptr) {
         return 1;

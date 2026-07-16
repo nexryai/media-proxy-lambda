@@ -116,7 +116,8 @@ reconstruct these rules from a framework's defaults:
   precedence;
 - exact URL syntax, forbidden CIDRs, DNS pinning, redirect validation, and
   origin-body limits;
-- MIME-sniff order and the exact SVG and AVIF overrides;
+- MIME-sniff order, the deliberate absence of an SVG override, and the exact
+  AVIF override;
 - separate static and animated resize formulas, including their odd branches;
 - response content type being selected independently from actual animation
   bytes;
@@ -125,8 +126,9 @@ reconstruct these rules from a framework's defaults:
 
 ### APNG `BLEND_OP_OVER` correction
 
-The APNG compositor is the one intentional initial media correction. It must
-maintain a full RGBA canvas and, for every emitted frame:
+The APNG compositor is the only intentional initial pixel-semantics
+correction; removal of SVG is a separately approved format-scope change. It
+must maintain a full RGBA canvas and, for every emitted frame:
 
 - snapshot the pre-frame canvas;
 - source-copy `BLEND_OP_SOURCE` or source-over composite `BLEND_OP_OVER` at the

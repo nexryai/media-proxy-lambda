@@ -9,7 +9,8 @@
             "variants": [
                 "no legacy checkout path in build inputs",
                 "no live network dependency in normal tests",
-                "APNG OVER is the only intentional initial media divergence"
+                "APNG OVER is the only pixel-semantics divergence",
+                "SVG input is intentionally unsupported"
             ]
         },
         {
@@ -353,9 +354,9 @@
             "sections": ["5.2"],
             "suite": "mime",
             "variants": [
-                "exact SVG origin type overrides plain text",
-                "SVG parameters do not override",
-                "SVG case variant does not override",
+                "exact SVG origin type does not override plain text",
+                "SVG parameters do not override plain text",
+                "SVG case variant does not override plain text",
                 "exact ftypavif at bytes 4 through 11 overrides octet stream",
                 "other AVIF or HEIF brands do not override and HEIF remains unsupported",
                 "override precondition MIME must match"
@@ -365,7 +366,7 @@
             "id": "media.convertible-mimes",
             "sections": ["6"],
             "suite": "media-classification",
-            "variants": ["AVIF", "ICO", "JPEG", "PNG", "WebP", "GIF", "SVG", "x-icon", "HEIF rejected", "all other MIME rejected"]
+            "variants": ["AVIF", "ICO", "JPEG", "PNG", "WebP", "GIF", "x-icon", "SVG rejected", "HEIF rejected", "all other MIME rejected"]
         },
         {
             "id": "media.animation-classification",
@@ -394,7 +395,7 @@
             "id": "media.loader-isolation",
             "sections": ["6"],
             "suite": "media-malformed",
-            "variants": ["all pages loaded from memory", "loader cannot fetch network URL", "loader cannot read external file", "SVG external resources disabled"]
+            "variants": ["all pages loaded from memory", "loader cannot fetch network URL", "loader cannot read external file", "no SVG loader present"]
         },
         {
             "id": "vips.process-initialization",

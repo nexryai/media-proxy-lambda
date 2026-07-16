@@ -142,7 +142,7 @@ foreach(required_line IN ITEMS
     endif()
 endforeach()
 if(pkgconfig MATCHES
-        "(libde265|x265|Magick|libtiff|libjxl|openjp|poppler|rsvg)")
+        "(libde265|x265|Magick|libtiff|libjxl|openjp|poppler|rsvg|cairo|pixman|freetype|fontconfig|harfbuzz|pango|fribidi|libxml2)")
     message(FATAL_ERROR "vips.pc advertises a forbidden dependency")
 endif()
 
@@ -237,6 +237,23 @@ if(forbidden_outputs)
 endif()
 
 file(READ "${LINK_MAP}" link_map)
+string(TOLOWER "${link_map}" link_map_lower)
+foreach(forbidden_dependency IN ITEMS
+        cairo
+        freetype
+        fontconfig
+        fribidi
+        harfbuzz
+        librsvg
+        libxml2
+        pango
+        pixman)
+    if(link_map_lower MATCHES "${forbidden_dependency}")
+        message(FATAL_ERROR
+            "bootstrap link map contains forbidden SVG dependency: "
+            "${forbidden_dependency}")
+    endif()
+endforeach()
 get_filename_component(archive_name "${LIBVIPS_ARCHIVE}" NAME)
 if(NOT link_map MATCHES "${archive_name}")
     message(FATAL_ERROR "bootstrap does not contain ${LIBVIPS_ARCHIVE}")

@@ -46,6 +46,8 @@ TEST(LibvipsBuild, ProvidesAvifWithoutOptionalForeignLoaders)
     EXPECT_EQ(vips_type_find("VipsOperation", "jp2kload"), 0U);
     EXPECT_EQ(vips_type_find("VipsOperation", "jxlload"), 0U);
     EXPECT_EQ(vips_type_find("VipsOperation", "svgload"), 0U);
+    EXPECT_EQ(vips_type_find("VipsOperation", "svgload_buffer"), 0U);
+    EXPECT_EQ(vips_type_find("VipsOperation", "text"), 0U);
 
     VipsImage* raw_image = nullptr;
     ASSERT_EQ(vips_black(&raw_image, 2, 3, nullptr), 0)
