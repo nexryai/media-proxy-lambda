@@ -174,7 +174,16 @@
             "id": "url.idna-corpus",
             "sections": ["3.1", "11"],
             "suite": "url-policy",
-            "variants": ["accepted Unicode host vectors", "rejected Unicode host vectors", "ASCII hostname retained for SNI verification"]
+            "variants": [
+                "Unicode 17.0.0 UTS #46 nontransitional conversion",
+                "NFC and alternate-dot mapping",
+                "UTS #46-valid symbol and emoji A-label conversion",
+                "Bidi and ContextJ acceptance and rejection",
+                "invalid UTF-8 rejected",
+                "STD3 and hyphen rules",
+                "63-byte label and 253-byte hostname limits",
+                "canonical ASCII hostname retained for SNI verification"
+            ]
         },
         {
             "id": "address.generic-classification",

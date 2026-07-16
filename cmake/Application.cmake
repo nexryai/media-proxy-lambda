@@ -6,6 +6,17 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+foreach(required_ada_idna_artifact IN ITEMS
+        "${MEDIAPROXY_ADA_IDNA_INCLUDE_DIR}/ada/ada_idna.h"
+        "${MEDIAPROXY_ADA_IDNA_LIBRARY}"
+        "${MEDIAPROXY_ADA_IDNA_LICENSE}")
+    if(NOT EXISTS "${required_ada_idna_artifact}")
+        message(FATAL_ERROR
+            "Pinned Ada IDNA artifact is absent: "
+            "${required_ada_idna_artifact}")
+    endif()
+endforeach()
+
 foreach(required_yyjson_artifact IN ITEMS
         "${MEDIAPROXY_YYJSON_INCLUDE_DIR}/yyjson.h"
         "${MEDIAPROXY_YYJSON_LIBRARY}")
@@ -198,12 +209,18 @@ endforeach()
 
 foreach(required_zlib_artifact IN ITEMS
         "${MEDIAPROXY_ZLIB_INCLUDE_DIR}/zlib.h"
-        "${MEDIAPROXY_ZLIB_LIBRARY}")
+        "${MEDIAPROXY_ZLIB_LIBRARY}"
+        "${MEDIAPROXY_ZLIB_PKGCONFIG}")
     if(NOT EXISTS "${required_zlib_artifact}")
         message(FATAL_ERROR
             "Pinned zlib artifact is absent: ${required_zlib_artifact}")
     endif()
 endforeach()
+
+add_library(mediaproxy_ada_idna STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_ada_idna PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_ADA_IDNA_LIBRARY}"
+)
 
 add_library(mediaproxy_yyjson STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_yyjson PROPERTIES
@@ -352,11 +369,25 @@ set_target_properties(mediaproxy_curl PROPERTIES
         "mediaproxy_boringssl_ssl;mediaproxy_nghttp2;mediaproxy_zlib"
 )
 
+add_library(mediaproxy_http STATIC
+    src/http/idna.cpp
+)
+target_include_directories(mediaproxy_http PUBLIC
+    "${CMAKE_SOURCE_DIR}/include"
+)
+target_link_libraries(mediaproxy_http
+    PRIVATE
+        mediaproxy_hardening
+        mediaproxy_warnings
+        mediaproxy_ada_idna
+)
+
 add_executable(bootstrap src/bootstrap.cpp)
 target_link_libraries(bootstrap
     PRIVATE
         mediaproxy_hardening
         mediaproxy_warnings
+        mediaproxy_http
         mediaproxy_libvips
         mediaproxy_curl
         mediaproxy_boringssl_ssl
@@ -417,6 +448,7 @@ if(BUILD_TESTING)
         tests/smoke/libexpat_test.cpp
         tests/smoke/libffi_test.cpp
         tests/smoke/glib_test.cpp
+        tests/smoke/idna_test.cpp
         tests/smoke/libaom_test.cpp
         tests/smoke/libheif_test.cpp
         tests/smoke/libvips_test.cpp
@@ -433,6 +465,7 @@ if(BUILD_TESTING)
         PRIVATE
             mediaproxy_hardening
             mediaproxy_warnings
+            mediaproxy_http
             mediaproxy_libvips
             mediaproxy_curl
             mediaproxy_boringssl_ssl
@@ -454,6 +487,9 @@ if(BUILD_TESTING)
             mediaproxy_yyjson
             mediaproxy_zlib
             GTest::gtest_main
+    )
+    target_compile_definitions(mediaproxy_smoke_test PRIVATE
+        "MEDIAPROXY_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\""
     )
 
     include(GoogleTest)
@@ -481,6 +517,21 @@ if(BUILD_TESTING)
         )
     endforeach()
 
+    add_test(
+        NAME ada-idna-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DADA_IDNA_ARCHIVE=${MEDIAPROXY_ADA_IDNA_LIBRARY}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DCOMPILE_COMMANDS=${MEDIAPROXY_ADA_IDNA_COMPILE_COMMANDS}"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DLICENSE_FILE=${MEDIAPROXY_ADA_IDNA_LICENSE}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/AdaIdnaBuildTest.cmake"
+    )
     add_test(
         NAME boringssl-build-policy
         COMMAND "${CMAKE_COMMAND}"
@@ -749,6 +800,7 @@ if(BUILD_TESTING)
             "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
             "-DNM=${MEDIAPROXY_NM}"
             "-DZLIB_ARCHIVE=${MEDIAPROXY_ZLIB_LIBRARY}"
+            "-DZLIB_PKGCONFIG=${MEDIAPROXY_ZLIB_PKGCONFIG}"
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/ZlibBuildTest.cmake"

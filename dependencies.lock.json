@@ -147,6 +147,31 @@
             "reason": "Bounded HTTP/HTTPS transport for the Lambda Runtime API and validated origins"
         },
         {
+            "name": "ada-idna",
+            "version": "3.4.4",
+            "revision": "8d50724a7dea209a05234a445e28f97994b0a5f6",
+            "url": "https://github.com/ada-url/ada/archive/refs/tags/v3.4.4.tar.gz",
+            "sha256": "77bc5bbc383ed098cc60266ad6ee912de2431bb62d89248c0e17c4e712dcdaf9",
+            "license": "MIT",
+            "buildOptions": [
+                "first-party CMake adapter compiles only the generated src/ada_idna.cpp translation unit",
+                "Unicode 17.0.0 UTS #46 mapping, normalization, Punycode, Bidi, and ContextJ tables",
+                "nontransitional processing",
+                "simdutf and the full WHATWG URL parser excluded",
+                "static libada_idna archive and ada_idna.h only",
+                "MIT license notice installed with the target artifacts",
+                "production hardening flags including libc++ hardening, fortify, ThinLTO, trapping CFI, stack protection, zero initialization, hidden visibility, and architecture branch protection",
+                "warnings as errors",
+                "LLVM tools only"
+            ],
+            "securityNotes": [
+                "Ada to_ascii can return a syntactically invalid DNS name, so first-party code independently enforces STD3 ASCII labels, hyphen rules, non-empty labels, and DNS label/name lengths",
+                "raw Unicode hostname input is capped at 4096 bytes before allocation-heavy conversion",
+                "libidn2, libunistring, ICU, simdutf, and runtime Unicode data files are absent from the dependency graph"
+            ],
+            "reason": "Permissively licensed, self-contained IDNA conversion for Unicode origin hostnames"
+        },
+        {
             "name": "libexpat",
             "version": "2.8.2",
             "revision": "c61098da494eea1cbd091118118dcee417faacea",
@@ -242,7 +267,7 @@
                 "ZLIB_BUILD_SHARED=OFF",
                 "ZLIB_BUILD_STATIC=ON",
                 "ZLIB_BUILD_TESTING=OFF",
-                "ZLIB_INSTALL=OFF with curated archive and header installation",
+                "ZLIB_INSTALL=OFF with curated archive, header, and generated zlib.pc installation",
                 "production hardening flags including fortify, ThinLTO, and trapping CFI",
                 "warnings as errors",
                 "LLVM tools only"
@@ -268,7 +293,7 @@
                 "production hardening flags including fortify, split-unit ThinLTO, stack protection, zero initialization, and architecture branch protection",
                 "explicit CFI exception for GLib's pervasive documented generic callback ABI; all other hardening remains enabled",
                 "upstream warning level 3 with warnings as errors",
-                "development headers and pkg-config metadata installed without target utilities or shared libraries",
+                "development headers and normalized static pkg-config metadata installed without target utilities or shared libraries",
                 "LLVM tools only"
             ],
             "patches": [

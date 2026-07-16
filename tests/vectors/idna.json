@@ -1,0 +1,38 @@
+{
+    "schemaVersion": 1,
+    "profile": {
+        "processing": "UTS #46 nontransitional",
+        "unicodeVersion": "17.0.0",
+        "useStd3AsciiRules": true,
+        "checkHyphens": true,
+        "checkBidi": true,
+        "checkJoiners": true,
+        "verifyDnsLength": true
+    },
+    "cases": [
+        {"id": "ascii.lowercase", "input": "origin.example", "accepted": true, "ascii": "origin.example"},
+        {"id": "ascii.uppercase-mapped", "input": "Origin.Example", "accepted": true, "ascii": "origin.example"},
+        {"id": "ascii.trailing-dot", "input": "origin.example.", "accepted": true, "ascii": "origin.example."},
+        {"id": "unicode.german", "input": "bücher.example", "accepted": true, "ascii": "xn--bcher-kva.example"},
+        {"id": "unicode.nontransitional-sharp-s", "input": "faß.example", "accepted": true, "ascii": "xn--fa-hia.example"},
+        {"id": "unicode.japanese-dot-mapping", "input": "例え。テスト", "accepted": true, "ascii": "xn--r8jz45g.xn--zckzah"},
+        {"id": "unicode.fullwidth-mapping", "input": "ｅｘａｍｐｌｅ．ｃｏｍ", "accepted": true, "ascii": "example.com"},
+        {"id": "unicode.nfc-normalization", "input": "é.example", "accepted": true, "ascii": "xn--9ca.example"},
+        {"id": "unicode.arabic-bidi", "input": "مثال.إختبار", "accepted": true, "ascii": "xn--mgbh0fb.xn--kgbechtv"},
+        {"id": "reject.empty", "input": "", "accepted": false},
+        {"id": "reject.leading-empty-label", "input": ".example", "accepted": false},
+        {"id": "reject.interior-empty-label", "input": "origin..example", "accepted": false},
+        {"id": "reject.empty-label-before-root-dot", "input": "origin..", "accepted": false},
+        {"id": "reject.leading-hyphen", "input": "-origin.example", "accepted": false},
+        {"id": "reject.trailing-hyphen", "input": "origin-.example", "accepted": false},
+        {"id": "reject.hyphens-third-fourth", "input": "ab--cd.example", "accepted": false},
+        {"id": "reject.std3-underscore", "input": "_service.example", "accepted": false},
+        {"id": "reject.space", "input": "origin name.example", "accepted": false},
+        {"id": "reject.slash", "input": "origin/name.example", "accepted": false},
+        {"id": "reject.invalid-ace-label", "input": "xn--.example", "accepted": false},
+        {"id": "unicode.emoji-punycode", "input": "😀.example", "accepted": true, "ascii": "xn--e28h.example"},
+        {"id": "reject.leading-combining-mark", "input": "́e.example", "accepted": false},
+        {"id": "reject.invalid-joiner-context", "input": "a‍b.example", "accepted": false},
+        {"id": "reject.mixed-arabic-number-sets", "input": "ا1١.example", "accepted": false}
+    ]
+}

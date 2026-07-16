@@ -7,7 +7,8 @@ foreach(required_variable
         NM
         TARGET_ARCH
         TARGET_TRIPLE
-        ZLIB_ARCHIVE)
+        ZLIB_ARCHIVE
+        ZLIB_PKGCONFIG)
     if(NOT DEFINED ${required_variable})
         message(FATAL_ERROR "${required_variable} is required")
     endif()
@@ -17,7 +18,8 @@ foreach(required_file IN ITEMS
         "${BOOTSTRAP}"
         "${COMPILE_COMMANDS}"
         "${LINK_MAP}"
-        "${ZLIB_ARCHIVE}")
+        "${ZLIB_ARCHIVE}"
+        "${ZLIB_PKGCONFIG}")
     if(NOT EXISTS "${required_file}")
         message(FATAL_ERROR
             "Required zlib build artifact is absent: ${required_file}")
@@ -118,6 +120,32 @@ foreach(required_source IN LISTS required_sources)
                 "${forbidden_flag}: ${matching_command}")
         endif()
     endforeach()
+endforeach()
+
+file(READ "${ZLIB_PKGCONFIG}" pkgconfig)
+foreach(required_field IN ITEMS
+        "prefix=/usr"
+        "Name: zlib"
+        "Version: 1.3.2"
+        [=[Libs: -L${libdir} -L${sharedlibdir} -lz]=]
+        [=[Cflags: -I${includedir}]=])
+    string(FIND "${pkgconfig}" "${required_field}" field_offset)
+    if(field_offset EQUAL -1)
+        message(FATAL_ERROR
+            "zlib pkg-config metadata is missing ${required_field}: "
+            "${ZLIB_PKGCONFIG}")
+    endif()
+endforeach()
+foreach(forbidden_text IN ITEMS
+        "${CMAKE_BINARY_DIR}"
+        "${CMAKE_SOURCE_DIR}"
+        ".so")
+    string(FIND "${pkgconfig}" "${forbidden_text}" forbidden_offset)
+    if(NOT forbidden_offset EQUAL -1)
+        message(FATAL_ERROR
+            "zlib pkg-config metadata contains forbidden text "
+            "${forbidden_text}: ${ZLIB_PKGCONFIG}")
+    endif()
 endforeach()
 
 get_filename_component(library_dir "${ZLIB_ARCHIVE}" DIRECTORY)

@@ -66,6 +66,9 @@ mediaproxy_lock_get(boringssl version boringssl_version)
 mediaproxy_lock_get(curl url curl_url)
 mediaproxy_lock_get(curl sha256 curl_sha256)
 mediaproxy_lock_get(curl version curl_version)
+mediaproxy_lock_get(ada-idna url ada_idna_url)
+mediaproxy_lock_get(ada-idna sha256 ada_idna_sha256)
+mediaproxy_lock_get(ada-idna version ada_idna_version)
 mediaproxy_lock_get(libexpat url libexpat_url)
 mediaproxy_lock_get(libexpat sha256 libexpat_sha256)
 mediaproxy_lock_get(libexpat version libexpat_version)
@@ -380,6 +383,7 @@ ExternalProject_Add(nghttp2
 set(zlib_binary_directory "${CMAKE_BINARY_DIR}/zlib-build")
 set(zlib_library "${sysroot}/usr/lib/libz.a")
 set(zlib_include_dir "${sysroot}/usr/include")
+set(zlib_pkgconfig "${sysroot}/usr/lib/pkgconfig/zlib.pc")
 set(zlib_vernum 0x1320)
 ExternalProject_Add(zlib
     DEPENDS fortify_headers
@@ -414,16 +418,20 @@ ExternalProject_Add(zlib
     INSTALL_COMMAND
         "${CMAKE_COMMAND}" -E make_directory
         "${zlib_include_dir}" "${sysroot}/usr/lib"
+        "${sysroot}/usr/lib/pkgconfig"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         <BINARY_DIR>/libz.a "${zlib_library}"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         <SOURCE_DIR>/zlib.h "${zlib_include_dir}/zlib.h"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         <BINARY_DIR>/zconf.h "${zlib_include_dir}/zconf.h"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/zlib.pc "${zlib_pkgconfig}"
     BUILD_BYPRODUCTS
         "${zlib_library}"
         "${zlib_include_dir}/zlib.h"
         "${zlib_include_dir}/zconf.h"
+        "${zlib_pkgconfig}"
 )
 
 set(libpng_binary_directory "${CMAKE_BINARY_DIR}/libpng-static-build")
@@ -1259,6 +1267,52 @@ ExternalProject_Add(llvm_runtimes
         "${sysroot}/usr/lib/libunwind.a"
 )
 
+set(ada_idna_binary_directory "${CMAKE_BINARY_DIR}/ada-idna-build")
+set(ada_idna_library "${sysroot}/usr/lib/libada_idna.a")
+set(ada_idna_include_dir "${sysroot}/usr/include")
+set(ada_idna_license
+    "${sysroot}/usr/share/licenses/ada-idna/LICENSE-MIT")
+ExternalProject_Add(ada_idna
+    DEPENDS fortify_headers llvm_runtimes
+    URL "${ada_idna_url}"
+    URL_HASH "SHA256=${ada_idna_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "ada-${ada_idna_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${ada_idna_binary_directory}"
+    CONFIGURE_COMMAND
+        "${CMAKE_COMMAND}"
+        -S "${CMAKE_SOURCE_DIR}/cmake/dependencies/ada-idna"
+        -B <BINARY_DIR>
+        -G Ninja
+        "-DMEDIAPROXY_ADA_SOURCE_DIR=<SOURCE_DIR>"
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_SYSTEM_NAME=Linux"
+        "-DCMAKE_SYSTEM_PROCESSOR=${target_processor}"
+        "-DCMAKE_CXX_COMPILER=${host_clangxx}"
+        "-DCMAKE_CXX_COMPILER_TARGET=${target_triple}"
+        "-DCMAKE_SYSROOT=${sysroot}"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+        "-DCMAKE_AR=${host_ar}"
+        "-DCMAKE_RANLIB=${host_ranlib}"
+        "-DCMAKE_NM=${host_nm}"
+        "-DCMAKE_LINKER=${host_lld}"
+        "-DCMAKE_CXX_FLAGS=${dependency_hardening_cxx_flags}"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target ada_idna
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E env "DESTDIR=${sysroot}"
+        "${CMAKE_COMMAND}" --install <BINARY_DIR>
+    BUILD_BYPRODUCTS
+        "${ada_idna_library}"
+        "${ada_idna_include_dir}/ada/ada_idna.h"
+        "${ada_idna_license}"
+)
+
 string(SHA256 libaom_build_configuration_sha256
     "${libaom_patch_sha256}")
 string(SUBSTRING "${libaom_build_configuration_sha256}" 0 12
@@ -1462,6 +1516,8 @@ ExternalProject_Add(libheif
         "${libheif_pkgconfig}"
 )
 
+set(glib_pkgconfig_normalizer
+    "${CMAKE_SOURCE_DIR}/cmake/dependencies/glib/NormalizeGioPkgConfig.cmake")
 string(SHA256 glib_build_configuration_sha256
     "${glib_patch_sha256}:${glib_cross_template_sha256}")
 string(SUBSTRING "${glib_build_configuration_sha256}" 0 12
@@ -1551,6 +1607,9 @@ ExternalProject_Add(glib
         <BINARY_DIR>/gobject/glib-mkenums
         <BINARY_DIR>/gobject/glib-genmarshal
         "${sysroot}/usr/bin"
+        COMMAND "${CMAKE_COMMAND}"
+        "-DGIO_PKGCONFIG=${gio_pkgconfig}"
+        -P "${glib_pkgconfig_normalizer}"
     BUILD_BYPRODUCTS
         "${glib_library}"
         "${gobject_library}"
@@ -1842,7 +1901,7 @@ ExternalProject_Add(curl
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS boringssl curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
+    DEPENDS ada_idna boringssl curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -1867,6 +1926,10 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_READELF=${host_readelf}"
         "-DMEDIAPROXY_SOURCE_CACHE=${source_cache}"
         "-DMEDIAPROXY_FORTIFY_INCLUDE_DIR=${fortify_headers_include_dir}"
+        "-DMEDIAPROXY_ADA_IDNA_INCLUDE_DIR=${ada_idna_include_dir}"
+        "-DMEDIAPROXY_ADA_IDNA_LIBRARY=${ada_idna_library}"
+        "-DMEDIAPROXY_ADA_IDNA_COMPILE_COMMANDS=${ada_idna_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_ADA_IDNA_LICENSE=${ada_idna_license}"
         "-DMEDIAPROXY_YYJSON_INCLUDE_DIR=${yyjson_include_dir}"
         "-DMEDIAPROXY_YYJSON_LIBRARY=${yyjson_library}"
         "-DMEDIAPROXY_YYJSON_COMPILE_COMMANDS=${yyjson_binary_directory}/compile_commands.json"
@@ -1959,6 +2022,7 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_ZLIB_INCLUDE_DIR=${zlib_include_dir}"
         "-DMEDIAPROXY_ZLIB_LIBRARY=${zlib_library}"
         "-DMEDIAPROXY_ZLIB_COMPILE_COMMANDS=${zlib_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_ZLIB_PKGCONFIG=${zlib_pkgconfig}"
         "-DMEDIAPROXY_GOOGLETEST_URL=${googletest_url}"
         "-DMEDIAPROXY_GOOGLETEST_SHA256=${googletest_sha256}"
         "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"

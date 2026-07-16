@@ -241,7 +241,10 @@ The pinned graph is expected to include:
 - librsvg plus Cairo, pixman, libxml2, freetype, fontconfig, harfbuzz, and any
   required Pango/fribidi closure for deterministic SVG output;
 - lcms2 and libexif if enabled for the golden media graph;
-- libidn2/libunistring when required by the checked-in Unicode host vectors;
+- Ada URL's standalone IDNA translation unit, built without the full URL parser
+  or simdutf, for pinned Unicode 17.0.0 UTS #46 nontransitional conversion;
+  first-party validation supplies strict STD3, hyphen, and DNS-length checks,
+  and libidn2/libunistring/ICU remain outside the dependency graph;
 - an embedded CA bundle and pinned embedded fonts/font configuration.
 
 No separate APNG library is required. Implement the specified parser/compositor
@@ -378,6 +381,12 @@ Deliverables:
 
 - Implement specification section 3 URL syntax and the complete address/CIDR
   classifier.
+- Use the pinned standalone Ada IDNA converter behind the first-party bounded
+  hostname-normalization API and run every Unicode host vector through that
+  boundary before DNS, redirect, SNI, or certificate processing. Keep the
+  Unicode acceptance profile aligned with UTS #46 rather than maintaining a
+  separate script/category allowlist; enforce network safety after canonical
+  A-label conversion.
 - Resolve once, reject mixed safe/unsafe answers, pin the validated address,
   and retain the hostname for SNI/certificate verification.
 - Build curl with BoringSSL, zlib content decoding, nghttp2, embedded CA, and

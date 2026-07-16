@@ -17,6 +17,7 @@
 #include <lcms2.h>
 #include <libexif/exif-tag.h>
 #include <libheif/heif.h>
+#include <mediaproxy/http/idna.hpp>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <pcre2.h>
@@ -69,11 +70,17 @@ private:
 int main()
 {
     constexpr std::string_view runtime_name = "mediaproxy-lambda";
+    const auto idna_hostname =
+        mediaproxy::http::normalize_hostname("bücher.example");
     const CurlGlobal curl_global;
     std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> tls_context(
         SSL_CTX_new(TLS_method()),
         &SSL_CTX_free);
-    if (runtime_name.empty() || !curl_global.ok() || tls_context == nullptr) {
+    if (runtime_name.empty()
+            || !idna_hostname
+            || idna_hostname.ascii != "xn--bcher-kva.example"
+            || !curl_global.ok()
+            || tls_context == nullptr) {
         return 1;
     }
     auto* volatile curl_version_function = &curl_version_info;

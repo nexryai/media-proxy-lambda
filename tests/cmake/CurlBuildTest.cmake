@@ -200,6 +200,7 @@ foreach(forbidden_dependency IN ITEMS
         libbrotli
         libgnutls
         libidn2
+        libunistring
         libmbedtls
         libpsl
         libssh

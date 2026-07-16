@@ -122,9 +122,36 @@ The first decoded `url` query value is accepted only when all conditions hold:
   not sent in the HTTP request.
 - If the hostname itself is an IP literal, it passes section 3.2.
 
-Preserve the logical hostname for SNI and certificate hostname verification.
-Unicode hostnames must be converted with an IDNA profile whose accepted/rejected
-test corpus is checked into this repository.
+Convert the parsed hostname to its canonical ASCII form before applying the
+dot, IP-literal, DNS, redirect, SNI, or certificate-hostname rules. Preserve
+that canonical hostname across resolution and connection pinning.
+
+IDNA conversion uses Unicode 17.0.0 UTS #46 nontransitional processing with
+STD3 ASCII rules, hyphen checks, Bidi checks, ContextJ checks, and DNS-length
+verification enabled. The pinned implementation performs mapping, NFC
+normalization, validity checks, and Punycode conversion. The MediaProxy boundary
+must independently validate its result because the low-level conversion API
+does not promise to return a syntactically valid DNS name:
+
+- Do not apply an additional Unicode script or identifier-category allowlist.
+  UTS #46-valid symbols, including emoji, are encoded as A-labels; network
+  safety is enforced on the canonical DNS name and every resolved address.
+- Reject an empty input and reject a decoded UTF-8 hostname longer than 4096
+  bytes before conversion.
+- Reject invalid UTF-8, a failed conversion, forbidden domain code points,
+  empty labels, and ASCII output containing anything other than lowercase
+  letters, digits, hyphen-minus, and label separators.
+- Reject a label longer than 63 bytes or beginning or ending with a hyphen.
+  Reject hyphens in both the third and fourth positions except for a valid
+  `xn--` A-label that the IDNA implementation has decoded and validated.
+- Reject a canonical hostname longer than 253 bytes. A single trailing root
+  dot is retained and permits a total textual length of 254 bytes; leading or
+  interior empty labels remain invalid.
+
+The complete accepted/rejected IDNA corpus, including normalization, dot
+mapping, Bidi, ContextJ, invalid UTF-8, STD3, hyphen, label-length, and
+hostname-length cases, is checked into this repository. Changing the Unicode
+version or any profile option requires review of that corpus.
 
 ### 3.2 Forbidden network addresses
 
