@@ -37,6 +37,15 @@ find_program(host_meson NAMES meson REQUIRED)
 find_program(host_ninja NAMES ninja REQUIRED)
 find_program(host_pkgconf NAMES pkgconf REQUIRED)
 
+if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$")
+    set(build_triple x86_64-pc-linux-gnu)
+elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+    set(build_triple aarch64-pc-linux-gnu)
+else()
+    message(FATAL_ERROR
+        "Unsupported superbuild host architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+endif()
+
 set(source_cache "${CMAKE_SOURCE_DIR}/.cache/sources")
 set(sysroot "${CMAKE_BINARY_DIR}/sysroot")
 
@@ -962,7 +971,7 @@ ExternalProject_Add(libffi
         "LDFLAGS=${libffi_configure_ldflags}"
         "LIBS=${libffi_configure_libs}"
         <SOURCE_DIR>/configure
-        --build=x86_64-pc-linux-gnu
+        "--build=${build_triple}"
         "--host=${target_triple}"
         --prefix=/usr
         --libdir=/usr/lib
@@ -1192,6 +1201,8 @@ ExternalProject_Add(compiler_rt
         "${compiler_rt_crtbegin}"
         "${compiler_rt_crtend}"
 )
+
+ExternalProject_Add_StepDependencies(libffi configure compiler_rt)
 
 ExternalProject_Add(llvm_runtimes
     DEPENDS compiler_rt
