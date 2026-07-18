@@ -371,6 +371,7 @@ set_target_properties(mediaproxy_curl PROPERTIES
 
 add_library(mediaproxy_http STATIC
     src/http/idna.cpp
+    src/http/query.cpp
 )
 target_include_directories(mediaproxy_http PUBLIC
     "${CMAKE_SOURCE_DIR}/include"
@@ -495,6 +496,25 @@ if(BUILD_TESTING)
     include(GoogleTest)
     if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
         gtest_discover_tests(mediaproxy_smoke_test DISCOVERY_MODE PRE_TEST)
+    endif()
+
+    add_executable(mediaproxy_http_test
+        tests/http/query_test.cpp
+        tests/http/selectors_test.cpp
+    )
+    target_link_libraries(mediaproxy_http_test
+        PRIVATE
+            mediaproxy_hardening
+            mediaproxy_warnings
+            mediaproxy_http
+            mediaproxy_yyjson
+            GTest::gtest_main
+    )
+    target_compile_definitions(mediaproxy_http_test PRIVATE
+        "MEDIAPROXY_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\""
+    )
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        gtest_discover_tests(mediaproxy_http_test DISCOVERY_MODE PRE_TEST)
     endif()
 
     add_executable(mediaproxy_stack_smash_probe
