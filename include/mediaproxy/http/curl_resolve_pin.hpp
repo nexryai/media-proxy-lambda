@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <span>
 #include <string>
 
@@ -36,11 +37,15 @@ public:
     [[nodiscard]] ResolvePinError error() const noexcept;
     [[nodiscard]] const std::string& entry() const noexcept;
     [[nodiscard]] curl_slist* native_handle() const noexcept;
+    [[nodiscard]] bool matches(const OriginUrl& origin) const noexcept;
 
 private:
     explicit CurlResolvePin(ResolvePinError error) noexcept;
 
     ResolvePinError error_ = ResolvePinError::empty_addresses;
+    std::string canonical_url_;
+    std::string hostname_;
+    std::uint16_t port_ = 0;
     std::string entry_;
     curl_slist* list_ = nullptr;
 };
