@@ -370,6 +370,7 @@ set_target_properties(mediaproxy_curl PROPERTIES
 )
 
 add_library(mediaproxy_http STATIC
+    src/http/address_policy.cpp
     src/http/event.cpp
     src/http/idna.cpp
     src/http/query.cpp
@@ -503,6 +504,7 @@ if(BUILD_TESTING)
     endif()
 
     add_executable(mediaproxy_http_test
+        tests/http/address_policy_test.cpp
         tests/http/event_test.cpp
         tests/http/query_test.cpp
         tests/http/response_test.cpp
