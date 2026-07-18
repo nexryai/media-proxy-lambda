@@ -243,7 +243,8 @@ The pinned graph is expected to include:
   or simdutf, for pinned Unicode 17.0.0 UTS #46 nontransitional conversion;
   first-party validation supplies strict STD3, hyphen, and DNS-length checks,
   and libidn2/libunistring/ICU remain outside the dependency graph;
-- an embedded CA bundle.
+- the dated, hash-pinned Mozilla CA extract compiled into the executable as
+  read-only data and supplied directly to curl.
 
 No separate APNG library is required. Implement the specified parser/compositor
 in first-party C++ using zlib/libpng primitives and libwebp. This avoids adopting
@@ -309,7 +310,8 @@ Deliverables:
   as static PIC/LTO-compatible archives.
 - Disable loadable modules and explicitly register required libvips, GLib, and
   codec operations.
-- Generate embedded CA data.
+- Fetch the dated Mozilla CA extract through the verified source cache and
+  generate the embedded read-only CA data object for both target architectures.
 - Add `bootstrap` packaging, link map, SBOM, notices/source bundle, relink
   bundle, and static ELF verification targets.
 - Add GoogleTest at a pinned revision as a test-only CMake dependency behind

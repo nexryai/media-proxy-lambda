@@ -44,6 +44,50 @@ foreach(required_curl_artifact IN ITEMS
     endif()
 endforeach()
 
+if(NOT EXISTS "${MEDIAPROXY_CA_BUNDLE}")
+    message(FATAL_ERROR
+        "Pinned Mozilla CA bundle is absent: ${MEDIAPROXY_CA_BUNDLE}")
+endif()
+file(SIZE "${MEDIAPROXY_CA_BUNDLE}" ca_bundle_size)
+if(ca_bundle_size EQUAL 0)
+    message(FATAL_ERROR "Pinned Mozilla CA bundle is empty")
+endif()
+file(SHA256 "${MEDIAPROXY_CA_BUNDLE}" actual_ca_bundle_sha256)
+if(NOT actual_ca_bundle_sha256 STREQUAL MEDIAPROXY_CA_BUNDLE_SHA256)
+    message(FATAL_ERROR "Pinned Mozilla CA bundle hash does not match the lock")
+endif()
+if(NOT EXISTS "${MEDIAPROXY_OBJCOPY}")
+    message(FATAL_ERROR "Pinned LLVM objcopy is absent: ${MEDIAPROXY_OBJCOPY}")
+endif()
+if(MEDIAPROXY_TARGET_ARCH STREQUAL "x86_64")
+    set(ca_bundle_object_format elf64-x86-64)
+    set(ca_bundle_object_architecture i386:x86-64)
+elseif(MEDIAPROXY_TARGET_ARCH STREQUAL "arm64")
+    set(ca_bundle_object_format elf64-littleaarch64)
+    set(ca_bundle_object_architecture aarch64)
+else()
+    message(FATAL_ERROR "Unsupported CA bundle target architecture")
+endif()
+get_filename_component(ca_bundle_directory "${MEDIAPROXY_CA_BUNDLE}" DIRECTORY)
+get_filename_component(ca_bundle_name "${MEDIAPROXY_CA_BUNDLE}" NAME)
+set(ca_bundle_object "${CMAKE_CURRENT_BINARY_DIR}/mediaproxy-ca-bundle.o")
+add_custom_command(
+    OUTPUT "${ca_bundle_object}"
+    COMMAND "${MEDIAPROXY_OBJCOPY}"
+        --input-target=binary
+        "--output-target=${ca_bundle_object_format}"
+        "--binary-architecture=${ca_bundle_object_architecture}"
+        --new-symbol-visibility=hidden
+        "--rename-section=.data=.rodata.mediaproxy_ca,alloc,load,readonly,data,contents"
+        "${ca_bundle_name}"
+        "${ca_bundle_object}"
+    DEPENDS "${MEDIAPROXY_CA_BUNDLE}"
+    WORKING_DIRECTORY "${ca_bundle_directory}"
+    VERBATIM)
+set_source_files_properties("${ca_bundle_object}" PROPERTIES
+    EXTERNAL_OBJECT TRUE
+    GENERATED TRUE)
+
 foreach(required_nghttp2_artifact IN ITEMS
         "${MEDIAPROXY_NGHTTP2_INCLUDE_DIR}/nghttp2/nghttp2.h"
         "${MEDIAPROXY_NGHTTP2_LIBRARY}")
@@ -370,7 +414,9 @@ set_target_properties(mediaproxy_curl PROPERTIES
 )
 
 add_library(mediaproxy_http STATIC
+    "${ca_bundle_object}"
     src/http/address_policy.cpp
+    src/http/ca_bundle.cpp
     src/http/curl_resolve_pin.cpp
     src/http/dns_policy.cpp
     src/http/event.cpp
@@ -603,6 +649,17 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/CurlBuildTest.cmake"
+    )
+    add_test(
+        NAME ca-bundle-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DBUNDLE=${MEDIAPROXY_CA_BUNDLE}"
+            "-DBUNDLE_OBJECT=${ca_bundle_object}"
+            "-DEXPECTED_SHA256=${MEDIAPROXY_CA_BUNDLE_SHA256}"
+            "-DREADELF=${MEDIAPROXY_READELF}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/CaBundleBuildTest.cmake"
     )
     add_test(
         NAME yyjson-build-policy

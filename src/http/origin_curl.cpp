@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include <curl/curl.h>
+#include <mediaproxy/http/ca_bundle.hpp>
 #include <mediaproxy/http/curl_resolve_pin.hpp>
 #include <mediaproxy/http/origin_response.hpp>
 #include <mediaproxy/http/url_policy.hpp>
@@ -41,14 +42,17 @@ OriginCurlConfigError configure_origin_curl(
     const OriginUrl& origin,
     const CurlResolvePin& pin,
     OriginResponseAccumulator& response,
-    std::span<const std::byte> ca_pem,
     long timeout_milliseconds) noexcept
 {
-    if (easy == nullptr || !pin.matches(origin) || ca_pem.empty()
+    if (easy == nullptr || !pin.matches(origin)
         || timeout_milliseconds <= 0) {
         return OriginCurlConfigError::invalid_argument;
     }
 
+    const std::span<const std::byte> ca_pem = embedded_ca_bundle();
+    if (ca_pem.empty()) {
+        return OriginCurlConfigError::invalid_argument;
+    }
     curl_blob ca_blob{
         .data = const_cast<std::byte*>(ca_pem.data()),
         .len = ca_pem.size(),

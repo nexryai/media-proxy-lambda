@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <span>
 
 #include <curl/curl.h>
 #include <mediaproxy/http/curl_resolve_pin.hpp>
@@ -24,7 +23,6 @@ enum class OriginCurlConfigError {
     const OriginUrl& origin,
     const CurlResolvePin& pin,
     OriginResponseAccumulator& response,
-    std::span<const std::byte> ca_pem,
     long timeout_milliseconds) noexcept;
 
 [[nodiscard]] std::size_t origin_header_callback(

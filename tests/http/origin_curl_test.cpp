@@ -8,6 +8,7 @@
 
 #include <curl/curl.h>
 #include <gtest/gtest.h>
+#include <mediaproxy/http/ca_bundle.hpp>
 #include <mediaproxy/http/curl_resolve_pin.hpp>
 #include <mediaproxy/http/dns_policy.hpp>
 #include <mediaproxy/http/origin_curl.hpp>
@@ -21,6 +22,7 @@ using mediaproxy::http::OriginCurlConfigError;
 using mediaproxy::http::OriginResponseAccumulator;
 using mediaproxy::http::OriginResponseError;
 using mediaproxy::http::configure_origin_curl;
+using mediaproxy::http::embedded_ca_bundle;
 using mediaproxy::http::is_body_limit_completion;
 using mediaproxy::http::maximum_origin_body_bytes;
 using mediaproxy::http::origin_body_callback;
@@ -68,16 +70,37 @@ TEST(OriginCurl, ConfiguresPinnedVerifiedGetRequest)
     const auto pin = CurlResolvePin::create(*parsed.url, resolved.addresses);
     ASSERT_TRUE(pin);
     OriginResponseAccumulator response;
-    constexpr std::array<std::byte, 4> ca_pem{
-        std::byte{0x74}, std::byte{0x65}, std::byte{0x73}, std::byte{0x74}};
-
     EXPECT_EQ(
         configure_origin_curl(
-            easy.get(), *parsed.url, pin, response, ca_pem, 1500),
+            easy.get(), *parsed.url, pin, response, 1500),
         OriginCurlConfigError::none);
 }
 
-TEST(OriginCurl, RejectsMissingSecurityInputsAndMismatchedPin)
+TEST(OriginCurl, EmbedsPinnedMozillaTrustBundle)
+{
+    const std::span<const std::byte> bundle = embedded_ca_bundle();
+    ASSERT_EQ(bundle.size(), 186446U);
+    const std::string_view text{
+        reinterpret_cast<const char*>(bundle.data()), bundle.size()};
+    EXPECT_TRUE(text.starts_with("##\n## Bundle of CA Root Certificates\n"));
+    EXPECT_NE(
+        text.find("Certificate data from Mozilla as of: "
+                  "Thu Jul 16 03:12:01 2026 GMT"),
+        std::string_view::npos);
+
+    constexpr std::string_view certificate_begin =
+        "-----BEGIN CERTIFICATE-----";
+    std::size_t certificate_count = 0;
+    for (std::size_t offset = 0;
+         (offset = text.find(certificate_begin, offset))
+            != std::string_view::npos;
+         offset += certificate_begin.size()) {
+        ++certificate_count;
+    }
+    EXPECT_EQ(certificate_count, 119U);
+}
+
+TEST(OriginCurl, RejectsInvalidArgumentsAndMismatchedPin)
 {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
@@ -95,30 +118,23 @@ TEST(OriginCurl, RejectsMissingSecurityInputsAndMismatchedPin)
     const auto pin = CurlResolvePin::create(*first.url, resolved.addresses);
     ASSERT_TRUE(pin);
     OriginResponseAccumulator response;
-    constexpr std::array<std::byte, 1> ca_pem{std::byte{1}};
-    constexpr std::array<std::byte, 0> empty_ca{};
-
     EXPECT_EQ(
         configure_origin_curl(
-            nullptr, *first.url, pin, response, ca_pem, 1000),
+            nullptr, *first.url, pin, response, 1000),
         OriginCurlConfigError::invalid_argument);
     EXPECT_EQ(
         configure_origin_curl(
-            easy.get(), *second.url, pin, response, ca_pem, 1000),
+            easy.get(), *second.url, pin, response, 1000),
         OriginCurlConfigError::invalid_argument);
     auto changed_url = *first.url;
     changed_url.canonical_url = "https://second.example/";
     EXPECT_EQ(
         configure_origin_curl(
-            easy.get(), changed_url, pin, response, ca_pem, 1000),
+            easy.get(), changed_url, pin, response, 1000),
         OriginCurlConfigError::invalid_argument);
     EXPECT_EQ(
         configure_origin_curl(
-            easy.get(), *first.url, pin, response, empty_ca, 1000),
-        OriginCurlConfigError::invalid_argument);
-    EXPECT_EQ(
-        configure_origin_curl(
-            easy.get(), *first.url, pin, response, ca_pem, 0),
+            easy.get(), *first.url, pin, response, 0),
         OriginCurlConfigError::invalid_argument);
 }
 

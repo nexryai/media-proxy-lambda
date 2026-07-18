@@ -29,6 +29,7 @@ find_program(host_lld NAMES ld.lld-22 REQUIRED)
 find_program(host_ar NAMES llvm-ar-22 REQUIRED)
 find_program(host_ranlib NAMES llvm-ranlib-22 REQUIRED)
 find_program(host_nm NAMES llvm-nm-22 REQUIRED)
+find_program(host_objcopy NAMES llvm-objcopy-22 REQUIRED)
 find_program(host_strip NAMES llvm-strip-22 REQUIRED)
 find_program(host_readelf NAMES llvm-readelf-22 REQUIRED)
 find_program(host_make NAMES make REQUIRED)
@@ -66,6 +67,9 @@ mediaproxy_lock_get(boringssl version boringssl_version)
 mediaproxy_lock_get(curl url curl_url)
 mediaproxy_lock_get(curl sha256 curl_sha256)
 mediaproxy_lock_get(curl version curl_version)
+mediaproxy_lock_get(mozilla-ca-bundle url ca_bundle_url)
+mediaproxy_lock_get(mozilla-ca-bundle sha256 ca_bundle_sha256)
+mediaproxy_lock_get(mozilla-ca-bundle version ca_bundle_version)
 mediaproxy_lock_get(ada-idna url ada_idna_url)
 mediaproxy_lock_get(ada-idna sha256 ada_idna_sha256)
 mediaproxy_lock_get(ada-idna version ada_idna_version)
@@ -1901,9 +1905,27 @@ ExternalProject_Add(curl
         "${curl_include_dir}/curl/curl.h"
 )
 
+set(ca_bundle_directory "${sysroot}/usr/share/mediaproxy")
+set(ca_bundle_file "${ca_bundle_directory}/cacert.pem")
+ExternalProject_Add(ca_bundle
+    URL "${ca_bundle_url}"
+    URL_HASH "SHA256=${ca_bundle_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "cacert-${ca_bundle_version}.pem"
+    DOWNLOAD_NO_EXTRACT TRUE
+    UPDATE_DISCONNECTED TRUE
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory "${ca_bundle_directory}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <DOWNLOADED_FILE> "${ca_bundle_file}"
+    BUILD_BYPRODUCTS "${ca_bundle_file}"
+)
+
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS ada_idna boringssl curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
+    DEPENDS ada_idna boringssl ca_bundle curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -1926,6 +1948,7 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_NM=${host_nm}"
         "-DMEDIAPROXY_STRIP=${host_strip}"
         "-DMEDIAPROXY_READELF=${host_readelf}"
+        "-DMEDIAPROXY_OBJCOPY=${host_objcopy}"
         "-DMEDIAPROXY_SOURCE_CACHE=${source_cache}"
         "-DMEDIAPROXY_FORTIFY_INCLUDE_DIR=${fortify_headers_include_dir}"
         "-DMEDIAPROXY_ADA_IDNA_INCLUDE_DIR=${ada_idna_include_dir}"
@@ -1943,6 +1966,8 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_CURL_LIBRARY=${curl_library}"
         "-DMEDIAPROXY_CURL_COMPILE_COMMANDS=${curl_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_CURL_CONFIG_HEADER=${curl_binary_directory}/lib/curl_config.h"
+        "-DMEDIAPROXY_CA_BUNDLE=${ca_bundle_file}"
+        "-DMEDIAPROXY_CA_BUNDLE_SHA256=${ca_bundle_sha256}"
         "-DMEDIAPROXY_NGHTTP2_INCLUDE_DIR=${nghttp2_include_dir}"
         "-DMEDIAPROXY_NGHTTP2_LIBRARY=${nghttp2_library}"
         "-DMEDIAPROXY_NGHTTP2_COMPILE_COMMANDS=${nghttp2_binary_directory}/compile_commands.json"

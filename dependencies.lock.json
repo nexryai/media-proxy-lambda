@@ -147,6 +147,26 @@
             "reason": "Bounded HTTP/HTTPS transport for the Lambda Runtime API and validated origins"
         },
         {
+            "name": "mozilla-ca-bundle",
+            "version": "2026-07-16",
+            "revision": "curl Mozilla CA extract dated 2026-07-16",
+            "url": "https://curl.se/ca/cacert-2026-07-16.pem",
+            "sha256": "3ff344e30b9b1ed2971044eabb438a08f2e2245ddb5f8ab1a3ad8b63ab4eaf91",
+            "license": "MPL-2.0",
+            "buildOptions": [
+                "119 Mozilla-trusted root certificates in PEM format",
+                "downloaded through the hash-verified superbuild source cache",
+                "compiled into the static bootstrap as read-only data",
+                "supplied to curl through CURLOPT_CAINFO_BLOB",
+                "no runtime CA file or directory lookup"
+            ],
+            "securityNotes": [
+                "the dated URL and SHA-256 prevent an upstream trust-store update from silently changing a release",
+                "refreshes require a dependency-lock change and embedded-bundle regression review"
+            ],
+            "reason": "Pinned public Web PKI trust roots for verified origin HTTPS without a runtime filesystem dependency"
+        },
+        {
             "name": "ada-idna",
             "version": "3.4.4",
             "revision": "8d50724a7dea209a05234a445e28f97994b0a5f6",
