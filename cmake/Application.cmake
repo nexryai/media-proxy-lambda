@@ -373,6 +373,8 @@ add_library(mediaproxy_http STATIC
     src/http/event.cpp
     src/http/idna.cpp
     src/http/query.cpp
+    src/http/request_plan.cpp
+    src/http/response.cpp
 )
 target_include_directories(mediaproxy_http PUBLIC
     "${CMAKE_SOURCE_DIR}/include"
@@ -503,6 +505,7 @@ if(BUILD_TESTING)
     add_executable(mediaproxy_http_test
         tests/http/event_test.cpp
         tests/http/query_test.cpp
+        tests/http/response_test.cpp
         tests/http/selectors_test.cpp
     )
     target_link_libraries(mediaproxy_http_test
@@ -517,7 +520,10 @@ if(BUILD_TESTING)
         "MEDIAPROXY_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\""
     )
     if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
-        gtest_discover_tests(mediaproxy_http_test DISCOVERY_MODE PRE_TEST)
+        gtest_discover_tests(
+            mediaproxy_http_test
+            DISCOVERY_MODE PRE_TEST
+            NO_PRETTY_VALUES)
     endif()
 
     add_executable(mediaproxy_stack_smash_probe

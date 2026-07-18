@@ -4,20 +4,25 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <variant>
 
 #include <gtest/gtest.h>
 #include <mediaproxy/http/event.hpp>
 #include <mediaproxy/http/query.hpp>
+#include <mediaproxy/http/request_plan.hpp>
+#include <mediaproxy/http/response.hpp>
 #include <yyjson.h>
 
 namespace {
 
 using mediaproxy::http::EventError;
+using mediaproxy::http::HttpResponse;
 using mediaproxy::http::MediaSelector;
+using mediaproxy::http::MediaRequest;
 using mediaproxy::http::PreferredOutput;
 using mediaproxy::http::RequestRoute;
 using mediaproxy::http::parse_function_url_event;
-using mediaproxy::http::select_media_options;
+using mediaproxy::http::plan_request;
 
 std::string ReadFile(const std::string& path)
 {
@@ -60,6 +65,18 @@ PreferredOutput ParseOutput(std::string_view value)
     return PreferredOutput::webp;
 }
 
+std::string_view HeaderValue(
+    const HttpResponse& response,
+    std::string_view name)
+{
+    for (const auto& header : response.headers) {
+        if (header.name == name) {
+            return header.value;
+        }
+    }
+    return {};
+}
+
 } // namespace
 
 TEST(Event, MatchesCheckedInFunctionUrlFixtures)
@@ -95,6 +112,19 @@ TEST(Event, MatchesCheckedInFunctionUrlFixtures)
         if (std::string_view{expected_route} == "error") {
             EXPECT_FALSE(result);
             EXPECT_EQ(result.error, EventError::invalid_path_escape);
+            const auto plan = plan_request(result);
+            ASSERT_TRUE(std::holds_alternative<HttpResponse>(plan));
+            const auto& response = std::get<HttpResponse>(plan);
+            EXPECT_EQ(
+                response.status,
+                yyjson_get_uint(yyjson_obj_get(expected, "status")));
+            EXPECT_EQ(
+                response.body,
+                yyjson_get_str(yyjson_obj_get(expected, "bodyUtf8")));
+            yyjson_val* const headers = yyjson_obj_get(expected, "headers");
+            EXPECT_EQ(
+                HeaderValue(response, "Content-Type"),
+                yyjson_get_str(yyjson_obj_get(headers, "Content-Type")));
             continue;
         }
 
@@ -113,11 +143,25 @@ TEST(Event, MatchesCheckedInFunctionUrlFixtures)
             : RequestRoute::media;
         EXPECT_EQ(request.route, route);
 
-        if (route == RequestRoute::media) {
+        const auto plan = plan_request(result);
+        if (route == RequestRoute::status) {
+            ASSERT_TRUE(std::holds_alternative<HttpResponse>(plan));
+            const auto& response = std::get<HttpResponse>(plan);
             EXPECT_EQ(
-                request.query.first("url"),
+                response.status,
+                yyjson_get_uint(yyjson_obj_get(expected, "status")));
+            EXPECT_EQ(
+                response.body,
+                yyjson_get_str(yyjson_obj_get(expected, "bodyUtf8")));
+        } else {
+            ASSERT_TRUE(std::holds_alternative<MediaRequest>(plan));
+            const auto& media_request = std::get<MediaRequest>(plan);
+            EXPECT_EQ(
+                media_request.source_url,
                 yyjson_get_str(yyjson_obj_get(expected, "firstUrl")));
-            const auto options = select_media_options(request.query);
+            EXPECT_EQ(media_request.method, request.method);
+            EXPECT_EQ(media_request.decoded_path, request.decoded_path);
+            const auto& options = media_request.options;
             EXPECT_EQ(
                 options.selector,
                 ParseSelector(yyjson_get_str(
@@ -164,4 +208,28 @@ TEST(Event, RejectsMalformedJsonAndRequiredFields)
     const auto missing_field = parse_function_url_event(missing_method);
     EXPECT_FALSE(missing_field);
     EXPECT_EQ(missing_field.error, EventError::invalid_structure);
+}
+
+TEST(RequestPlan, RejectsMissingOrEmptyFirstUrl)
+{
+    constexpr std::string_view missing_url = R"({
+        "version":"2.0",
+        "rawPath":"/media",
+        "rawQueryString":"thumbnail=1",
+        "requestContext":{"http":{"method":"GET"}}
+    })";
+    const auto missing_plan = plan_request(parse_function_url_event(missing_url));
+    ASSERT_TRUE(std::holds_alternative<HttpResponse>(missing_plan));
+    EXPECT_EQ(std::get<HttpResponse>(missing_plan).status, 400);
+
+    constexpr std::string_view empty_first_url = R"({
+        "version":"2.0",
+        "rawPath":"/media",
+        "rawQueryString":"url=&url=https%3A%2F%2Forigin.example%2Fa",
+        "requestContext":{"http":{"method":"GET"}}
+    })";
+    const auto empty_plan =
+        plan_request(parse_function_url_event(empty_first_url));
+    ASSERT_TRUE(std::holds_alternative<HttpResponse>(empty_plan));
+    EXPECT_EQ(std::get<HttpResponse>(empty_plan).status, 400);
 }
