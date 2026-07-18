@@ -370,6 +370,7 @@ set_target_properties(mediaproxy_curl PROPERTIES
 )
 
 add_library(mediaproxy_http STATIC
+    src/http/event.cpp
     src/http/idna.cpp
     src/http/query.cpp
 )
@@ -381,6 +382,7 @@ target_link_libraries(mediaproxy_http
         mediaproxy_hardening
         mediaproxy_warnings
         mediaproxy_ada_idna
+        mediaproxy_yyjson
 )
 
 add_executable(bootstrap src/bootstrap.cpp)
@@ -499,6 +501,7 @@ if(BUILD_TESTING)
     endif()
 
     add_executable(mediaproxy_http_test
+        tests/http/event_test.cpp
         tests/http/query_test.cpp
         tests/http/selectors_test.cpp
     )

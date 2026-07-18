@@ -1,69 +1,14 @@
 #include <mediaproxy/http/query.hpp>
 
+#include "percent_decode.hpp"
+
 #include <cstddef>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
 namespace mediaproxy::http {
-namespace {
-
-[[nodiscard]] std::optional<unsigned char> decode_hex_pair(
-    char high,
-    char low) noexcept
-{
-    const auto decode_nibble = [](char value) -> std::optional<unsigned char> {
-        if (value >= '0' && value <= '9') {
-            return static_cast<unsigned char>(value - '0');
-        }
-        if (value >= 'a' && value <= 'f') {
-            return static_cast<unsigned char>(value - 'a' + 10);
-        }
-        if (value >= 'A' && value <= 'F') {
-            return static_cast<unsigned char>(value - 'A' + 10);
-        }
-        return std::nullopt;
-    };
-
-    const auto high_nibble = decode_nibble(high);
-    const auto low_nibble = decode_nibble(low);
-    if (!high_nibble || !low_nibble) {
-        return std::nullopt;
-    }
-    return static_cast<unsigned char>((*high_nibble << 4U) | *low_nibble);
-}
-
-[[nodiscard]] std::optional<std::string> query_unescape(
-    std::string_view encoded)
-{
-    std::string decoded;
-    decoded.reserve(encoded.size());
-    for (std::size_t index = 0; index < encoded.size(); ++index) {
-        const char value = encoded[index];
-        if (value == '+') {
-            decoded.push_back(' ');
-            continue;
-        }
-        if (value != '%') {
-            decoded.push_back(value);
-            continue;
-        }
-        if (encoded.size() - index < 3) {
-            return std::nullopt;
-        }
-        const auto byte = decode_hex_pair(encoded[index + 1], encoded[index + 2]);
-        if (!byte) {
-            return std::nullopt;
-        }
-        decoded.push_back(static_cast<char>(*byte));
-        index += 2;
-    }
-    return decoded;
-}
-
-} // namespace
 
 QueryParameters::QueryParameters(std::vector<QueryParameter> parameters)
     : parameters_(std::move(parameters))
@@ -108,8 +53,8 @@ QueryParameters parse_query(std::string_view raw_query)
             const std::string_view encoded_value = equals == std::string_view::npos
                 ? std::string_view{}
                 : field.substr(equals + 1);
-            auto key = query_unescape(encoded_key);
-            auto value = query_unescape(encoded_value);
+            auto key = detail::percent_decode(encoded_key, true);
+            auto value = detail::percent_decode(encoded_value, true);
             if (key && value) {
                 parameters.push_back(
                     {.key = std::move(*key), .value = std::move(*value)});
