@@ -424,6 +424,7 @@ add_library(mediaproxy_http STATIC
     src/http/origin_curl.cpp
     src/http/origin_response.cpp
     src/http/query.cpp
+    src/http/redirect_policy.cpp
     src/http/request_plan.cpp
     src/http/response.cpp
     src/http/url_policy.cpp
@@ -563,6 +564,7 @@ if(BUILD_TESTING)
         tests/http/origin_curl_test.cpp
         tests/http/origin_response_test.cpp
         tests/http/query_test.cpp
+        tests/http/redirect_policy_test.cpp
         tests/http/response_test.cpp
         tests/http/selectors_test.cpp
         tests/http/url_policy_test.cpp
