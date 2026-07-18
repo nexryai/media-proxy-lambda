@@ -376,6 +376,7 @@ add_library(mediaproxy_http STATIC
     src/http/query.cpp
     src/http/request_plan.cpp
     src/http/response.cpp
+    src/http/url_policy.cpp
 )
 target_include_directories(mediaproxy_http PUBLIC
     "${CMAKE_SOURCE_DIR}/include"
@@ -385,6 +386,7 @@ target_link_libraries(mediaproxy_http
         mediaproxy_hardening
         mediaproxy_warnings
         mediaproxy_ada_idna
+        mediaproxy_curl
         mediaproxy_yyjson
 )
 
@@ -509,6 +511,7 @@ if(BUILD_TESTING)
         tests/http/query_test.cpp
         tests/http/response_test.cpp
         tests/http/selectors_test.cpp
+        tests/http/url_policy_test.cpp
     )
     target_link_libraries(mediaproxy_http_test
         PRIVATE
