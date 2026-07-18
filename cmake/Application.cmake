@@ -375,6 +375,7 @@ add_library(mediaproxy_http STATIC
     src/http/dns_policy.cpp
     src/http/event.cpp
     src/http/idna.cpp
+    src/http/origin_response.cpp
     src/http/query.cpp
     src/http/request_plan.cpp
     src/http/response.cpp
@@ -512,6 +513,7 @@ if(BUILD_TESTING)
         tests/http/curl_resolve_pin_test.cpp
         tests/http/dns_policy_test.cpp
         tests/http/event_test.cpp
+        tests/http/origin_response_test.cpp
         tests/http/query_test.cpp
         tests/http/response_test.cpp
         tests/http/selectors_test.cpp
