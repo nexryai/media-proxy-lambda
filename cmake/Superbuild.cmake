@@ -620,7 +620,7 @@ ExternalProject_Add(libwebp
         "-DCMAKE_RANLIB=${host_ranlib}"
         "-DCMAKE_NM=${host_nm}"
         "-DCMAKE_LINKER=${host_lld}"
-        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -Wall -Wextra -Werror"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -fno-sanitize=cfi-icall -Wall -Wextra -Werror"
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
         "-DCMAKE_DISABLE_FIND_PACKAGE_OpenGL=TRUE"
         "-DBUILD_SHARED_LIBS=OFF"

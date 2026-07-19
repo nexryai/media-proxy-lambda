@@ -169,11 +169,14 @@ GObject callback conventions throughout operation registration. libexif also
 passes public callback functions through internal generic traversal helpers;
 ThinLTO exposes those conversions to whole-program CFI when libvips invokes the
 EXIF traversal API. libheif's public versioned writer and codec-backend tables
-similarly cross the C/C++ callback boundary. Disable only `cfi-icall` for the
-pinned libvips, libexif, and libheif archives while retaining their other CFI
-classes and every other hardening control. Build-policy tests must enforce each
-narrow exception and every retained flag; first-party code and compatible
-dependencies, including libaom, keep full trapping CFI.
+similarly cross the C/C++ callback boundary. libwebp invokes the public
+`WebPPicture` writer hook supplied by libvips; the pinned pair uses
+ABI-compatible callback signatures that ThinLTO CFI assigns different type
+identities. Disable only `cfi-icall` for the pinned libvips, libexif, libheif,
+and libwebp archives while retaining their other CFI classes and every other
+hardening control. Build-policy tests must enforce each narrow exception and
+every retained flag; first-party code and compatible dependencies, including
+libaom, keep full trapping CFI.
 
 The production and test baseline includes:
 
