@@ -19,6 +19,7 @@
 #include <libheif/heif.h>
 #include <mediaproxy/http/ca_bundle.hpp>
 #include <mediaproxy/http/idna.hpp>
+#include <mediaproxy/media/vips_runtime.hpp>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <pcre2.h>
@@ -194,17 +195,15 @@ int main()
         return 1;
     }
     heif_deinit_function();
-    if (vips_init("mediaproxy-bootstrap") != 0) {
+    if (!mediaproxy::media::initialize_vips()) {
         return 1;
     }
     if (vips_type_find("VipsOperation", "heifload") == 0
             || vips_type_find("VipsOperation", "heifsave") == 0
             || vips_type_find("VipsOperation", "tiffload") != 0
             || vips_type_find("VipsOperation", "magickload") != 0) {
-        vips_shutdown();
         return 1;
     }
-    vips_shutdown();
     auto* volatile pcre2_config_function = &pcre2_config;
     PCRE2_UCHAR pcre2_version[32] = {};
     if (pcre2_config_function(PCRE2_CONFIG_VERSION, pcre2_version) < 0

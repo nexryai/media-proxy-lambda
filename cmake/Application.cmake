@@ -402,7 +402,7 @@ set_target_properties(mediaproxy_libvips PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES
         "${MEDIAPROXY_GLIB_INCLUDE_DIR};${MEDIAPROXY_GLIB_CONFIG_INCLUDE_DIR}"
     INTERFACE_LINK_LIBRARIES
-        "mediaproxy_libheif;mediaproxy_libaom;mediaproxy_libwebp_mux;mediaproxy_libwebp_demux;mediaproxy_libpng;mediaproxy_libjpeg_turbo;mediaproxy_lcms2;mediaproxy_libexif;mediaproxy_libexpat;mediaproxy_gio;mediaproxy_gobject;mediaproxy_gthread;mediaproxy_glib;mediaproxy_zlib;m"
+        "mediaproxy_libheif;mediaproxy_libaom;mediaproxy_libwebp_mux;mediaproxy_libwebp_demux;mediaproxy_libpng;mediaproxy_libjpeg_turbo;mediaproxy_libnsgif;mediaproxy_lcms2;mediaproxy_libexif;mediaproxy_libexpat;mediaproxy_gio;mediaproxy_gobject;mediaproxy_gthread;mediaproxy_glib;mediaproxy_zlib;m"
 )
 
 add_library(mediaproxy_curl STATIC IMPORTED GLOBAL)
@@ -447,6 +447,7 @@ add_library(mediaproxy_media STATIC
     src/media/classification.cpp
     src/media/mime.cpp
     src/media/resize.cpp
+    src/media/vips_runtime.cpp
 )
 target_include_directories(mediaproxy_media PUBLIC
     "${CMAKE_SOURCE_DIR}/include"
@@ -455,6 +456,7 @@ target_link_libraries(mediaproxy_media
     PRIVATE
         mediaproxy_hardening
         mediaproxy_warnings
+        mediaproxy_libvips
 )
 
 add_executable(bootstrap src/bootstrap.cpp)
@@ -611,12 +613,14 @@ if(BUILD_TESTING)
         tests/media/classification_test.cpp
         tests/media/mime_test.cpp
         tests/media/resize_test.cpp
+        tests/media/vips_runtime_test.cpp
     )
     target_link_libraries(mediaproxy_media_test
         PRIVATE
             mediaproxy_hardening
             mediaproxy_warnings
             mediaproxy_media
+            mediaproxy_libvips
             mediaproxy_yyjson
             GTest::gtest_main
     )
