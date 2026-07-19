@@ -189,6 +189,11 @@ system.
 
 Format all code according to the repository's `.editorconfig`.
 
+Write code comments in English. Avoid comments that merely narrate an obvious
+operation. Add comments where the reason is not apparent from the code alone,
+especially at security boundaries, ownership transitions, and intentional
+compatibility exceptions.
+
 Use RAII for BoringSSL, curl, libvips, GLib, file descriptors, and Runtime API
 resources. Use bounded containers and checked arithmetic for byte lengths,
 dimensions, offsets, rectangles, pages, frame counts, timestamps, and chunk
