@@ -276,6 +276,8 @@ std::string_view mime_type_name(MimeType type) noexcept
     switch (type) {
     case MimeType::image_avif:
         return "image/avif";
+    case MimeType::image_ico:
+        return "image/ico";
     case MimeType::image_x_icon:
         return "image/x-icon";
     case MimeType::image_bmp:
