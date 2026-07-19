@@ -1319,7 +1319,7 @@ ExternalProject_Add(ada_idna
 )
 
 string(SHA256 libaom_build_configuration_sha256
-    "${libaom_patch_sha256}")
+    "${libaom_sha256}:${libaom_patch_sha256}")
 string(SUBSTRING "${libaom_build_configuration_sha256}" 0 12
     libaom_patch_build_id)
 set(libaom_prefix_directory

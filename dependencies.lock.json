@@ -335,8 +335,8 @@
             "name": "libaom",
             "version": "3.14.1",
             "revision": "03087864cf4bea6abb0d28f95cf7843511413d8f",
-            "url": "https://aomedia.googlesource.com/aom/+archive/refs/tags/v3.14.1.tar.gz",
-            "sha256": "90d7272148f671951894ed379b1b8a1fde48690cf5aeb0d2f8eecf601db36f47",
+            "url": "https://storage.googleapis.com/aom-releases/libaom-3.14.1.tar.gz",
+            "sha256": "44bf90dbd23e734d50e70a8c41c285193922938bd0d3bc2ee56764d181d55ef5",
             "license": "BSD-2-Clause AND LicenseRef-AOM-Patent-License-1.0",
             "buildOptions": [
                 "static libaom archive with PIC",
