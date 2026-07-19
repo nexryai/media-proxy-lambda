@@ -1,0 +1,102 @@
+name: Bootstrap
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    build:
+        name: ${{ matrix.arch }} deployment bootstrap
+        runs-on: ${{ matrix.runner }}
+        timeout-minutes: 180
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - arch: x86_64
+                      runner: ubuntu-24.04
+                      runner_arch: x86_64
+                      platform: linux/amd64
+                      preset: x86_64-release
+                    - arch: arm64
+                      runner: ubuntu-24.04-arm
+                      runner_arch: aarch64
+                      platform: linux/arm64
+                      preset: arm64-release
+
+        steps:
+            - name: Check out source
+              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+            - name: Verify native runner architecture
+              env:
+                  EXPECTED_RUNNER_ARCH: ${{ matrix.runner_arch }}
+              run: test "$(uname -m)" = "${EXPECTED_RUNNER_ARCH}"
+
+            - name: Restore pinned source archives
+              uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+              with:
+                  path: .cache/sources
+                  key: dependency-sources-v1-${{ hashFiles('dependencies.lock.json') }}
+
+            - name: Build CI toolchain container
+              env:
+                  CI_IMAGE: mediaproxy-ci:${{ matrix.arch }}
+                  CI_PLATFORM: ${{ matrix.platform }}
+              run: >-
+                  docker build
+                  --platform "${CI_PLATFORM}"
+                  --target ci
+                  --tag "${CI_IMAGE}"
+                  --file .devcontainer/Dockerfile
+                  .devcontainer
+
+            - name: Configure deployment build
+              env:
+                  CI_IMAGE: mediaproxy-ci:${{ matrix.arch }}
+                  CI_PLATFORM: ${{ matrix.platform }}
+                  CMAKE_PRESET: ${{ matrix.preset }}
+              run: >-
+                  docker run --rm
+                  --platform "${CI_PLATFORM}"
+                  --volume "${GITHUB_WORKSPACE}:/workspace"
+                  --workdir /workspace
+                  "${CI_IMAGE}"
+                  cmake --preset "${CMAKE_PRESET}" -DBUILD_TESTING=OFF
+
+            - name: Build deployment bootstrap
+              env:
+                  CI_IMAGE: mediaproxy-ci:${{ matrix.arch }}
+                  CI_PLATFORM: ${{ matrix.platform }}
+                  CMAKE_PRESET: ${{ matrix.preset }}
+              run: >-
+                  docker run --rm
+                  --platform "${CI_PLATFORM}"
+                  --volume "${GITHUB_WORKSPACE}:/workspace"
+                  --workdir /workspace
+                  "${CI_IMAGE}"
+                  cmake --build --preset "${CMAKE_PRESET}"
+                  --target application --parallel 2
+
+            - name: Report bootstrap size
+              env:
+                  ARCH: ${{ matrix.arch }}
+                  BOOTSTRAP: out/build/${{ matrix.preset }}/application/bootstrap
+              run: |
+                  test -x "${BOOTSTRAP}"
+                  bootstrap_bytes=$(stat --format='%s' "${BOOTSTRAP}")
+                  bootstrap_mib=$(awk -v bytes="${bootstrap_bytes}" \
+                      'BEGIN { printf "%.2f", bytes / 1048576 }')
+                  echo "bootstrap (${ARCH}): ${bootstrap_bytes} bytes (${bootstrap_mib} MiB)"
+                  {
+                      echo "### ${ARCH} deployment bootstrap"
+                      echo
+                      echo "- Binary: \`${BOOTSTRAP}\`"
+                      echo "- Size: ${bootstrap_bytes} bytes (${bootstrap_mib} MiB)"
+                  } >> "${GITHUB_STEP_SUMMARY}"
