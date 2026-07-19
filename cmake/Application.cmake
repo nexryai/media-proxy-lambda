@@ -446,6 +446,7 @@ target_link_libraries(mediaproxy_http
 add_library(mediaproxy_media STATIC
     src/media/classification.cpp
     src/media/mime.cpp
+    src/media/resize.cpp
 )
 target_include_directories(mediaproxy_media PUBLIC
     "${CMAKE_SOURCE_DIR}/include"
@@ -609,6 +610,7 @@ if(BUILD_TESTING)
     add_executable(mediaproxy_media_test
         tests/media/classification_test.cpp
         tests/media/mime_test.cpp
+        tests/media/resize_test.cpp
     )
     target_link_libraries(mediaproxy_media_test
         PRIVATE
