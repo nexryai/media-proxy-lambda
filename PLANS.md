@@ -391,8 +391,9 @@ Deliverables:
   and retain the hostname for SNI/certificate verification.
 - Build curl with BoringSSL, zlib content decoding, nghttp2, embedded CA, and
   the required IDNA behavior; disable unrelated protocols.
-- Implement at most 10 fully revalidated redirects, loop detection, exact user
-  agent, `Blocked-By`, status, content-length, truncation, and deadline rules.
+- Implement at most 10 fully revalidated 301/302/303/307/308 redirects, loop
+  detection, exact user agent, `Blocked-By`, status, content-length,
+  truncation, and deadline rules.
 - Isolate the trusted local Runtime API client from public origin URL policy.
 - Add GoogleTest unit tests for URL syntax, address classification, redirect
   decisions, header parsing, and body-limit state transitions; run local TLS

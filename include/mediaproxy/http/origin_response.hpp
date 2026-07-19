@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -30,6 +31,7 @@ public:
 
     [[nodiscard]] OriginResponseError error() const noexcept;
     [[nodiscard]] std::optional<std::int64_t> content_length() const noexcept;
+    [[nodiscard]] const std::optional<std::string>& location() const noexcept;
     [[nodiscard]] const std::vector<std::byte>& body() const noexcept;
     [[nodiscard]] bool at_body_limit() const noexcept;
 
@@ -38,6 +40,7 @@ private:
 
     OriginResponseError error_ = OriginResponseError::none;
     std::optional<std::int64_t> content_length_;
+    std::optional<std::string> location_;
     std::vector<std::byte> body_;
 };
 

@@ -97,6 +97,18 @@ TEST(OriginResponse, AppliesExactNextDnsHeaderRule)
     }
 }
 
+TEST(OriginResponse, RetainsTrimmedCaseInsensitiveRedirectLocation)
+{
+    OriginResponseAccumulator response;
+    response.consume_header_line("lOcAtIoN:\t ../next?value=1 \t\r\n");
+    ASSERT_TRUE(response.location().has_value());
+    EXPECT_EQ(*response.location(), "../next?value=1");
+
+    response.consume_header_line("Location: https://next.example/final\r\n");
+    ASSERT_TRUE(response.location().has_value());
+    EXPECT_EQ(*response.location(), "https://next.example/final");
+}
+
 TEST(OriginResponse, RetainsAtMostTenMibWithoutProbeByte)
 {
     OriginResponseAccumulator response;

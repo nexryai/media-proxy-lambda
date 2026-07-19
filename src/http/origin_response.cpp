@@ -7,6 +7,7 @@
 #include <new>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <system_error>
 
@@ -71,11 +72,25 @@ void OriginResponseAccumulator::consume_header_line(
     }
 
     const std::size_t separator = line.find(':');
-    if (separator == std::string_view::npos
-        || !ascii_iequals(line.substr(0, separator), "Content-Length")) {
+    if (separator == std::string_view::npos) {
         return;
     }
-    set_content_length(trim_optional_whitespace(line.substr(separator + 1)));
+    const std::string_view name = line.substr(0, separator);
+    const std::string_view value =
+        trim_optional_whitespace(line.substr(separator + 1));
+    if (ascii_iequals(name, "Content-Length")) {
+        set_content_length(value);
+    } else if (ascii_iequals(name, "Location")) {
+        try {
+            // Preserve the field value verbatim after HTTP optional whitespace
+            // removal; URL resolution and policy validation happen later.
+            location_ = std::string{value};
+        } catch (const std::bad_alloc&) {
+            error_ = OriginResponseError::allocation;
+        } catch (const std::length_error&) {
+            error_ = OriginResponseError::allocation;
+        }
+    }
 }
 
 void OriginResponseAccumulator::set_content_length(
@@ -159,6 +174,12 @@ std::optional<std::int64_t> OriginResponseAccumulator::content_length()
     const noexcept
 {
     return content_length_;
+}
+
+const std::optional<std::string>& OriginResponseAccumulator::location()
+    const noexcept
+{
+    return location_;
 }
 
 const std::vector<std::byte>& OriginResponseAccumulator::body() const noexcept

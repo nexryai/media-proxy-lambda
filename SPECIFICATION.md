@@ -188,6 +188,9 @@ than relying on address order.
 
 Redirects are a security exception to legacy behavior:
 
+- Treat status 301, 302, 303, 307, and 308 as redirects only when the response
+  supplies a non-empty `Location` field. Every other non-200 status is a
+  download failure.
 - Follow at most 10 redirects.
 - Resolve relative `Location` values against the current URL.
 - Apply the complete syntax and address policy to every hop.
@@ -213,8 +216,9 @@ Redirects are a security exception to legacy behavior:
   compatibility while never retaining additional bytes.
 - A response header exactly equal to `Blocked-By: NextDNS` is a download
   failure.
-- Read and sniff the body before evaluating status. Only status 200 succeeds;
-  every other status is a download failure.
+- Read and sniff the body and apply the header and body safety checks before
+  evaluating each hop's status. Redirect statuses are handled by section 3.3;
+  after redirect processing, only status 200 succeeds.
 - Bound connect, transfer, and total time by the remaining Lambda invocation
   deadline, leaving time to submit a 500 response. There is no independent
   legacy wall-clock timeout to preserve.
