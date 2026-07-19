@@ -7,7 +7,6 @@
     "workspaceFolder": "/workspace",
     "remoteUser": "ubuntu",
     "overrideCommand": true,
-    "postCreateCommand": "git config --global pull.rebase false",
     "customizations": {
         "vscode": {
             "extensions": ["editorconfig.editorconfig", "llvm-vs-code-extensions.vscode-clangd", "ms-vscode.cmake-tools"],
