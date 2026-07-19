@@ -30,17 +30,10 @@ set(glib_archives
     "${GTHREAD_ARCHIVE}"
     "${GMODULE_ARCHIVE}"
     "${GIO_ARCHIVE}")
-if(TARGET_ARCH STREQUAL "x86_64")
-    set(expected_member_counts 97 21 1 2 244)
-    set(expected_hardened_command_count 351)
-elseif(TARGET_ARCH STREQUAL "arm64")
-    # Cross configure cannot execute printf probes, so GLib conservatively
-    # includes eleven gnulib printf compatibility objects in libglib.
-    set(expected_member_counts 108 21 1 2 244)
-    set(expected_hardened_command_count 362)
-else()
+if(NOT TARGET_ARCH STREQUAL "x86_64" AND NOT TARGET_ARCH STREQUAL "arm64")
     message(FATAL_ERROR "Unsupported TARGET_ARCH: ${TARGET_ARCH}")
 endif()
+set(expected_member_counts 0 21 1 2 244)
 set(archive_index 0)
 foreach(archive IN LISTS glib_archives)
     if(NOT EXISTS "${archive}")
@@ -56,11 +49,24 @@ foreach(archive IN LISTS glib_archives)
     endif()
     string(REGEX MATCHALL "[^\n]+" archive_member_list "${archive_members}")
     list(LENGTH archive_member_list archive_member_count)
-    list(GET expected_member_counts ${archive_index} expected_member_count)
-    if(NOT archive_member_count EQUAL expected_member_count)
-        message(FATAL_ERROR
-            "${archive} contains ${archive_member_count} objects instead of "
-            "${expected_member_count}")
+    if(archive_index EQUAL 0)
+        # A native runner can execute the musl printf probes. A cross-only
+        # builder cannot, so GLib adds eleven gnulib compatibility objects.
+        if(archive_member_count EQUAL 97)
+            set(expected_hardened_command_count 351)
+        elseif(archive_member_count EQUAL 108)
+            set(expected_hardened_command_count 362)
+        else()
+            message(FATAL_ERROR
+                "${archive} contains unexpected ${archive_member_count} objects")
+        endif()
+    else()
+        list(GET expected_member_counts ${archive_index} expected_member_count)
+        if(NOT archive_member_count EQUAL expected_member_count)
+            message(FATAL_ERROR
+                "${archive} contains ${archive_member_count} objects instead of "
+                "${expected_member_count}")
+        endif()
     endif()
     math(EXPR archive_index "${archive_index} + 1")
 endforeach()

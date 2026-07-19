@@ -974,6 +974,15 @@ if(BUILD_TESTING)
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/HardeningFlagsTest.cmake"
     )
     if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        if(MEDIAPROXY_TARGET_ARCH STREQUAL "x86_64")
+            set(hardening_trap_result "Illegal instruction|SIGILL")
+        elseif(MEDIAPROXY_TARGET_ARCH STREQUAL "arm64")
+            # Clang lowers trapping fortify and CFI failures to BRK on arm64.
+            set(hardening_trap_result "Trace/breakpoint trap|SIGTRAP")
+        else()
+            message(FATAL_ERROR
+                "Unsupported hardening probe architecture: ${MEDIAPROXY_TARGET_ARCH}")
+        endif()
         add_test(
             NAME hardening-fortify-safe
             COMMAND mediaproxy_fortify_probe
@@ -983,7 +992,7 @@ if(BUILD_TESTING)
             COMMAND "${CMAKE_COMMAND}"
                 "-DPROGRAM=$<TARGET_FILE:mediaproxy_fortify_probe>"
                 "-DPROGRAM_ARGUMENTS=overflow"
-                "-DEXPECTED_RESULT=Illegal instruction"
+                "-DEXPECTED_RESULT=${hardening_trap_result}"
                 -P "${CMAKE_SOURCE_DIR}/tests/cmake/ExpectSignalFailure.cmake"
         )
         add_test(
@@ -997,7 +1006,7 @@ if(BUILD_TESTING)
             NAME hardening-cfi-violation
             COMMAND "${CMAKE_COMMAND}"
                 "-DPROGRAM=$<TARGET_FILE:mediaproxy_cfi_violation_probe>"
-                "-DEXPECTED_RESULT=Illegal instruction"
+                "-DEXPECTED_RESULT=${hardening_trap_result}"
                 -P "${CMAKE_SOURCE_DIR}/tests/cmake/ExpectSignalFailure.cmake"
         )
     endif()
