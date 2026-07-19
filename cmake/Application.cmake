@@ -566,6 +566,7 @@ if(BUILD_TESTING)
         tests/http/event_test.cpp
         tests/http/origin_curl_test.cpp
         tests/http/origin_download_test.cpp
+        tests/http/origin_redirect_download_test.cpp
         tests/http/origin_response_test.cpp
         tests/http/query_test.cpp
         tests/http/redirect_policy_test.cpp
