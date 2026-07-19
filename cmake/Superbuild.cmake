@@ -172,6 +172,8 @@ ExternalProject_Add(linux_headers
     BUILD_COMMAND
         "${host_make}" -C <SOURCE_DIR>
         "ARCH=${kernel_arch}"
+        "HOSTCC=${host_clang}"
+        "HOSTCXX=${host_clangxx}"
         "INSTALL_HDR_PATH=${sysroot}/usr"
         headers_install
     INSTALL_COMMAND ""
