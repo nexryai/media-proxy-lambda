@@ -3,7 +3,7 @@ name: Test
 on:
     push:
         branches:
-            - dummy
+            - main
     pull_request:
     workflow_dispatch:
 
