@@ -447,6 +447,7 @@ add_library(mediaproxy_media STATIC
     src/media/classification.cpp
     src/media/mime.cpp
     src/media/resize.cpp
+    src/media/static_conversion.cpp
     src/media/vips_runtime.cpp
 )
 target_include_directories(mediaproxy_media PUBLIC
@@ -613,6 +614,7 @@ if(BUILD_TESTING)
         tests/media/classification_test.cpp
         tests/media/mime_test.cpp
         tests/media/resize_test.cpp
+        tests/media/static_conversion_test.cpp
         tests/media/vips_runtime_test.cpp
     )
     target_link_libraries(mediaproxy_media_test

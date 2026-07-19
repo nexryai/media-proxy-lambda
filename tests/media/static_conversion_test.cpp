@@ -1,0 +1,141 @@
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <span>
+#include <vector>
+
+#include <glib.h>
+#include <gtest/gtest.h>
+#include <mediaproxy/media/static_conversion.hpp>
+#include <mediaproxy/media/vips_runtime.hpp>
+#include <vips/vips.h>
+#include <webp/encode.h>
+
+namespace {
+
+struct ImageUnref {
+    void operator()(VipsImage* image) const noexcept
+    {
+        if (image != nullptr) {
+            g_object_unref(image);
+        }
+    }
+};
+
+struct GFree {
+    void operator()(void* memory) const noexcept
+    {
+        g_free(memory);
+    }
+};
+
+using ImagePtr = std::unique_ptr<VipsImage, ImageUnref>;
+using BufferPtr = std::unique_ptr<void, GFree>;
+using mediaproxy::media::ImageDimensions;
+using mediaproxy::media::OutputFormat;
+using mediaproxy::media::convert_static_image;
+using mediaproxy::media::initialize_vips;
+
+std::vector<std::byte> MakeWebp(int width, int height)
+{
+    std::vector<std::uint8_t> pixels(
+        static_cast<std::size_t>(width * height * 4), 0);
+    std::uint8_t* raw_buffer = nullptr;
+    const std::size_t size = WebPEncodeLosslessRGBA(
+        pixels.data(), width, height, width * 4, &raw_buffer);
+    EXPECT_GT(size, 0U);
+    std::unique_ptr<std::uint8_t, decltype(&WebPFree)> buffer(
+        raw_buffer, &WebPFree);
+    const auto* bytes = reinterpret_cast<const std::byte*>(buffer.get());
+    return {bytes, bytes + size};
+}
+
+std::vector<std::byte> MakeAnimatedWebp(int width, int page_height)
+{
+    VipsImage* raw_first = nullptr;
+    VipsImage* raw_second = nullptr;
+    EXPECT_EQ(vips_black(&raw_first, width, page_height, nullptr), 0);
+    EXPECT_EQ(vips_black(&raw_second, width, page_height, nullptr), 0);
+    ImagePtr first(raw_first);
+    ImagePtr second(raw_second);
+
+    VipsImage* raw_joined = nullptr;
+    EXPECT_EQ(vips_join(first.get(), second.get(), &raw_joined,
+                  VIPS_DIRECTION_VERTICAL, nullptr),
+        0)
+        << vips_error_buffer();
+    ImagePtr joined(raw_joined);
+    vips_image_set_int(joined.get(), VIPS_META_PAGE_HEIGHT, page_height);
+    vips_image_set_int(joined.get(), VIPS_META_N_PAGES, 2);
+
+    void* raw_buffer = nullptr;
+    std::size_t size = 0;
+    EXPECT_EQ(vips_webpsave_buffer(
+                  joined.get(), &raw_buffer, &size, "Q", 70, nullptr),
+        0)
+        << vips_error_buffer();
+    BufferPtr buffer(raw_buffer);
+    const auto* bytes = static_cast<const std::byte*>(buffer.get());
+    return {bytes, bytes + size};
+}
+
+ImagePtr Load(std::span<const std::byte> body)
+{
+    return ImagePtr(vips_image_new_from_buffer(
+        body.data(), body.size(), "", nullptr));
+}
+
+class StaticConversionTest : public testing::Test {
+protected:
+    static void SetUpTestSuite()
+    {
+        ASSERT_TRUE(initialize_vips()) << vips_error_buffer();
+    }
+};
+
+TEST_F(StaticConversionTest, ResizesAndEncodesLossyWebp)
+{
+    const auto input = MakeWebp(100, 80);
+    const auto result = convert_static_image(
+        input, OutputFormat::webp, ImageDimensions{50, 40});
+    ASSERT_TRUE(result);
+    const ImagePtr decoded = Load(result.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    EXPECT_EQ(vips_image_get_width(decoded.get()), 50);
+    EXPECT_EQ(vips_image_get_height(decoded.get()), 40);
+}
+
+TEST_F(StaticConversionTest, EncodesAvifWithConfiguredBackend)
+{
+    const auto input = MakeWebp(8, 6);
+    const auto result = convert_static_image(
+        input, OutputFormat::avif, ImageDimensions{320, 320});
+    ASSERT_TRUE(result);
+    const ImagePtr decoded = Load(result.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    EXPECT_EQ(vips_image_get_width(decoded.get()), 8);
+    EXPECT_EQ(vips_image_get_height(decoded.get()), 6);
+}
+
+TEST_F(StaticConversionTest, LoadsAllPagesButEncodesOnlyFirstPage)
+{
+    const auto input = MakeAnimatedWebp(12, 7);
+    const auto result = convert_static_image(
+        input, OutputFormat::webp, ImageDimensions{320, 320});
+    ASSERT_TRUE(result);
+    const ImagePtr decoded = Load(result.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    EXPECT_EQ(vips_image_get_width(decoded.get()), 12);
+    EXPECT_EQ(vips_image_get_height(decoded.get()), 7);
+}
+
+TEST_F(StaticConversionTest, RejectsEmptyAndMalformedInput)
+{
+    EXPECT_FALSE(convert_static_image(
+        {}, OutputFormat::webp, ImageDimensions{320, 320}));
+    const std::vector malformed{std::byte{0}, std::byte{1}};
+    EXPECT_FALSE(convert_static_image(
+        malformed, OutputFormat::webp, ImageDimensions{320, 320}));
+}
+
+} // namespace
