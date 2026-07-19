@@ -443,12 +443,25 @@ target_link_libraries(mediaproxy_http
         mediaproxy_yyjson
 )
 
+add_library(mediaproxy_media STATIC
+    src/media/mime.cpp
+)
+target_include_directories(mediaproxy_media PUBLIC
+    "${CMAKE_SOURCE_DIR}/include"
+)
+target_link_libraries(mediaproxy_media
+    PRIVATE
+        mediaproxy_hardening
+        mediaproxy_warnings
+)
+
 add_executable(bootstrap src/bootstrap.cpp)
 target_link_libraries(bootstrap
     PRIVATE
         mediaproxy_hardening
         mediaproxy_warnings
         mediaproxy_http
+        mediaproxy_media
         mediaproxy_libvips
         mediaproxy_curl
         mediaproxy_boringssl_ssl
@@ -588,6 +601,27 @@ if(BUILD_TESTING)
     if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
         gtest_discover_tests(
             mediaproxy_http_test
+            DISCOVERY_MODE PRE_TEST
+            NO_PRETTY_VALUES)
+    endif()
+
+    add_executable(mediaproxy_media_test
+        tests/media/mime_test.cpp
+    )
+    target_link_libraries(mediaproxy_media_test
+        PRIVATE
+            mediaproxy_hardening
+            mediaproxy_warnings
+            mediaproxy_media
+            mediaproxy_yyjson
+            GTest::gtest_main
+    )
+    target_compile_definitions(mediaproxy_media_test PRIVATE
+        "MEDIAPROXY_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\""
+    )
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        gtest_discover_tests(
+            mediaproxy_media_test
             DISCOVERY_MODE PRE_TEST
             NO_PRETTY_VALUES)
     endif()
