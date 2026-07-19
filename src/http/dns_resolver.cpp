@@ -54,6 +54,8 @@ using AddressInfo = std::unique_ptr<addrinfo, AddressInfoDeleter>;
 [[nodiscard]] std::optional<OriginUrl> revalidate_origin(
     const OriginUrl& origin)
 {
+    // OriginUrl is public data rather than an unforgeable capability. Reparse
+    // the canonical URL and compare every derived field before DNS or bypass.
     UrlPolicyResult validated = validate_origin_url(origin.canonical_url);
     if (!validated
         || validated.url->canonical_url != origin.canonical_url
@@ -166,6 +168,8 @@ OriginResolutionResult resolve_origin_addresses(
     std::array<std::array<char, INET6_ADDRSTRLEN>, maximum_dns_candidates>
         text_storage{};
     std::array<std::string_view, maximum_dns_candidates> candidates{};
+    // Keep the complete answer bounded and intact. Policy evaluation happens
+    // only after traversal so a late forbidden address rejects the whole set.
     std::size_t count = 0;
     for (const addrinfo* current = results.get(); current != nullptr;
          current = current->ai_next) {
