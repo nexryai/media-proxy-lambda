@@ -83,6 +83,7 @@ foreach(required_source IN LISTS required_sources)
         -fvisibility=hidden
         -flto=thin
         -fsanitize=cfi
+        -fno-sanitize=cfi-icall
         -fsanitize-trap=cfi
         -fno-sanitize-recover=cfi
         -Wall
@@ -108,12 +109,15 @@ foreach(required_source IN LISTS required_sources)
                 "${matching_command}")
         endif()
     endforeach()
+    string(REPLACE "-fno-sanitize=cfi-icall" ""
+        command_without_icall_exception "${matching_command}")
     foreach(forbidden_flag IN ITEMS
             -fno-lto
             -fno-sanitize=cfi
             -fno-sanitize-trap=cfi
             -fno-stack-protector)
-        string(FIND "${matching_command}" "${forbidden_flag}" flag_offset)
+        string(FIND "${command_without_icall_exception}"
+            "${forbidden_flag}" flag_offset)
         if(NOT flag_offset EQUAL -1)
             message(FATAL_ERROR
                 "${required_source} contains forbidden build flag "
