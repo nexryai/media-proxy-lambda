@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <mediaproxy/media/classification.hpp>
+#include <mediaproxy/media/mime.hpp>
 #include <mediaproxy/media/resize.hpp>
 
 namespace mediaproxy::media {
@@ -30,6 +31,7 @@ struct StaticConversionResult {
 
 [[nodiscard]] StaticConversionResult convert_static_image(
     std::span<const std::byte> body,
+    MimeType mime,
     OutputFormat output,
     ImageDimensions limits);
 
