@@ -313,9 +313,11 @@ Use libvips with execution-environment initialization equivalent to:
 - all pages requested on load
 
 If an ICO/x-icon cannot be loaded by libvips, decode its directory entries,
-choose the first successfully decoded image in file order, encode that image to
-an in-memory PNG, and load the PNG through libvips. Do not choose the largest
-icon.
+choose the first successfully decoded image in file order, and pass that
+decoded image directly to the remaining libvips pipeline. The source request
+bytes remain alive until conversion completes; do not create an intermediate
+PNG or a full-image copy solely to extend their lifetime. Do not choose the
+largest icon.
 
 For a static image, width and height are libvips image dimensions. For an
 animated image, width is the loaded width and per-frame height is loaded height

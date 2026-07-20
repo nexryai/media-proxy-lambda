@@ -255,7 +255,10 @@ The pinned graph is expected to include:
 No separate APNG library is required. Implement the specified parser/compositor
 in first-party C++ using zlib/libpng primitives and libwebp. This avoids adopting
 another decoder's blend/dispose semantics. No separate ICO dependency is
-planned; implement first-entry fallback using the linked PNG/JPEG codecs.
+planned; implement first-entry fallback using the linked PNG/JPEG codecs. Keep
+the request bytes alive through conversion so the decoded entry can flow
+directly into resize and output encoding without an intermediate PNG or
+full-image lifetime copy.
 
 Disable ImageMagick/GraphicsMagick, PDF/PostScript loaders, OpenSlide, TIFF,
 OpenEXR, JPEG XL, FFTW, video support, runtime modules, introspection tools, and

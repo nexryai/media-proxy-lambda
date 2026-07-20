@@ -79,26 +79,10 @@ using BufferPtr = std::unique_ptr<void, GFree>;
         const auto payload = body.subspan(payload_offset, payload_size);
         ImagePtr decoded(vips_image_new_from_buffer(
             payload.data(), payload.size(), "", nullptr));
-        if (!decoded) {
-            vips_error_clear();
-            continue;
-        }
-
-        void* png_memory = nullptr;
-        std::size_t png_size = 0;
-        if (vips_pngsave_buffer(
-                decoded.get(), &png_memory, &png_size, nullptr)
-            != 0) {
-            vips_error_clear();
-            continue;
-        }
-        BufferPtr png(png_memory);
-        ImagePtr reloaded(vips_image_new_from_buffer(
-            png.get(), png_size, "", nullptr));
-        if (reloaded) {
-            // Buffer loaders are lazy and may retain the caller's bytes.
-            // Materialize before the temporary encoded PNG is released.
-            return ImagePtr(vips_image_copy_memory(reloaded.get()));
+        if (decoded) {
+            // The request body outlives the complete synchronous conversion,
+            // so this lazy image can safely retain its entry payload.
+            return decoded;
         }
         vips_error_clear();
     }

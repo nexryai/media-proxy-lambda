@@ -413,7 +413,7 @@
                 "first corrupt then second decodes",
                 "smaller first entry wins over larger later entry",
                 "all entries invalid",
-                "fallback PNG is loaded from memory"
+                "decoded entry is processed directly without an intermediate PNG"
             ]
         },
         {
