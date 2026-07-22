@@ -626,6 +626,7 @@ if(BUILD_TESTING)
         tests/http/origin_download_test.cpp
         tests/http/origin_redirect_download_test.cpp
         tests/http/origin_response_test.cpp
+        tests/http/origin_tls_test.cpp
         tests/http/query_test.cpp
         tests/http/redirect_policy_test.cpp
         tests/http/response_test.cpp
@@ -637,6 +638,7 @@ if(BUILD_TESTING)
             mediaproxy_hardening
             mediaproxy_warnings
             mediaproxy_http
+            mediaproxy_boringssl_ssl
             mediaproxy_yyjson
             GTest::gtest_main
     )
