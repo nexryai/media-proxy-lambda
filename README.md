@@ -20,3 +20,11 @@ ctest --preset arm64-release
 
 成果物は`out/build/arm64-release/artifact/bootstrap`です。AWSリソースの
 デプロイ、IaC、コスト管理はこのリポジトリの対象外です。
+
+ASan/UBSan診断はproduction成果物と分離した動的musl PIEで実行します。
+
+```sh
+cmake --preset arm64-sanitizers
+cmake --build --preset arm64-sanitizers --parallel 2
+ctest --preset arm64-sanitizers
+```

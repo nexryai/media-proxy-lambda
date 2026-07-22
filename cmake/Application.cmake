@@ -593,6 +593,12 @@ if(BUILD_TESTING)
     target_link_options(mediaproxy_fuzzing INTERFACE
         -fno-sanitize-link-runtime
     )
+    if(MEDIAPROXY_SANITIZER_BUILD
+            AND (NOT DEFINED MEDIAPROXY_SANITIZER_LOADER
+                OR NOT EXISTS "${MEDIAPROXY_SANITIZER_LOADER}"))
+        message(FATAL_ERROR
+            "Pinned musl sanitizer loader is required for sanitizer tests")
+    endif()
 
     add_library(mediaproxy_http_fuzz STATIC ${mediaproxy_http_sources})
     target_include_directories(mediaproxy_http_fuzz PUBLIC
@@ -852,15 +858,28 @@ if(BUILD_TESTING)
                 ${library}
                 mediaproxy_libfuzzer
         )
-        add_test(
-            NAME "fuzz-${target}"
-            COMMAND ${target}
-                -runs=256
-                "-max_len=${max_length}"
-                "${fuzz_corpus_directory}"
-        )
+        if(MEDIAPROXY_SANITIZER_BUILD)
+            add_test(
+                NAME "fuzz-${target}"
+                COMMAND "${MEDIAPROXY_SANITIZER_LOADER}"
+                    $<TARGET_FILE:${target}>
+                    -runs=256
+                    "-max_len=${max_length}"
+                    "${fuzz_corpus_directory}"
+            )
+        else()
+            add_test(
+                NAME "fuzz-${target}"
+                COMMAND ${target}
+                    -runs=256
+                    "-max_len=${max_length}"
+                    "${fuzz_corpus_directory}"
+            )
+        endif()
         set_tests_properties("fuzz-${target}" PROPERTIES
             TIMEOUT 30
+            ENVIRONMENT
+                "ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:fast_unwind_on_malloc=0;UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"
         )
     endfunction()
 
@@ -890,6 +909,33 @@ if(BUILD_TESTING)
         mediaproxy_runtime_fuzz
         "${CMAKE_SOURCE_DIR}/tests/fuzz/corpus/runtime"
         65536)
+
+    if(MEDIAPROXY_SANITIZER_BUILD)
+        add_executable(mediaproxy_sanitizer_probe
+            tests/sanitizer/detection_probe.cpp)
+        target_link_libraries(mediaproxy_sanitizer_probe
+            PRIVATE
+                mediaproxy_hardening
+                mediaproxy_warnings)
+        foreach(sanitizer_detection IN ITEMS
+                "address|AddressSanitizer: heap-buffer-overflow"
+                "undefined|runtime error: signed integer overflow")
+            string(REPLACE "|" ";" sanitizer_fields
+                "${sanitizer_detection}")
+            list(GET sanitizer_fields 0 sanitizer_mode)
+            list(GET sanitizer_fields 1 sanitizer_expected)
+            add_test(
+                NAME "sanitizer-detects-${sanitizer_mode}"
+                COMMAND "${CMAKE_COMMAND}"
+                    "-DLOADER=${MEDIAPROXY_SANITIZER_LOADER}"
+                    "-DEXECUTABLE=$<TARGET_FILE:mediaproxy_sanitizer_probe>"
+                    "-DMODE=${sanitizer_mode}"
+                    "-DEXPECTED=${sanitizer_expected}"
+                    -P "${CMAKE_SOURCE_DIR}/tests/cmake/SanitizerDetectionTest.cmake")
+            set_tests_properties("sanitizer-detects-${sanitizer_mode}"
+                PROPERTIES TIMEOUT 15)
+        endforeach()
+    endif()
 
     add_executable(mediaproxy_stack_smash_probe
         tests/hardening/stack_smash.cpp

@@ -214,6 +214,13 @@ coverage, stronger libc++ debug checks, or other diagnostics as applicable.
 Each such preset documents the minimum necessary baseline exception; for
 example, MSan disables automatic variable initialization so uninitialized
 reads remain observable.
+The arm64 ASan/UBSan preset instruments first-party parser and media code but
+disables ThinLTO and CFI for those diagnostic targets because their sanitizer
+runtimes are not compatible with the production trapping-CFI link. It links a
+dynamic musl diagnostic PIE and invokes the pinned build-tree musl loader so
+AddressSanitizer can interpose allocation APIs. A negative probe proves both
+ASan and UBSan diagnostics before the malformed-input smoke corpus runs. This
+exception is test-only; the release `bootstrap` remains a static musl PIE.
 These high-overhead diagnostic configurations are test-only: production must
 not use ASan, MSan, TSan, HWASan, LSan, fuzz/coverage instrumentation, debug
 iterators, `-O0`, or similar options that are normally unsuitable for release

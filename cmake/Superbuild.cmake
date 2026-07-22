@@ -3,6 +3,12 @@ include(cmake/DependencyLock.cmake)
 
 set(MEDIAPROXY_TARGET_ARCH "x86_64" CACHE STRING "Lambda target architecture")
 set_property(CACHE MEDIAPROXY_TARGET_ARCH PROPERTY STRINGS x86_64 arm64)
+option(MEDIAPROXY_ENABLE_SANITIZERS
+    "Build the dynamic-musl ASan/UBSan diagnostic suite" OFF)
+if(MEDIAPROXY_ENABLE_SANITIZERS AND NOT BUILD_TESTING)
+    message(FATAL_ERROR
+        "MEDIAPROXY_ENABLE_SANITIZERS requires BUILD_TESTING")
+endif()
 
 if(MEDIAPROXY_TARGET_ARCH STREQUAL "x86_64")
     set(target_triple x86_64-linux-musl)
@@ -1323,6 +1329,119 @@ if(BUILD_TESTING)
     set(application_fuzz_dependency compiler_rt_fuzzer)
 endif()
 
+set(sanitizer_runtime_directory
+    "${CMAKE_BINARY_DIR}/sanitizer-runtime")
+set(sanitizer_loader
+    "${sanitizer_runtime_directory}/ld-musl-${compiler_rt_arch}.so.1")
+set(sanitizer_libc
+    "${sanitizer_runtime_directory}/libc.so")
+set(asan_static_library
+    "${sanitizer_runtime_directory}/libclang_rt.asan_static-${compiler_rt_arch}.a")
+set(asan_library
+    "${sanitizer_runtime_directory}/libclang_rt.asan-${compiler_rt_arch}.a")
+set(asan_cxx_library
+    "${sanitizer_runtime_directory}/libclang_rt.asan_cxx-${compiler_rt_arch}.a")
+if(MEDIAPROXY_ENABLE_SANITIZERS)
+    ExternalProject_Get_Property(musl SOURCE_DIR)
+    set(musl_source_directory "${SOURCE_DIR}")
+    set(musl_sanitizer_binary_directory
+        "${CMAKE_BINARY_DIR}/musl-sanitizer-build")
+    ExternalProject_Add(musl_sanitizer
+        DEPENDS musl
+        SOURCE_DIR "${musl_source_directory}"
+        BINARY_DIR "${musl_sanitizer_binary_directory}"
+        DOWNLOAD_COMMAND ""
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        CONFIGURE_COMMAND
+            "${CMAKE_COMMAND}" -E env
+            "CC=${host_clang} --target=${target_triple} --sysroot=${sysroot}"
+            "AR=${host_ar}"
+            "RANLIB=${host_ranlib}"
+            "LIBCC=${compiler_rt_library}"
+            "CFLAGS=-O1 -g -fPIC"
+            "LDFLAGS=-fuse-ld=lld -nostdlib"
+            <SOURCE_DIR>/configure
+            --prefix=/usr
+            --syslibdir=/lib
+            "--target=${target_triple}"
+        BUILD_COMMAND "${host_make}" -j2 lib/libc.so
+        INSTALL_COMMAND
+            "${CMAKE_COMMAND}" -E make_directory
+                "${sanitizer_runtime_directory}"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                <BINARY_DIR>/lib/libc.so "${sanitizer_loader}"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                <BINARY_DIR>/lib/libc.so "${sanitizer_libc}"
+        BUILD_BYPRODUCTS
+            "${sanitizer_loader}"
+            "${sanitizer_libc}")
+
+    set(compiler_rt_sanitizer_binary_directory
+        "${CMAKE_BINARY_DIR}/compiler-rt-sanitizer-build")
+    set(built_asan_static_library
+        "${compiler_rt_sanitizer_binary_directory}/lib/linux/libclang_rt.asan_static-${compiler_rt_arch}.a")
+    set(built_asan_library
+        "${compiler_rt_sanitizer_binary_directory}/lib/linux/libclang_rt.asan-${compiler_rt_arch}.a")
+    set(built_asan_cxx_library
+        "${compiler_rt_sanitizer_binary_directory}/lib/linux/libclang_rt.asan_cxx-${compiler_rt_arch}.a")
+    ExternalProject_Add(compiler_rt_sanitizers
+        DEPENDS llvm_runtimes llvm_source
+        SOURCE_DIR "${llvm_source_directory}/compiler-rt"
+        BINARY_DIR "${compiler_rt_sanitizer_binary_directory}"
+        DOWNLOAD_COMMAND ""
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        CMAKE_GENERATOR Ninja
+        CMAKE_ARGS
+            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_INSTALL_PREFIX=/usr"
+            "-DCMAKE_C_COMPILER=${host_clang}"
+            "-DCMAKE_CXX_COMPILER=${host_clangxx}"
+            "-DCMAKE_ASM_COMPILER=${host_clang}"
+            "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+            "-DCMAKE_CXX_COMPILER_TARGET=${target_triple}"
+            "-DCMAKE_ASM_COMPILER_TARGET=${target_triple}"
+            "-DCMAKE_SYSROOT=${sysroot}"
+            "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+            "-DCMAKE_AR=${host_ar}"
+            "-DCMAKE_RANLIB=${host_ranlib}"
+            "-DCMAKE_NM=${host_nm}"
+            "-DCMAKE_LINKER=${host_lld}"
+            "-DCMAKE_C_FLAGS=-fPIC"
+            "-DCMAKE_CXX_FLAGS=-fPIC -nostdinc++ -isystem ${sysroot}/usr/include/c++/v1"
+            "-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON"
+            "-DCOMPILER_RT_BUILD_BUILTINS=OFF"
+            "-DCOMPILER_RT_BUILD_SANITIZERS=ON"
+            "-DCOMPILER_RT_SANITIZERS_TO_BUILD=asan"
+            "-DCOMPILER_RT_BUILD_XRAY=OFF"
+            "-DCOMPILER_RT_BUILD_LIBFUZZER=OFF"
+            "-DCOMPILER_RT_BUILD_PROFILE=OFF"
+            "-DCOMPILER_RT_BUILD_ORC=OFF"
+            "-DCOMPILER_RT_INCLUDE_TESTS=OFF"
+            "-DCOMPILER_RT_USE_LIBCXX=ON"
+            "-DLLVM_CONFIG_PATH="
+        BUILD_COMMAND
+            "${CMAKE_COMMAND}" --build <BINARY_DIR> --parallel 2
+            --target
+                "clang_rt.asan_static-${compiler_rt_arch}"
+                "clang_rt.asan-${compiler_rt_arch}"
+                "clang_rt.asan_cxx-${compiler_rt_arch}"
+        INSTALL_COMMAND
+            "${CMAKE_COMMAND}" -E make_directory
+                "${sanitizer_runtime_directory}"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "${built_asan_static_library}" "${asan_static_library}"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "${built_asan_library}" "${asan_library}"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "${built_asan_cxx_library}" "${asan_cxx_library}"
+        BUILD_BYPRODUCTS
+            "${asan_static_library}"
+            "${asan_library}"
+            "${asan_cxx_library}")
+endif()
+
 set(ada_idna_binary_directory "${CMAKE_BINARY_DIR}/ada-idna-build")
 set(ada_idna_library "${sysroot}/usr/lib/libada_idna.a")
 set(ada_idna_include_dir "${sysroot}/usr/include")
@@ -1977,16 +2096,12 @@ ExternalProject_Add(ca_bundle
 )
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
-ExternalProject_Add(application
-    DEPENDS ada_idna boringssl ca_bundle curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib ${application_fuzz_dependency}
-    BUILD_ALWAYS TRUE
-    SOURCE_DIR "${CMAKE_SOURCE_DIR}"
-    BINARY_DIR "${application_binary_directory}"
-    DOWNLOAD_COMMAND ""
-    UPDATE_COMMAND ""
-    PATCH_COMMAND ""
-    CMAKE_GENERATOR Ninja
-    CMAKE_ARGS
+set(application_dependencies
+    ada_idna boringssl ca_bundle curl fortify_headers glib lcms2 libaom
+    libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips
+    libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
+    ${application_fuzz_dependency})
+set(application_cmake_args
         "-DMEDIAPROXY_INNER_BUILD=ON"
         "-DMEDIAPROXY_TARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
         "-DMEDIAPROXY_TARGET_TRIPLE=${target_triple}"
@@ -2111,6 +2226,17 @@ ExternalProject_Add(application
         "-DCMAKE_BUILD_TYPE=Release"
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
         "-DBUILD_TESTING=${BUILD_TESTING}"
+)
+ExternalProject_Add(application
+    DEPENDS ${application_dependencies}
+    BUILD_ALWAYS TRUE
+    SOURCE_DIR "${CMAKE_SOURCE_DIR}"
+    BINARY_DIR "${application_binary_directory}"
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS ${application_cmake_args}
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS
         "${application_binary_directory}/bootstrap"
@@ -2118,6 +2244,58 @@ ExternalProject_Add(application
         "${application_binary_directory}/bootstrap.undefined-symbols.txt"
         "${CMAKE_BINARY_DIR}/artifact/bootstrap"
 )
+
+if(MEDIAPROXY_ENABLE_SANITIZERS)
+    set(sanitizer_application_binary_directory
+        "${CMAKE_BINARY_DIR}/sanitizer-application")
+    ExternalProject_Add(sanitizer_application
+        EXCLUDE_FROM_ALL TRUE
+        DEPENDS
+            ${application_dependencies}
+            compiler_rt_sanitizers
+            musl_sanitizer
+        SOURCE_DIR "${CMAKE_SOURCE_DIR}"
+        BINARY_DIR "${sanitizer_application_binary_directory}"
+        DOWNLOAD_COMMAND ""
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        CMAKE_GENERATOR Ninja
+        CMAKE_ARGS
+            ${application_cmake_args}
+            "-DMEDIAPROXY_SANITIZER_BUILD=ON"
+            "-DMEDIAPROXY_SANITIZER_LOADER=${sanitizer_loader}"
+            "-DMEDIAPROXY_ASAN_STATIC_LIBRARY=${asan_static_library}"
+            "-DMEDIAPROXY_ASAN_LIBRARY=${asan_library}"
+            "-DMEDIAPROXY_ASAN_CXX_LIBRARY=${asan_cxx_library}"
+            "-DMEDIAPROXY_ARTIFACT_DIR=${CMAKE_BINARY_DIR}/sanitizer-artifact"
+            "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl-sanitizer.cmake"
+            "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+        BUILD_COMMAND
+            "${CMAKE_COMMAND}" --build <BINARY_DIR> --parallel 2
+            --target
+                mediaproxy_request_fuzzer
+                mediaproxy_mime_fuzzer
+                mediaproxy_apng_fuzzer
+                mediaproxy_ico_fuzzer
+                mediaproxy_runtime_fuzzer
+                mediaproxy_sanitizer_probe
+        INSTALL_COMMAND ""
+        BUILD_BYPRODUCTS
+            "${sanitizer_application_binary_directory}/mediaproxy_request_fuzzer"
+            "${sanitizer_application_binary_directory}/mediaproxy_mime_fuzzer"
+            "${sanitizer_application_binary_directory}/mediaproxy_apng_fuzzer"
+            "${sanitizer_application_binary_directory}/mediaproxy_ico_fuzzer"
+            "${sanitizer_application_binary_directory}/mediaproxy_runtime_fuzzer"
+            "${sanitizer_application_binary_directory}/mediaproxy_sanitizer_probe")
+    add_custom_target(sanitizer-tests DEPENDS sanitizer_application)
+    add_test(
+        NAME sanitizer-tests
+        COMMAND "${CMAKE_CTEST_COMMAND}"
+            --test-dir "${sanitizer_application_binary_directory}"
+            --output-on-failure
+            -R "^(fuzz-|sanitizer-detects-)")
+    set_tests_properties(sanitizer-tests PROPERTIES TIMEOUT 180)
+endif()
 
 add_custom_target(bootstrap-artifact DEPENDS application)
 

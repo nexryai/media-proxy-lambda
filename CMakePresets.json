@@ -31,6 +31,16 @@
             "cacheVariables": {
                 "MEDIAPROXY_TARGET_ARCH": "arm64"
             }
+        },
+        {
+            "name": "arm64-sanitizers",
+            "inherits": "release-base",
+            "displayName": "Lambda arm64 ASan/UBSan diagnostics",
+            "cacheVariables": {
+                "BUILD_TESTING": "ON",
+                "MEDIAPROXY_ENABLE_SANITIZERS": "ON",
+                "MEDIAPROXY_TARGET_ARCH": "arm64"
+            }
         }
     ],
     "buildPresets": [
@@ -41,6 +51,11 @@
         {
             "name": "arm64-release",
             "configurePreset": "arm64-release"
+        },
+        {
+            "name": "arm64-sanitizers",
+            "configurePreset": "arm64-sanitizers",
+            "targets": ["sanitizer-tests"]
         }
     ],
     "testPresets": [
@@ -54,6 +69,18 @@
         {
             "name": "arm64-release",
             "configurePreset": "arm64-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "arm64-sanitizers",
+            "configurePreset": "arm64-sanitizers",
+            "filter": {
+                "include": {
+                    "name": "^sanitizer-tests$"
+                }
+            },
             "output": {
                 "outputOnFailure": true
             }

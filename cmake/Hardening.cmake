@@ -14,17 +14,12 @@ target_compile_definitions(mediaproxy_hardening INTERFACE
 )
 target_compile_options(mediaproxy_hardening INTERFACE
     "SHELL:-isystem ${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
-    -O2
     -fstack-protector-strong
     -ftrivial-auto-var-init=zero
     -fvisibility=hidden
     -fvisibility-inlines-hidden
     -ffunction-sections
     -fdata-sections
-    -flto=thin
-    -fsanitize=cfi
-    -fsanitize-trap=cfi
-    -fno-sanitize-recover=cfi
 )
 
 target_compile_options(mediaproxy_warnings INTERFACE
@@ -33,19 +28,47 @@ target_compile_options(mediaproxy_warnings INTERFACE
     -Wpedantic
     -Werror
 )
-target_link_options(mediaproxy_hardening INTERFACE
-    -fuse-ld=lld
-    -static-pie
-    -flto=thin
-    -fsanitize=cfi
-    -fsanitize-trap=cfi
-    -fno-sanitize-recover=cfi
-    LINKER:--gc-sections
-    LINKER:--fatal-warnings
-    LINKER:-z,relro
-    LINKER:-z,now
-    LINKER:-z,noexecstack
-)
+if(MEDIAPROXY_SANITIZER_BUILD)
+    target_compile_options(mediaproxy_hardening INTERFACE
+        -O1
+        -g
+        -fno-omit-frame-pointer
+        -fsanitize=address,undefined
+        -fno-sanitize-recover=all
+    )
+    target_link_options(mediaproxy_hardening INTERFACE
+        -fuse-ld=lld
+        -fsanitize=address,undefined
+        -fno-sanitize-link-runtime
+        -fno-sanitize-recover=all
+        LINKER:--gc-sections
+        LINKER:--fatal-warnings
+        LINKER:-z,relro
+        LINKER:-z,now
+        LINKER:-z,noexecstack
+    )
+else()
+    target_compile_options(mediaproxy_hardening INTERFACE
+        -O2
+        -flto=thin
+        -fsanitize=cfi
+        -fsanitize-trap=cfi
+        -fno-sanitize-recover=cfi
+    )
+    target_link_options(mediaproxy_hardening INTERFACE
+        -fuse-ld=lld
+        -static-pie
+        -flto=thin
+        -fsanitize=cfi
+        -fsanitize-trap=cfi
+        -fno-sanitize-recover=cfi
+        LINKER:--gc-sections
+        LINKER:--fatal-warnings
+        LINKER:-z,relro
+        LINKER:-z,now
+        LINKER:-z,noexecstack
+    )
+endif()
 
 if(MEDIAPROXY_TARGET_ARCH STREQUAL "x86_64")
     target_compile_options(mediaproxy_hardening INTERFACE
