@@ -38,8 +38,8 @@ std::optional<ImageDimensions> validate_dimensions(
         }
         frame_height /= page_count;
     }
-    if (frame_height <= 0 || loaded_width > maximum_media_dimension
-        || frame_height > maximum_media_dimension) {
+    if (frame_height <= 0 || loaded_width > maximum_media_width
+        || frame_height > maximum_media_height) {
         return std::nullopt;
     }
 

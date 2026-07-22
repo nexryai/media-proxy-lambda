@@ -5,7 +5,8 @@
 
 namespace mediaproxy::media {
 
-inline constexpr std::uint32_t maximum_media_dimension = 5120;
+inline constexpr std::uint32_t maximum_media_width = 7680;
+inline constexpr std::uint32_t maximum_media_height = 4320;
 
 struct ImageDimensions {
     std::uint32_t width = 0;

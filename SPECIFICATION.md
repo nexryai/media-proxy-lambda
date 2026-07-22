@@ -329,10 +329,11 @@ For a static image, width and height are libvips image dimensions. For an
 animated image, width is the loaded width and per-frame height is loaded height
 divided by page count. Zero pages or non-integral/invalid dimensions fail.
 
-Except for the non-palette APNG early-return path in section 8, reject width or
-per-frame height above 5120. No explicit decoded-pixel limit may alter valid
-golden cases; security limits must be set above the maximum valid corpus and
-documented.
+Except for the non-palette APNG early-return path in section 8, accept width up
+to 7680 and per-frame height up to 4320 so a landscape 16:9 8K UHD image is
+convertible. Reject a larger width or per-frame height. No explicit
+decoded-pixel limit may alter valid golden cases; security limits must be set
+above the maximum valid corpus and documented.
 
 ### 7.2 Static resize algorithm
 
@@ -398,7 +399,7 @@ general chunk scan in the compatibility path.
 A palette APNG is converted as a static image through section 7, so
 `static=1` and AVIF preference take effect normally. A non-palette APNG always
 uses the APNG-to-animated-WebP path, even with `static=1`, ignores route resize
-limits, forces WebP encoding, and returns before the 5120 dimension check.
+limits, forces WebP encoding, and returns before the general dimension check.
 
 The APNG target width and height are the width and height reported by the
 all-pages libvips load at the point the APNG branch is entered. The APNG IHDR

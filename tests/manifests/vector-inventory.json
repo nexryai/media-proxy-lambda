@@ -426,9 +426,9 @@
                 "animated page height division",
                 "zero pages rejected",
                 "non-integral page height rejected",
-                "width over 5120 rejected",
-                "per-frame height over 5120 rejected",
-                "non-palette APNG bypasses 5120 rejection"
+                "width through 7680 accepted and larger rejected",
+                "per-frame height through 4320 accepted and larger rejected",
+                "non-palette APNG bypasses general dimension rejection"
             ]
         },
         {

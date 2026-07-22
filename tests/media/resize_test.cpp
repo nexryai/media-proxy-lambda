@@ -20,9 +20,12 @@ TEST(MediaDimensions, ValidatesStaticAndAnimatedPageGeometry)
     EXPECT_FALSE(validate_dimensions(640, 0, 1, false).has_value());
     EXPECT_FALSE(validate_dimensions(640, 480, 0, true).has_value());
     EXPECT_FALSE(validate_dimensions(640, 1000, 3, true).has_value());
-    EXPECT_FALSE(validate_dimensions(5121, 480, 1, false).has_value());
-    EXPECT_FALSE(validate_dimensions(640, 10242, 2, true).has_value());
-    EXPECT_TRUE(validate_dimensions(5120, 10240, 2, true).has_value());
+    EXPECT_EQ(validate_dimensions(7680, 4320, 1, false),
+        (ImageDimensions{7680, 4320}));
+    EXPECT_FALSE(validate_dimensions(7681, 4320, 1, false).has_value());
+    EXPECT_FALSE(validate_dimensions(7680, 4321, 1, false).has_value());
+    EXPECT_FALSE(validate_dimensions(640, 8642, 2, true).has_value());
+    EXPECT_TRUE(validate_dimensions(7680, 8640, 2, true).has_value());
 }
 
 TEST(StaticResize, PreservesAbsoluteExcessSelection)
