@@ -466,6 +466,18 @@ target_link_libraries(mediaproxy_media
         mediaproxy_libvips
 )
 
+add_library(mediaproxy_runtime STATIC
+    src/runtime/streaming.cpp
+)
+target_include_directories(mediaproxy_runtime PUBLIC
+    "${CMAKE_SOURCE_DIR}/include"
+)
+target_link_libraries(mediaproxy_runtime
+    PRIVATE
+        mediaproxy_hardening
+        mediaproxy_warnings
+)
+
 add_executable(bootstrap src/bootstrap.cpp)
 target_link_libraries(bootstrap
     PRIVATE
@@ -473,6 +485,7 @@ target_link_libraries(bootstrap
         mediaproxy_warnings
         mediaproxy_http
         mediaproxy_media
+        mediaproxy_runtime
         mediaproxy_libvips
         mediaproxy_curl
         mediaproxy_boringssl_ssl
@@ -645,6 +658,23 @@ if(BUILD_TESTING)
     if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
         gtest_discover_tests(
             mediaproxy_media_test
+            DISCOVERY_MODE PRE_TEST
+            NO_PRETTY_VALUES)
+    endif()
+
+    add_executable(mediaproxy_runtime_test
+        tests/runtime/streaming_test.cpp
+    )
+    target_link_libraries(mediaproxy_runtime_test
+        PRIVATE
+            mediaproxy_hardening
+            mediaproxy_warnings
+            mediaproxy_runtime
+            GTest::gtest_main
+    )
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        gtest_discover_tests(
+            mediaproxy_runtime_test
             DISCOVERY_MODE PRE_TEST
             NO_PRETTY_VALUES)
     endif()
