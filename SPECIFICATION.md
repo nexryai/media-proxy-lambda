@@ -225,8 +225,9 @@ Redirects are a security exception to legacy behavior:
   evaluating each hop's status. Redirect statuses are handled by section 3.3;
   after redirect processing, only status 200 succeeds.
 - Bound connect, transfer, and total time by the remaining Lambda invocation
-  deadline, leaving time to submit a 500 response. There is no independent
-  legacy wall-clock timeout to preserve.
+  deadline after subtracting exactly 1,000 milliseconds to submit a response.
+  Refuse to begin or continue an origin hop when that remaining budget is zero.
+  There is no independent legacy wall-clock timeout to preserve.
 
 ## 5. MIME sniffing
 

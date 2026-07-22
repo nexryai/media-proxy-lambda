@@ -294,7 +294,7 @@
                 "body read and sniffed before status evaluation",
                 "status 200 accepted",
                 "all non-200 statuses rejected",
-                "timeouts preserve response-submission margin"
+                "timeouts preserve the exact 1000 millisecond response-submission margin"
             ]
         },
         {

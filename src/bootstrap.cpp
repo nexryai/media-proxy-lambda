@@ -1,5 +1,9 @@
+#include <cstdlib>
 #include <cstdio>
+#include <exception>
 #include <memory>
+#include <new>
+#include <string>
 #include <string_view>
 
 #include <aom/aom_codec.h>
@@ -17,9 +21,13 @@
 #include <lcms2.h>
 #include <libexif/exif-tag.h>
 #include <libheif/heif.h>
+#include <mediaproxy/handler.hpp>
 #include <mediaproxy/http/ca_bundle.hpp>
 #include <mediaproxy/http/idna.hpp>
 #include <mediaproxy/media/vips_runtime.hpp>
+#include <mediaproxy/runtime/client.hpp>
+#include <mediaproxy/runtime/deadline.hpp>
+#include <mediaproxy/runtime/socket_transport.hpp>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
 #include <pcre2.h>
@@ -71,6 +79,11 @@ private:
 
 int main()
 {
+    const char* const runtime_api = std::getenv("AWS_LAMBDA_RUNTIME_API");
+    if (runtime_api == nullptr
+        || !mediaproxy::runtime::parse_runtime_authority(runtime_api)) {
+        return 1;
+    }
     constexpr std::string_view runtime_name = "mediaproxy-lambda";
     const auto idna_hostname =
         mediaproxy::http::normalize_hostname("bücher.example");
@@ -242,5 +255,53 @@ int main()
                 tls_context.get(), TLS1_3_VERSION) != 1) {
         return 1;
     }
-    return 0;
+
+    const mediaproxy::runtime::RuntimeClient runtime_client{
+        std::string{runtime_api}};
+    while (true) {
+        auto invocation = runtime_client.poll_next();
+        if (!invocation) {
+            std::fputs("{\"category\":\"runtime_poll_failure\"}\n", stderr);
+            return 1;
+        }
+        if (::setenv("_X_AMZN_TRACE_ID", invocation->trace_id.c_str(), 1)
+            != 0) {
+            if (!runtime_client.send_invocation_error(invocation->request_id,
+                    "RuntimeEnvironmentError",
+                    "Failed to set invocation trace context")) {
+                return 1;
+            }
+            continue;
+        }
+
+        try {
+            mediaproxy::runtime::InvocationDeadline deadline{
+                invocation->deadline_ms};
+            mediaproxy::http::HttpResponse response =
+                mediaproxy::handle_function_url_event(
+                    invocation->event, deadline.origin_timeout());
+            if (!runtime_client.send_response(
+                    invocation->request_id, response)) {
+                return 1;
+            }
+        } catch (const std::bad_alloc&) {
+            if (!runtime_client.send_invocation_error(invocation->request_id,
+                    "RuntimeOutOfMemory",
+                    "Invocation allocation failed before response")) {
+                return 1;
+            }
+        } catch (const std::exception&) {
+            if (!runtime_client.send_invocation_error(invocation->request_id,
+                    "UnhandledInvocationError",
+                    "Invocation failed before response")) {
+                return 1;
+            }
+        } catch (...) {
+            if (!runtime_client.send_invocation_error(invocation->request_id,
+                    "UnknownInvocationError",
+                    "Invocation failed before response")) {
+                return 1;
+            }
+        }
+    }
 }

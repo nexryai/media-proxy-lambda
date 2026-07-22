@@ -468,6 +468,7 @@ target_link_libraries(mediaproxy_media
 
 add_library(mediaproxy_runtime STATIC
     src/runtime/client.cpp
+    src/runtime/deadline.cpp
     src/runtime/next_response.cpp
     src/runtime/socket_transport.cpp
     src/runtime/streaming.cpp
@@ -682,6 +683,7 @@ if(BUILD_TESTING)
 
     add_executable(mediaproxy_runtime_test
         tests/runtime/client_test.cpp
+        tests/runtime/deadline_test.cpp
         tests/runtime/next_response_test.cpp
         tests/runtime/socket_transport_test.cpp
         tests/runtime/streaming_test.cpp
