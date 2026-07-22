@@ -1,16 +1,25 @@
 #include <mediaproxy/http/response.hpp>
 
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 namespace mediaproxy::http {
 namespace {
 
+[[nodiscard]] std::vector<std::byte> response_bytes(std::string_view text)
+{
+    const auto bytes = std::as_bytes(std::span{text});
+    return {bytes.begin(), bytes.end()};
+}
+
 [[nodiscard]] HttpResponse text_response(
     std::uint16_t status,
-    std::string body)
+    std::string_view body)
 {
     std::vector<HttpHeader> headers;
     headers.push_back({
@@ -20,7 +29,7 @@ namespace {
     return {
         .status = status,
         .headers = std::move(headers),
-        .body = std::move(body),
+        .body = response_bytes(body),
     };
 }
 
@@ -33,7 +42,7 @@ HttpResponse make_status_response()
     return {
         .status = 200,
         .headers = std::move(headers),
-        .body = R"({"status":"OK"})",
+        .body = response_bytes(R"({"status":"OK"})"),
     };
 }
 
@@ -52,7 +61,9 @@ HttpResponse make_error_response(ErrorResponse error)
     __builtin_unreachable();
 }
 
-HttpResponse make_media_response(PreferredOutput output, std::string body)
+HttpResponse make_media_response(
+    PreferredOutput output,
+    std::vector<std::byte> body)
 {
     std::vector<HttpHeader> headers;
     headers.reserve(3);

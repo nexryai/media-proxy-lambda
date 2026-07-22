@@ -1,6 +1,9 @@
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <gtest/gtest.h>
 #include <mediaproxy/http/query.hpp>
@@ -14,6 +17,12 @@ using mediaproxy::http::PreferredOutput;
 using mediaproxy::http::make_error_response;
 using mediaproxy::http::make_media_response;
 using mediaproxy::http::make_status_response;
+
+std::vector<std::byte> Bytes(std::string_view text)
+{
+    const auto bytes = std::as_bytes(std::span{text});
+    return {bytes.begin(), bytes.end()};
+}
 
 std::string_view HeaderValue(
     const HttpResponse& response,
@@ -46,7 +55,7 @@ TEST_P(ErrorResponseTest, MatchesExactStatusHeadersAndBody)
     EXPECT_EQ(
         HeaderValue(response, "Content-Type"),
         "text/plain; charset=utf-8");
-    EXPECT_EQ(response.body, expected.body);
+    EXPECT_EQ(response.body, Bytes(expected.body));
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -83,12 +92,13 @@ TEST(Response, BuildsExactStatusResponse)
     EXPECT_EQ(response.status, 200);
     ASSERT_EQ(response.headers.size(), 1U);
     EXPECT_EQ(HeaderValue(response, "Content-Type"), "application/json");
-    EXPECT_EQ(response.body, R"({"status":"OK"})");
+    EXPECT_EQ(response.body, Bytes(R"({"status":"OK"})"));
 }
 
 TEST(Response, BuildsMediaMetadataWithoutInspectingBinaryBody)
 {
-    const std::string binary_body{"\0\xff", 2};
+    const std::vector<std::byte> binary_body{
+        std::byte{0}, std::byte{0xff}};
     const HttpResponse avif =
         make_media_response(PreferredOutput::avif, binary_body);
     EXPECT_EQ(avif.status, 200);

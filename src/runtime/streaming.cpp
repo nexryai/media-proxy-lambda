@@ -178,7 +178,7 @@ bool write_streaming_response(
         return false;
     }
 
-    const auto body = std::as_bytes(std::span{response.body});
+    const std::span<const std::byte> body{response.body};
     for (std::size_t offset = 0; offset < body.size();) {
         const std::size_t size =
             std::min(response_chunk_bytes, body.size() - offset);

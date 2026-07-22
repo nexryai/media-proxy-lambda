@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -16,7 +17,7 @@ struct HttpHeader {
 struct HttpResponse {
     std::uint16_t status = 500;
     std::vector<HttpHeader> headers;
-    std::string body;
+    std::vector<std::byte> body;
 };
 
 enum class ErrorResponse {
@@ -30,6 +31,6 @@ enum class ErrorResponse {
 [[nodiscard]] HttpResponse make_error_response(ErrorResponse error);
 [[nodiscard]] HttpResponse make_media_response(
     PreferredOutput output,
-    std::string body);
+    std::vector<std::byte> body);
 
 } // namespace mediaproxy::http

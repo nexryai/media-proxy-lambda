@@ -2,9 +2,11 @@
 #include <fstream>
 #include <iterator>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <variant>
+#include <vector>
 
 #include <gtest/gtest.h>
 #include <mediaproxy/http/event.hpp>
@@ -23,6 +25,12 @@ using mediaproxy::http::PreferredOutput;
 using mediaproxy::http::RequestRoute;
 using mediaproxy::http::parse_function_url_event;
 using mediaproxy::http::plan_request;
+
+std::vector<std::byte> Bytes(std::string_view text)
+{
+    const auto bytes = std::as_bytes(std::span{text});
+    return {bytes.begin(), bytes.end()};
+}
 
 std::string ReadFile(const std::string& path)
 {
@@ -120,7 +128,7 @@ TEST(Event, MatchesCheckedInFunctionUrlFixtures)
                 yyjson_get_uint(yyjson_obj_get(expected, "status")));
             EXPECT_EQ(
                 response.body,
-                yyjson_get_str(yyjson_obj_get(expected, "bodyUtf8")));
+                Bytes(yyjson_get_str(yyjson_obj_get(expected, "bodyUtf8"))));
             yyjson_val* const headers = yyjson_obj_get(expected, "headers");
             EXPECT_EQ(
                 HeaderValue(response, "Content-Type"),
@@ -152,7 +160,7 @@ TEST(Event, MatchesCheckedInFunctionUrlFixtures)
                 yyjson_get_uint(yyjson_obj_get(expected, "status")));
             EXPECT_EQ(
                 response.body,
-                yyjson_get_str(yyjson_obj_get(expected, "bodyUtf8")));
+                Bytes(yyjson_get_str(yyjson_obj_get(expected, "bodyUtf8"))));
         } else {
             ASSERT_TRUE(std::holds_alternative<MediaRequest>(plan));
             const auto& media_request = std::get<MediaRequest>(plan);

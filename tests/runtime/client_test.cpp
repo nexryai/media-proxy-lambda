@@ -91,7 +91,7 @@ TEST(RuntimeClient, SendsStreamingResponseAndWaitsForAcknowledgement)
     const HttpResponse response{
         .status = 200,
         .headers = {HttpHeader{"Content-Type", "application/json"}},
-        .body = "{}",
+        .body = {std::byte{'{'}, std::byte{'}'}},
     };
     ASSERT_TRUE(send_response_on(
         transport, "127.0.0.1:9001", "invocation-1", response));
@@ -112,7 +112,9 @@ TEST(RuntimeClient, RejectsNonAcceptedRuntimeResponse)
     SendAll(sockets[1],
         "HTTP/1.1 500 Error\r\nContent-Length: 0\r\n\r\n");
     EXPECT_FALSE(send_response_on(transport, "127.0.0.1:9001", "id",
-        HttpResponse{.status = 500, .headers = {}, .body = "error"}));
+        HttpResponse{.status = 500, .headers = {},
+            .body = {std::byte{'e'}, std::byte{'r'}, std::byte{'r'},
+                std::byte{'o'}, std::byte{'r'}}}));
     ::close(sockets[1]);
 }
 

@@ -52,7 +52,7 @@ TEST(RuntimeStreaming, WritesMetadataDelimiterAndRawBinaryBody)
     const HttpResponse response{
         .status = 201,
         .headers = {HttpHeader{"Content-Type", "image/webp"}},
-        .body = std::string{"\0\xff", 2},
+        .body = {std::byte{0}, std::byte{0xff}},
     };
     CollectingSink sink;
     ASSERT_TRUE(write_streaming_response(sink, response));
@@ -81,8 +81,8 @@ TEST(RuntimeStreaming, WritesMetadataDelimiterAndRawBinaryBody)
 TEST(RuntimeStreaming, BoundsBodyChunksAndStopsOnSinkFailure)
 {
     HttpResponse response{.status = 200, .headers = {},
-        .body = std::string(
-            mediaproxy::runtime::response_chunk_bytes + 1, 'x')};
+        .body = std::vector<std::byte>(
+            mediaproxy::runtime::response_chunk_bytes + 1, std::byte{'x'})};
     CollectingSink sink;
     ASSERT_TRUE(write_streaming_response(sink, response));
     EXPECT_NE(sink.output.find("10000\r\n"), std::string::npos);
