@@ -10,8 +10,12 @@
 
 #include <arpa/inet.h>
 #include <gtest/gtest.h>
+#include <linux/filter.h>
+#include <linux/seccomp.h>
 #include <netinet/in.h>
+#include <sys/prctl.h>
 #include <sys/socket.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -186,6 +190,31 @@ private:
     return response;
 }
 
+[[nodiscard]] bool InstallNoFileOpenFilter() noexcept
+{
+    const sock_filter filter[] = {
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
+            offsetof(seccomp_data, nr)),
+#ifdef __NR_open
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_open, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM),
+#endif
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_openat, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM),
+#ifdef __NR_openat2
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_openat2, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM),
+#endif
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
+    };
+    const sock_fprog program{
+        .len = static_cast<unsigned short>(std::size(filter)),
+        .filter = const_cast<sock_filter*>(filter),
+    };
+    return ::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == 0
+        && ::prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &program) == 0;
+}
+
 [[nodiscard]] std::string ServeInvocation(
     int listener,
     std::string_view request_id,
@@ -231,7 +260,7 @@ void ExpectStreamingResponse(
     EXPECT_TRUE(request.ends_with("0\r\n\r\n"));
 }
 
-TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsUntilPollFailure)
+TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsWithoutOpeningFiles)
 {
     std::uint16_t port = 0;
     FileDescriptor listener = CreateListener(port);
@@ -245,6 +274,9 @@ TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsUntilPollFailure)
         const std::string authority = "127.0.0.1:" + std::to_string(port);
         if (::setenv("AWS_LAMBDA_RUNTIME_API", authority.c_str(), 1) != 0) {
             _exit(126);
+        }
+        if (!InstallNoFileOpenFilter()) {
+            _exit(125);
         }
         ::execl(MEDIAPROXY_BOOTSTRAP_PATH,
             MEDIAPROXY_BOOTSTRAP_PATH, static_cast<char*>(nullptr));
