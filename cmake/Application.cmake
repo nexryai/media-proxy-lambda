@@ -599,6 +599,8 @@ if(NOT MEDIAPROXY_SANITIZER_BUILD)
         "${CMAKE_SOURCE_DIR}/include/*"
         "${CMAKE_SOURCE_DIR}/src/*"
         "${CMAKE_SOURCE_DIR}/tests/*")
+    list(FILTER compliance_project_sources EXCLUDE REGEX
+        "/tests/results/")
     list(APPEND compliance_project_sources
         "${CMAKE_SOURCE_DIR}/.editorconfig"
         "${CMAKE_SOURCE_DIR}/.gitattributes"
@@ -868,6 +870,7 @@ if(BUILD_TESTING)
 
     add_executable(mediaproxy_handler_test
         tests/handler_test.cpp
+        tests/media/resize_fixture_test.cpp
     )
     target_link_libraries(mediaproxy_handler_test
         PRIVATE
