@@ -9,8 +9,7 @@ AWS Lambdaに最適化されたMediaProxyです。
 
 ## arm64 bootstrapのビルド
 
-`.devcontainer`で定義された開発環境から、次のCMakeインターフェースで
-strip・静的ELF検証済みの成果物を生成します。
+`.devcontainer`で定義された開発環境から、次のコマンドを実行してビルドします。
 
 ```console
 cmake --preset arm64-release
@@ -18,10 +17,10 @@ cmake --build --preset arm64-release --target bootstrap-artifact --parallel 2
 ctest --preset arm64-release
 ```
 
-成果物は`out/build/arm64-release/artifact/bootstrap`です。AWSリソースの
-デプロイ、IaC、コスト管理はこのリポジトリの対象外です。
+成果物は`out/build/arm64-release/artifact/bootstrap`にコンパイルされます。
+x86_64にも対応していますが、arm64で動作させることを推奨しています。
 
-SBOM、第三者ライセンス通知、LGPL対応ソース、再リンク材料は
+LGPL対応ソース、再リンク材料などは
 `out/build/arm64-release/artifact/compliance`に生成されます。
 
 ASan/UBSan診断はproduction成果物と分離した動的musl PIEで実行します。
