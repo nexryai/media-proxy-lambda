@@ -705,11 +705,19 @@ ExternalProject_Add(libwebp
         "${libwebp_sharpyuv_pkgconfig}"
 )
 
-set(libnsgif_binary_directory "${CMAKE_BINARY_DIR}/libnsgif-build")
+string(SHA256 libnsgif_build_configuration_sha256
+    "${libnsgif_sha256}:no-cfi-icall-for-bitmap-callback-abi-v1")
+string(SUBSTRING "${libnsgif_build_configuration_sha256}" 0 12
+    libnsgif_build_id)
+set(libnsgif_prefix_directory
+    "${CMAKE_BINARY_DIR}/libnsgif-${libnsgif_build_id}-prefix")
+set(libnsgif_binary_directory
+    "${CMAKE_BINARY_DIR}/libnsgif-${libnsgif_build_id}-build")
 set(libnsgif_library "${sysroot}/usr/lib/libnsgif.a")
 set(libnsgif_include_dir "${sysroot}/usr/include")
 ExternalProject_Add(libnsgif
     DEPENDS fortify_headers
+    PREFIX "${libnsgif_prefix_directory}"
     URL "${libnsgif_url}"
     URL_HASH "SHA256=${libnsgif_sha256}"
     DOWNLOAD_DIR "${source_cache}"
@@ -734,7 +742,7 @@ ExternalProject_Add(libnsgif
         "-DCMAKE_RANLIB=${host_ranlib}"
         "-DCMAKE_NM=${host_nm}"
         "-DCMAKE_LINKER=${host_lld}"
-        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags}"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -fno-sanitize=cfi-icall"
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
     BUILD_COMMAND
         "${CMAKE_COMMAND}" --build <BINARY_DIR>
@@ -872,7 +880,14 @@ ExternalProject_Add(lcms2
         "${lcms2_pkgconfig}"
 )
 
-set(libexpat_binary_directory "${CMAKE_BINARY_DIR}/libexpat-static-build")
+string(SHA256 libexpat_build_configuration_sha256
+    "${libexpat_sha256}:no-cfi-icall-for-parser-callback-abi-v1")
+string(SUBSTRING "${libexpat_build_configuration_sha256}" 0 12
+    libexpat_build_id)
+set(libexpat_prefix_directory
+    "${CMAKE_BINARY_DIR}/libexpat-${libexpat_build_id}-prefix")
+set(libexpat_binary_directory
+    "${CMAKE_BINARY_DIR}/libexpat-${libexpat_build_id}-static-build")
 set(libexpat_library "${sysroot}/usr/lib/libexpat.a")
 set(libexpat_include_dir "${sysroot}/usr/include")
 set(libexpat_config_header
@@ -880,6 +895,7 @@ set(libexpat_config_header
 set(libexpat_pkgconfig "${sysroot}/usr/lib/pkgconfig/expat.pc")
 ExternalProject_Add(libexpat
     DEPENDS fortify_headers
+    PREFIX "${libexpat_prefix_directory}"
     URL "${libexpat_url}"
     URL_HASH "SHA256=${libexpat_sha256}"
     DOWNLOAD_DIR "${source_cache}"
@@ -903,7 +919,7 @@ ExternalProject_Add(libexpat
         "-DCMAKE_RANLIB=${host_ranlib}"
         "-DCMAKE_NM=${host_nm}"
         "-DCMAKE_LINKER=${host_lld}"
-        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -Wall -Wextra -Werror -Wpedantic"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -fno-sanitize=cfi-icall -Wall -Wextra -Werror -Wpedantic"
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
         "-DEXPAT_SHARED_LIBS=OFF"
         "-DEXPAT_BUILD_TOOLS=OFF"

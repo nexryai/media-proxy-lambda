@@ -210,7 +210,8 @@
                 "EXPAT_WITH_GETRANDOM=ON using the musl getrandom wrapper as the sole entropy source",
                 "arc4random, getentropy, direct SYS_getrandom, and /dev/urandom sources disabled",
                 "static libexpat archive, public headers, generated configuration, and expat.pc only",
-                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "production hardening flags including fortify, ThinLTO, trapping CFI except cfi-icall, stack protection, zero initialization, hidden visibility, and architecture branch protection",
+                "cfi-icall alone disabled because libexpat invokes public XML parser handlers across ABI-compatible callback signatures that ThinLTO assigns different type identities",
                 "warnings as errors",
                 "LLVM tools only"
             ],
@@ -532,7 +533,8 @@
                 "first-party CMake adapter compiles only src/gif.c and src/lzw.c",
                 "C99 static archive only",
                 "upstream examples, tests, fuzz corpora, documentation, and NetSurf buildsystem excluded",
-                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "production hardening flags including fortify, ThinLTO, trapping CFI except cfi-icall, stack protection, zero initialization, hidden visibility, and architecture branch protection",
+                "cfi-icall alone disabled because libnsgif invokes libvips bitmap callbacks across ABI-compatible signatures that ThinLTO assigns different type identities",
                 "strict upstream warning set with warnings as errors",
                 "LLVM tools only"
             ],
