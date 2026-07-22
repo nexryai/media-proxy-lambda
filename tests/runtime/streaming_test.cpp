@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
@@ -24,6 +25,36 @@ public:
     std::string output;
     std::size_t writes = 0;
     std::size_t fail_on_write = 0;
+};
+
+class BodyTrackingSink final : public mediaproxy::runtime::ByteSink {
+public:
+    explicit BodyTrackingSink(std::span<const std::byte> body) noexcept
+        : body_begin_(reinterpret_cast<std::uintptr_t>(body.data()))
+        , body_end_(body_begin_ + body.size())
+    {
+    }
+
+    bool write(std::span<const std::byte> bytes) override
+    {
+        const std::uintptr_t begin =
+            reinterpret_cast<std::uintptr_t>(bytes.data());
+        if (begin >= body_begin_ && begin <= body_end_
+            && bytes.size() <= body_end_ - begin) {
+            body_bytes += bytes.size();
+            largest_body_write = std::max(largest_body_write, bytes.size());
+        }
+        ++writes;
+        return true;
+    }
+
+    std::size_t body_bytes = 0;
+    std::size_t largest_body_write = 0;
+    std::size_t writes = 0;
+
+private:
+    std::uintptr_t body_begin_ = 0;
+    std::uintptr_t body_end_ = 0;
 };
 
 using mediaproxy::http::HttpHeader;
@@ -90,6 +121,23 @@ TEST(RuntimeStreaming, BoundsBodyChunksAndStopsOnSinkFailure)
     CollectingSink failing;
     failing.fail_on_write = 2;
     EXPECT_FALSE(write_streaming_response(failing, response));
+}
+
+TEST(RuntimeStreaming, StreamsBodyAboveBufferedResponseLimitInRawChunks)
+{
+    constexpr std::size_t buffered_response_limit = 6U * 1024U * 1024U;
+    HttpResponse response{
+        .status = 200,
+        .headers = {},
+        .body = std::vector<std::byte>(
+            buffered_response_limit + 1, std::byte{0xa5}),
+    };
+    BodyTrackingSink sink{response.body};
+    ASSERT_TRUE(write_streaming_response(sink, response));
+    EXPECT_EQ(sink.body_bytes, response.body.size());
+    EXPECT_LE(sink.largest_body_write,
+        mediaproxy::runtime::response_chunk_bytes);
+    EXPECT_GT(sink.writes, 3U);
 }
 
 TEST(RuntimeStreaming, WritesBase64ErrorTrailers)
