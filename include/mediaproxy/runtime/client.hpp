@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include <mediaproxy/http/response.hpp>
+#include <mediaproxy/runtime/invocation.hpp>
 #include <mediaproxy/runtime/next_response.hpp>
 #include <mediaproxy/runtime/socket_transport.hpp>
 
@@ -27,18 +28,18 @@ namespace mediaproxy::runtime {
     std::string_view error_type,
     std::string_view error_message);
 
-class RuntimeClient {
+class RuntimeClient final : public InvocationResponder {
 public:
     explicit RuntimeClient(std::string authority);
 
     [[nodiscard]] std::optional<Invocation> poll_next() const;
     [[nodiscard]] bool send_response(
         std::string_view request_id,
-        const http::HttpResponse& response) const;
+        const http::HttpResponse& response) const override;
     [[nodiscard]] bool send_invocation_error(
         std::string_view request_id,
         std::string_view error_type,
-        std::string_view error_message) const;
+        std::string_view error_message) const override;
 
 private:
     std::string authority_;

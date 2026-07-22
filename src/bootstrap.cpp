@@ -2,9 +2,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstdio>
-#include <exception>
 #include <memory>
-#include <new>
 #include <string>
 #include <string_view>
 
@@ -30,6 +28,7 @@
 #include <mediaproxy/media/vips_runtime.hpp>
 #include <mediaproxy/runtime/client.hpp>
 #include <mediaproxy/runtime/deadline.hpp>
+#include <mediaproxy/runtime/invocation.hpp>
 #include <mediaproxy/runtime/socket_transport.hpp>
 #include <nghttp2/nghttp2.h>
 #include <openssl/ssl.h>
@@ -77,6 +76,29 @@ public:
 private:
     CURLcode result_;
 };
+
+[[nodiscard]] mediaproxy::http::HttpResponse ProcessInvocation(
+    const mediaproxy::runtime::Invocation& invocation,
+    void*)
+{
+    const auto handler_start = std::chrono::steady_clock::now();
+    mediaproxy::runtime::InvocationDeadline deadline{invocation.deadline_ms};
+    mediaproxy::HandlerDiagnostics diagnostics;
+    mediaproxy::http::HttpResponse response =
+        mediaproxy::handle_function_url_event(invocation.event,
+            deadline.origin_timeout(), {},
+            mediaproxy::http::system_origin_transport(), &diagnostics);
+    const auto handler_microseconds =
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - handler_start)
+            .count();
+    mediaproxy::log_invocation(stderr, invocation.request_id, diagnostics,
+        response.status, invocation.event.size(), response.body.size(),
+        handler_microseconds > 0
+            ? static_cast<std::uint64_t>(handler_microseconds)
+            : 0);
+    return response;
+}
 
 } // namespace
 
@@ -287,55 +309,32 @@ int main()
             continue;
         }
 
-        try {
-            const auto handler_start = std::chrono::steady_clock::now();
-            mediaproxy::runtime::InvocationDeadline deadline{
-                invocation->deadline_ms};
-            mediaproxy::HandlerDiagnostics diagnostics;
-            mediaproxy::http::HttpResponse response =
-                mediaproxy::handle_function_url_event(
-                    invocation->event, deadline.origin_timeout(), {},
-                    mediaproxy::http::system_origin_transport(), &diagnostics);
-            const auto handler_microseconds =
-                std::chrono::duration_cast<std::chrono::microseconds>(
-                    std::chrono::steady_clock::now() - handler_start)
-                    .count();
-            mediaproxy::log_invocation(stderr, invocation->request_id,
-                diagnostics, response.status, invocation->event.size(),
-                response.body.size(),
-                handler_microseconds > 0
-                    ? static_cast<std::uint64_t>(handler_microseconds)
-                    : 0);
-            if (!runtime_client.send_response(
-                    invocation->request_id, response)) {
-                mediaproxy::log_runtime_failure(stderr,
-                    invocation->request_id, "runtime_response_failure");
-                return 1;
-            }
-        } catch (const std::bad_alloc&) {
+        const auto result = mediaproxy::runtime::execute_invocation(
+            runtime_client, *invocation, &ProcessInvocation);
+        using Result = mediaproxy::runtime::InvocationExecutionResult;
+        switch (result) {
+        case Result::response_sent:
+            break;
+        case Result::out_of_memory_reported:
             mediaproxy::log_runtime_failure(
                 stderr, invocation->request_id, "runtime_out_of_memory");
-            if (!runtime_client.send_invocation_error(invocation->request_id,
-                    "RuntimeOutOfMemory",
-                    "Invocation allocation failed before response")) {
-                return 1;
-            }
-        } catch (const std::exception&) {
+            break;
+        case Result::unhandled_error_reported:
             mediaproxy::log_runtime_failure(stderr, invocation->request_id,
                 "unhandled_invocation_error");
-            if (!runtime_client.send_invocation_error(invocation->request_id,
-                    "UnhandledInvocationError",
-                    "Invocation failed before response")) {
-                return 1;
-            }
-        } catch (...) {
+            break;
+        case Result::unknown_error_reported:
             mediaproxy::log_runtime_failure(stderr, invocation->request_id,
                 "unknown_invocation_error");
-            if (!runtime_client.send_invocation_error(invocation->request_id,
-                    "UnknownInvocationError",
-                    "Invocation failed before response")) {
-                return 1;
-            }
+            break;
+        case Result::response_failure:
+            mediaproxy::log_runtime_failure(stderr, invocation->request_id,
+                "runtime_response_failure");
+            return 1;
+        case Result::error_submission_failure:
+            mediaproxy::log_runtime_failure(stderr, invocation->request_id,
+                "runtime_error_submission_failure");
+            return 1;
         }
     }
 }
