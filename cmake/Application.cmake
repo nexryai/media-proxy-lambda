@@ -481,12 +481,27 @@ target_link_libraries(mediaproxy_runtime
         mediaproxy_warnings
 )
 
+add_library(mediaproxy_handler STATIC
+    src/handler.cpp
+)
+target_include_directories(mediaproxy_handler PUBLIC
+    "${CMAKE_SOURCE_DIR}/include"
+)
+target_link_libraries(mediaproxy_handler
+    PRIVATE
+        mediaproxy_hardening
+        mediaproxy_warnings
+        mediaproxy_http
+        mediaproxy_media
+)
+
 add_executable(bootstrap src/bootstrap.cpp)
 target_link_libraries(bootstrap
     PRIVATE
         mediaproxy_hardening
         mediaproxy_warnings
         mediaproxy_http
+        mediaproxy_handler
         mediaproxy_media
         mediaproxy_runtime
         mediaproxy_libvips
@@ -683,6 +698,26 @@ if(BUILD_TESTING)
             mediaproxy_runtime_test
             DISCOVERY_MODE PRE_TEST
             NO_PRETTY_VALUES)
+    endif()
+
+    add_executable(mediaproxy_handler_test
+        tests/handler_test.cpp
+    )
+    target_link_libraries(mediaproxy_handler_test
+        PRIVATE
+            mediaproxy_hardening
+            mediaproxy_warnings
+            mediaproxy_handler
+            mediaproxy_libvips
+            GTest::gtest_main
+    )
+    target_compile_definitions(mediaproxy_handler_test PRIVATE
+        "MEDIAPROXY_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\""
+    )
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        gtest_discover_tests(
+            mediaproxy_handler_test
+            DISCOVERY_MODE PRE_TEST)
     endif()
 
     add_executable(mediaproxy_stack_smash_probe
