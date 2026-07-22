@@ -447,6 +447,7 @@ add_library(mediaproxy_media STATIC
     src/media/animated_conversion.cpp
     src/media/apng.cpp
     src/media/apng_compositor.cpp
+    src/media/apng_decoder.cpp
     src/media/classification.cpp
     src/media/mime.cpp
     src/media/resize.cpp
@@ -617,6 +618,7 @@ if(BUILD_TESTING)
         tests/media/animated_conversion_test.cpp
         tests/media/apng_test.cpp
         tests/media/apng_compositor_test.cpp
+        tests/media/apng_decoder_test.cpp
         tests/media/classification_test.cpp
         tests/media/mime_test.cpp
         tests/media/resize_test.cpp

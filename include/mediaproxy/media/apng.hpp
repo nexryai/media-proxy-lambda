@@ -22,6 +22,8 @@ enum class ApngParseError {
     ihdr,
     animation_control,
     frame_control,
+    frame_data,
+    sequence,
     frame_rectangle,
     delay_denominator,
     blend_operation,

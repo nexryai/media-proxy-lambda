@@ -92,6 +92,8 @@ ApngDescription parse_apng(std::span<const std::byte> body)
     ApngDescription result;
     bool have_ihdr = false;
     bool have_actl = false;
+    bool frame_has_data = false;
+    std::uint32_t expected_sequence = 0;
     std::size_t offset = png_signature.size();
     while (offset < body.size()) {
         constexpr std::size_t chunk_overhead = 12;
@@ -144,6 +146,9 @@ ApngDescription parse_apng(std::span<const std::byte> body)
             if (!have_ihdr || !have_actl || length != 26) {
                 return fail(ApngParseError::frame_control);
             }
+            if (!result.frames.empty() && !frame_has_data) {
+                return fail(ApngParseError::frame_data);
+            }
             ApngFrameControl frame{
                 .sequence = read_u32(body, data_offset),
                 .width = read_u32(body, data_offset + 4),
@@ -155,6 +160,9 @@ ApngDescription parse_apng(std::span<const std::byte> body)
                 .dispose = std::to_integer<std::uint8_t>(body[data_offset + 24]),
                 .blend = std::to_integer<std::uint8_t>(body[data_offset + 25]),
             };
+            if (frame.sequence != expected_sequence++) {
+                return fail(ApngParseError::sequence);
+            }
             if (frame.width == 0 || frame.height == 0
                 || frame.x_offset > result.canvas_width
                 || frame.width > result.canvas_width - frame.x_offset
@@ -172,11 +180,25 @@ ApngDescription parse_apng(std::span<const std::byte> body)
                 return fail(ApngParseError::blend_operation);
             }
             result.frames.push_back(frame);
+            frame_has_data = false;
+        } else if (tag_at(body, type_offset, "IDAT")) {
+            if (result.frames.empty()) {
+                return fail(ApngParseError::frame_data);
+            }
+            frame_has_data = true;
+        } else if (tag_at(body, type_offset, "fdAT")) {
+            if (result.frames.empty() || length < 4) {
+                return fail(ApngParseError::frame_data);
+            }
+            if (read_u32(body, data_offset) != expected_sequence++) {
+                return fail(ApngParseError::sequence);
+            }
+            frame_has_data = true;
         }
 
         offset = crc_offset + 4;
     }
-    if (!have_ihdr || !have_actl
+    if (!have_ihdr || !have_actl || !frame_has_data
         || result.frames.size() != result.declared_frames) {
         return fail(ApngParseError::animation_control);
     }
