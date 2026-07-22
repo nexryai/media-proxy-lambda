@@ -79,6 +79,12 @@ template <typename Integer>
         && value.find_first_of("\r\n \t") == std::string_view::npos;
 }
 
+[[nodiscard]] bool safe_request_id(std::string_view value) noexcept
+{
+    return !value.empty()
+        && value.find_first_of("/ ?#\t\\") == std::string_view::npos;
+}
+
 } // namespace
 
 NextParseStatus NextResponseParser::feed(std::span<const std::byte> bytes)
@@ -172,7 +178,7 @@ bool NextResponseParser::parse_headers(std::size_t header_end)
             }
             have_length = true;
         } else if (ascii_equal(name, "Lambda-Runtime-Aws-Request-Id")) {
-            if (have_request_id || value.empty()) {
+            if (have_request_id || !safe_request_id(value)) {
                 return false;
             }
             invocation_.request_id = value;

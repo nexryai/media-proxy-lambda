@@ -81,7 +81,11 @@ TEST(RuntimeNextResponse, RejectsDuplicateAndInvalidFraming)
              "Lambda-Runtime-Deadline-Ms: 1\r\n\r\n",
              "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n"
              "Lambda-Runtime-Aws-Request-Id: id\r\n"
-             "Lambda-Runtime-Deadline-Ms: 1\r\n\r\n"}) {
+             "Lambda-Runtime-Deadline-Ms: 1\r\n\r\n",
+             "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n"
+             "Lambda-Runtime-Aws-Request-Id: bad?id\r\n"
+             "Lambda-Runtime-Deadline-Ms: 1\r\n"
+             "Lambda-Runtime-Trace-Id: trace\r\n\r\n"}) {
         NextResponseParser parser;
         EXPECT_EQ(parser.feed(Bytes(response)), NextParseStatus::error);
     }

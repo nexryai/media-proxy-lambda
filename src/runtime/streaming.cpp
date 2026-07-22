@@ -151,7 +151,7 @@ std::string make_streaming_request_head(
 {
     if (!safe_header_component(runtime_authority)
         || !safe_header_component(request_id)
-        || request_id.find('/') != std::string_view::npos) {
+        || request_id.find_first_of("/ ?#\t\\") != std::string_view::npos) {
         return {};
     }
     std::string output = "POST /2018-06-01/runtime/invocation/";

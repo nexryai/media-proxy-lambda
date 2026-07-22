@@ -76,6 +76,8 @@ TEST(RuntimeStreaming, BuildsRequiredResponseRequestHeaders)
         "Connection: close\r\n\r\n");
     EXPECT_TRUE(make_streaming_request_head("bad\r\nhost", "id").empty());
     EXPECT_TRUE(make_streaming_request_head("host", "bad/id").empty());
+    EXPECT_TRUE(make_streaming_request_head("host", "bad?id").empty());
+    EXPECT_TRUE(make_streaming_request_head("host", "bad id").empty());
 }
 
 TEST(RuntimeStreaming, WritesMetadataDelimiterAndRawBinaryBody)
