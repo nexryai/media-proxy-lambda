@@ -1,5 +1,5 @@
 # media-proxy-lambda
-WIP: AWS Lambdaに最適化されたMediaProxyです。
+AWS Lambdaに最適化されたMediaProxyです。
 
  - C++で書かれています。依存関係を全てHardeningした上でStaticなバイナリにコンパイルしています。
  - 必要最低限の依存関係のみを含める方針で開発されています。
