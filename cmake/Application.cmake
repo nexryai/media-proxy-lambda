@@ -773,7 +773,8 @@ if(BUILD_TESTING)
     )
 
     include(GoogleTest)
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR
+            AND NOT MEDIAPROXY_SANITIZER_BUILD)
         gtest_discover_tests(mediaproxy_smoke_test DISCOVERY_MODE PRE_TEST)
     endif()
 
@@ -806,7 +807,8 @@ if(BUILD_TESTING)
     target_compile_definitions(mediaproxy_http_test PRIVATE
         "MEDIAPROXY_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\""
     )
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR
+            AND NOT MEDIAPROXY_SANITIZER_BUILD)
         gtest_discover_tests(
             mediaproxy_http_test
             DISCOVERY_MODE PRE_TEST
@@ -839,7 +841,8 @@ if(BUILD_TESTING)
     target_compile_definitions(mediaproxy_media_test PRIVATE
         "MEDIAPROXY_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\""
     )
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR
+            AND NOT MEDIAPROXY_SANITIZER_BUILD)
         gtest_discover_tests(
             mediaproxy_media_test
             DISCOVERY_MODE PRE_TEST
@@ -861,7 +864,8 @@ if(BUILD_TESTING)
             mediaproxy_runtime
             GTest::gtest_main
     )
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR
+            AND NOT MEDIAPROXY_SANITIZER_BUILD)
         gtest_discover_tests(
             mediaproxy_runtime_test
             DISCOVERY_MODE PRE_TEST
@@ -870,6 +874,7 @@ if(BUILD_TESTING)
 
     add_executable(mediaproxy_handler_test
         tests/handler_test.cpp
+        tests/media/animated_fixture_test.cpp
         tests/media/resize_fixture_test.cpp
     )
     target_link_libraries(mediaproxy_handler_test
@@ -883,7 +888,8 @@ if(BUILD_TESTING)
     target_compile_definitions(mediaproxy_handler_test PRIVATE
         "MEDIAPROXY_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\""
     )
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR
+            AND NOT MEDIAPROXY_SANITIZER_BUILD)
         gtest_discover_tests(
             mediaproxy_handler_test
             DISCOVERY_MODE PRE_TEST)
@@ -902,7 +908,8 @@ if(BUILD_TESTING)
         "MEDIAPROXY_BOOTSTRAP_PATH=\"${bootstrap_artifact}\""
     )
     add_dependencies(mediaproxy_bootstrap_test bootstrap-artifact-inner)
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR
+            AND NOT MEDIAPROXY_SANITIZER_BUILD)
         gtest_discover_tests(
             mediaproxy_bootstrap_test
             DISCOVERY_MODE PRE_TEST)

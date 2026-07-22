@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <tuple>
 #include <vector>
 
 #include <glib.h>
@@ -74,6 +75,18 @@ constexpr std::array fixtures{
     Fixture{"7680x4320_1.png", MimeType::image_png,
         {{{320, 180}, {700, 394}, {200, 113}, {96, 54}, {500, 281},
             {64, 36}, {3200, 1800}}}},
+    Fixture{"7680x4320_1.avif", MimeType::image_avif,
+        {{{320, 180}, {700, 394}, {200, 113}, {96, 54}, {500, 281},
+            {64, 36}, {3200, 1800}}}},
+    Fixture{"7680x4320_1.webp", MimeType::image_webp,
+        {{{320, 180}, {700, 394}, {200, 113}, {96, 54}, {500, 281},
+            {64, 36}, {3200, 1800}}}},
+    Fixture{"7680x4320_lossless.avif", MimeType::image_avif,
+        {{{320, 180}, {700, 394}, {200, 113}, {96, 54}, {500, 281},
+            {64, 36}, {3200, 1800}}}},
+    Fixture{"7680x4320_lossless.webp", MimeType::image_webp,
+        {{{320, 180}, {700, 394}, {200, 113}, {96, 54}, {500, 281},
+            {64, 36}, {3200, 1800}}}},
 };
 
 std::vector<std::byte> ReadFile(const std::string& path)
@@ -119,7 +132,9 @@ OutputFormat ToOutputFormat(PreferredOutput output)
         : OutputFormat::webp;
 }
 
-class ResizeFixtureTest : public testing::Test {
+using FixtureParameter = std::tuple<std::size_t, std::size_t>;
+
+class ResizeFixtureTest : public testing::TestWithParam<FixtureParameter> {
 protected:
     static void SetUpTestSuite()
     {
@@ -127,7 +142,7 @@ protected:
     }
 };
 
-TEST_F(ResizeFixtureTest, WritesEverySelectorResultAtExpectedDimensions)
+TEST_P(ResizeFixtureTest, WritesSelectorResultAtExpectedDimensions)
 {
     const std::filesystem::path source_root{MEDIAPROXY_SOURCE_DIR};
     const auto result_directory = source_root / "tests/results/resize";
@@ -135,59 +150,55 @@ TEST_F(ResizeFixtureTest, WritesEverySelectorResultAtExpectedDimensions)
     std::filesystem::create_directories(result_directory, directory_error);
     ASSERT_FALSE(directory_error) << directory_error.message();
 
-    for (const auto& fixture : fixtures) {
-        SCOPED_TRACE(fixture.filename);
-        const std::string fixture_path = std::string{MEDIAPROXY_SOURCE_DIR}
-            + "/tests/fixtures/media/resize/" + std::string(fixture.filename);
-        const auto input = ReadFile(fixture_path);
-        if (input.empty()) {
-            continue;
-        }
+    const auto [fixture_index, target_index] = GetParam();
+    const auto& fixture = fixtures[fixture_index];
+    const auto& target = targets[target_index];
+    SCOPED_TRACE(fixture.filename);
+    SCOPED_TRACE(target.name);
+    const std::string fixture_path = std::string{MEDIAPROXY_SOURCE_DIR}
+        + "/tests/fixtures/media/resize/" + std::string(fixture.filename);
+    const auto input = ReadFile(fixture_path);
+    ASSERT_FALSE(input.empty());
 
-        for (std::size_t index = 0; index < targets.size(); ++index) {
-            const auto& target = targets[index];
-            SCOPED_TRACE(target.name);
-            const auto options =
-                select_media_options(parse_query(target.query));
-            const auto requested_output =
-                ToOutputFormat(options.preferred_output);
-            EXPECT_EQ(requested_output, target.output);
+    const auto options = select_media_options(parse_query(target.query));
+    const auto requested_output = ToOutputFormat(options.preferred_output);
+    EXPECT_EQ(requested_output, target.output);
 
-            const auto result = convert_media(input, fixture.mime,
-                options.force_static, requested_output,
-                {options.width_limit, options.height_limit});
-            if (!result) {
-                ADD_FAILURE() << "Conversion failed with error "
-                              << static_cast<int>(result.error) << ": "
-                              << vips_error_buffer();
-                continue;
-            }
-            EXPECT_EQ(result.encoded_format, target.output);
+    const auto result = convert_media(input, fixture.mime,
+        options.force_static, requested_output,
+        {options.width_limit, options.height_limit});
+    ASSERT_TRUE(result) << "Conversion failed with error "
+                        << static_cast<int>(result.error) << ": "
+                        << vips_error_buffer();
+    EXPECT_EQ(result.encoded_format, target.output);
 
-            const std::string output_path = result_directory.string() + "/"
-                + std::filesystem::path{std::string(fixture.filename)}
-                      .stem()
-                      .string()
-                + "."
-                + std::string(target.name) + "."
-                + std::string(target.extension);
-            if (!WriteFile(output_path, result.body)) {
-                ADD_FAILURE() << "Unable to write " << output_path;
-                continue;
-            }
+    const std::string output_path = result_directory.string() + "/"
+        + std::string(fixture.filename) + "." + std::string(target.name) + "."
+        + std::string(target.extension);
+    ASSERT_TRUE(WriteFile(output_path, result.body))
+        << "Unable to write " << output_path;
 
-            const ImagePtr decoded(vips_image_new_from_buffer(
-                result.body.data(), result.body.size(), "", nullptr));
-            if (!decoded) {
-                ADD_FAILURE() << output_path << ": " << vips_error_buffer();
-                continue;
-            }
-            EXPECT_EQ(vips_image_get_width(decoded.get()),
-                static_cast<int>(fixture.expected[index].width));
-            EXPECT_EQ(vips_image_get_height(decoded.get()),
-                static_cast<int>(fixture.expected[index].height));
-        }
-    }
+    const ImagePtr decoded(vips_image_new_from_buffer(
+        result.body.data(), result.body.size(), "", nullptr));
+    ASSERT_NE(decoded, nullptr) << output_path << ": " << vips_error_buffer();
+    EXPECT_EQ(vips_image_get_width(decoded.get()),
+        static_cast<int>(fixture.expected[target_index].width));
+    EXPECT_EQ(vips_image_get_height(decoded.get()),
+        static_cast<int>(fixture.expected[target_index].height));
 }
+
+std::string ResizeParameterName(
+    const testing::TestParamInfo<FixtureParameter>& parameter)
+{
+    const auto [fixture_index, target_index] = parameter.param;
+    return "Fixture" + std::to_string(fixture_index) + "_"
+        + std::string(targets[target_index].name);
+}
+
+INSTANTIATE_TEST_SUITE_P(AllFixtures, ResizeFixtureTest,
+    testing::Combine(
+        testing::Range<std::size_t>(0, fixtures.size()),
+        testing::Range<std::size_t>(0, targets.size())),
+    ResizeParameterName);
 
 } // namespace
