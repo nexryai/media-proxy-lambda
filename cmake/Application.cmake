@@ -468,6 +468,7 @@ target_link_libraries(mediaproxy_media
 
 add_library(mediaproxy_runtime STATIC
     src/runtime/next_response.cpp
+    src/runtime/socket_transport.cpp
     src/runtime/streaming.cpp
 )
 target_include_directories(mediaproxy_runtime PUBLIC
@@ -665,6 +666,7 @@ if(BUILD_TESTING)
 
     add_executable(mediaproxy_runtime_test
         tests/runtime/next_response_test.cpp
+        tests/runtime/socket_transport_test.cpp
         tests/runtime/streaming_test.cpp
     )
     target_link_libraries(mediaproxy_runtime_test
