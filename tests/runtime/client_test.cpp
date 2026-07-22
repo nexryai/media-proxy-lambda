@@ -17,6 +17,7 @@ using mediaproxy::http::HttpHeader;
 using mediaproxy::http::HttpResponse;
 using mediaproxy::runtime::SocketTransport;
 using mediaproxy::runtime::poll_next_on;
+using mediaproxy::runtime::send_invocation_error_on;
 using mediaproxy::runtime::send_response_on;
 
 std::array<int, 2> SocketPair()
@@ -112,6 +113,26 @@ TEST(RuntimeClient, RejectsNonAcceptedRuntimeResponse)
         "HTTP/1.1 500 Error\r\nContent-Length: 0\r\n\r\n");
     EXPECT_FALSE(send_response_on(transport, "127.0.0.1:9001", "id",
         HttpResponse{.status = 500, .headers = {}, .body = "error"}));
+    ::close(sockets[1]);
+}
+
+TEST(RuntimeClient, ReportsPreResponseFailureToMatchingErrorEndpoint)
+{
+    auto sockets = SocketPair();
+    SocketTransport transport{sockets[0]};
+    SendAll(sockets[1],
+        "HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\n\r\n");
+    ASSERT_TRUE(send_invocation_error_on(transport, "127.0.0.1:9001",
+        "invocation-7", "MediaError", "decode \"failed\""));
+    const std::string request = ReadToEnd(sockets[1]);
+    EXPECT_TRUE(request.starts_with(
+        "POST /2018-06-01/runtime/invocation/invocation-7/error HTTP/1.1\r\n"));
+    EXPECT_NE(request.find(
+                  "Lambda-Runtime-Function-Error-Type: MediaError\r\n"),
+        std::string::npos);
+    EXPECT_TRUE(request.ends_with(
+        "{\"errorMessage\":\"decode \\\"failed\\\"\","
+        "\"errorType\":\"MediaError\"}"));
     ::close(sockets[1]);
 }
 

@@ -20,6 +20,13 @@ namespace mediaproxy::runtime {
     std::string_view request_id,
     const http::HttpResponse& response);
 
+[[nodiscard]] bool send_invocation_error_on(
+    SocketTransport& transport,
+    std::string_view runtime_authority,
+    std::string_view request_id,
+    std::string_view error_type,
+    std::string_view error_message);
+
 class RuntimeClient {
 public:
     explicit RuntimeClient(std::string authority);
@@ -28,6 +35,10 @@ public:
     [[nodiscard]] bool send_response(
         std::string_view request_id,
         const http::HttpResponse& response) const;
+    [[nodiscard]] bool send_invocation_error(
+        std::string_view request_id,
+        std::string_view error_type,
+        std::string_view error_message) const;
 
 private:
     std::string authority_;

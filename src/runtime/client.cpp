@@ -13,6 +13,53 @@
 namespace mediaproxy::runtime {
 namespace {
 
+[[nodiscard]] bool safe_line(std::string_view value) noexcept
+{
+    return !value.empty()
+        && value.find_first_of("\r\n") == std::string_view::npos;
+}
+
+[[nodiscard]] bool safe_request_id(std::string_view value) noexcept
+{
+    return safe_line(value)
+        && value.find_first_of("/?# \t\\") == std::string_view::npos;
+}
+
+void append_json_string(std::string& output, std::string_view value)
+{
+    constexpr char hex[] = "0123456789abcdef";
+    output.push_back('"');
+    for (const unsigned char character : value) {
+        switch (character) {
+        case '"':
+            output += "\\\"";
+            break;
+        case '\\':
+            output += "\\\\";
+            break;
+        case '\n':
+            output += "\\n";
+            break;
+        case '\r':
+            output += "\\r";
+            break;
+        case '\t':
+            output += "\\t";
+            break;
+        default:
+            if (character < 0x20U) {
+                output += "\\u00";
+                output.push_back(hex[character >> 4U]);
+                output.push_back(hex[character & 0x0fU]);
+            } else {
+                output.push_back(static_cast<char>(character));
+            }
+            break;
+        }
+    }
+    output.push_back('"');
+}
+
 [[nodiscard]] bool write_text(
     SocketTransport& transport,
     std::string_view text)
@@ -85,6 +132,39 @@ bool send_response_on(
     return read_response_ack(transport);
 }
 
+bool send_invocation_error_on(
+    SocketTransport& transport,
+    std::string_view runtime_authority,
+    std::string_view request_id,
+    std::string_view error_type,
+    std::string_view error_message)
+{
+    if (!parse_runtime_authority(runtime_authority).has_value()
+        || !safe_request_id(request_id) || !safe_line(error_type)) {
+        return false;
+    }
+    std::string body = "{\"errorMessage\":";
+    append_json_string(body, error_message);
+    body += ",\"errorType\":";
+    append_json_string(body, error_type);
+    body.push_back('}');
+
+    std::string request = "POST /2018-06-01/runtime/invocation/";
+    request += request_id;
+    request += "/error HTTP/1.1\r\nHost: ";
+    request += runtime_authority;
+    request += "\r\nLambda-Runtime-Function-Error-Type: ";
+    request += error_type;
+    request +=
+        "\r\nContent-Type: application/vnd.aws.lambda.error+json"
+        "\r\nContent-Length: ";
+    request += std::to_string(body.size());
+    request += "\r\nConnection: close\r\n\r\n";
+    request += body;
+    return write_text(transport, request) && transport.shutdown_write()
+        && read_response_ack(transport);
+}
+
 RuntimeClient::RuntimeClient(std::string authority)
     : authority_(std::move(authority))
 {
@@ -106,6 +186,17 @@ bool RuntimeClient::send_response(
     auto transport = SocketTransport::connect(authority_);
     return transport.has_value()
         && send_response_on(*transport, authority_, request_id, response);
+}
+
+bool RuntimeClient::send_invocation_error(
+    std::string_view request_id,
+    std::string_view error_type,
+    std::string_view error_message) const
+{
+    auto transport = SocketTransport::connect(authority_);
+    return transport.has_value()
+        && send_invocation_error_on(*transport, authority_, request_id,
+            error_type, error_message);
 }
 
 } // namespace mediaproxy::runtime
