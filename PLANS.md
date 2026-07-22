@@ -182,13 +182,14 @@ similarly cross the C/C++ callback boundary. libwebp invokes the public
 `WebPPicture` writer hook supplied by libvips; the pinned pair uses
 ABI-compatible callback signatures that ThinLTO CFI assigns different type
 identities. libpng likewise invokes its public read/write callbacks supplied by
-libvips across a callback ABI that ThinLTO assigns mismatched type identities,
-and zlib invokes libpng's public allocator callbacks across the same boundary.
-Disable only `cfi-icall` for the pinned libvips, libexif, libheif, libwebp,
-libpng, and zlib archives while retaining their other CFI classes and every
-other hardening control. Build-policy tests must enforce each narrow exception
-and every retained flag; first-party code and compatible dependencies, including
-libaom, keep full trapping CFI.
+libvips across a callback ABI that ThinLTO assigns mismatched type identities.
+libjpeg-turbo invokes its public source-manager callbacks supplied by libvips
+across the same kind of boundary, and zlib invokes libpng's public allocator
+callbacks. Disable only `cfi-icall` for the pinned libvips, libexif, libheif,
+libwebp, libpng, libjpeg-turbo, and zlib archives while retaining their other
+CFI classes and every other hardening control. Build-policy tests must enforce
+each narrow exception and every retained flag; first-party code and compatible
+dependencies, including libaom, keep full trapping CFI.
 
 The production and test baseline includes:
 

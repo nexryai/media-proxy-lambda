@@ -517,8 +517,12 @@ ExternalProject_Add(libpng
         "${libpng_pkgconfig}"
 )
 
+string(SHA256 libjpeg_turbo_build_configuration_sha256
+    "${libjpeg_turbo_sha256}:no-cfi-icall-for-source-manager-callback-abi-v1")
+string(SUBSTRING "${libjpeg_turbo_build_configuration_sha256}" 0 12
+    libjpeg_turbo_build_id)
 set(libjpeg_turbo_binary_directory
-    "${CMAKE_BINARY_DIR}/libjpeg-turbo-static-build")
+    "${CMAKE_BINARY_DIR}/libjpeg-turbo-${libjpeg_turbo_build_id}-static-build")
 set(libjpeg_turbo_library "${sysroot}/usr/lib/libjpeg.a")
 set(libjpeg_turbo_include_dir "${sysroot}/usr/include")
 set(libjpeg_turbo_pkgconfig "${sysroot}/usr/lib/pkgconfig/libjpeg.pc")
@@ -549,7 +553,7 @@ ExternalProject_Add(libjpeg_turbo
         "-DCMAKE_RANLIB=${host_ranlib}"
         "-DCMAKE_NM=${host_nm}"
         "-DCMAKE_LINKER=${host_lld}"
-        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -Wall -Wextra -Werror -Wno-unused-parameter -ffp-contract=off"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags} -fno-sanitize=cfi-icall -Wall -Wextra -Werror -Wno-unused-parameter -ffp-contract=off"
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
         "-DENABLE_SHARED=OFF"
         "-DENABLE_STATIC=ON"

@@ -487,7 +487,8 @@
                 "-ffp-contract=off for architecture-independent floating-point DCT behavior",
                 "-Wno-unused-parameter for upstream precision-wrapper callbacks whose parameters are conditionally unused",
                 "libjpeg static archive only",
-                "production hardening flags including fortify, ThinLTO, and trapping CFI",
+                "production hardening flags including fortify, ThinLTO, trapping CFI except cfi-icall, stack protection, zero initialization, hidden visibility, and architecture branch protection",
+                "cfi-icall alone disabled because libjpeg-turbo invokes libvips source-manager callbacks across ABI-compatible signatures that ThinLTO assigns different type identities",
                 "warnings as errors",
                 "LLVM tools only"
             ],
