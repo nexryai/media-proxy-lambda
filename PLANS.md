@@ -443,8 +443,8 @@ Deliverables:
   section 5.
 - Initialize libvips once with concurrency/cache settings from section 7.
 - Implement supported MIME classification, all-pages loading, ICO first-entry
-  fallback, 7680-by-4320 rejection boundaries, and static/animated resize
-  formulas.
+  fallback, AVIF-sequence first-frame fallback, 7680-by-4320 rejection
+  boundaries, and static/animated resize formulas.
 - Implement static/animated WebP and AVIF options exactly.
 - Bound arithmetic, pages, frame memory, and decoded resources above valid
   fixture maxima.

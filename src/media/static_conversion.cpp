@@ -2,11 +2,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <span>
 #include <vector>
 
 #include <glib.h>
+#include <libheif/heif.h>
+#include <libheif/heif_sequences.h>
 #include <mediaproxy/media/vips_runtime.hpp>
 #include <vips/vips.h>
 
@@ -29,10 +32,141 @@ struct GFree {
     }
 };
 
+struct HeifContextFree {
+    void operator()(heif_context* context) const noexcept
+    {
+        heif_context_free(context);
+    }
+};
+
+struct HeifTrackRelease {
+    void operator()(heif_track* track) const noexcept
+    {
+        heif_track_release(track);
+    }
+};
+
+struct HeifImageRelease {
+    void operator()(heif_image* image) const noexcept
+    {
+        heif_image_release(image);
+    }
+};
+
+struct HeifDecodingOptionsFree {
+    void operator()(heif_decoding_options* options) const noexcept
+    {
+        heif_decoding_options_free(options);
+    }
+};
+
 using ImagePtr = std::unique_ptr<VipsImage, ImageUnref>;
 using BufferPtr = std::unique_ptr<void, GFree>;
+using HeifContextPtr = std::unique_ptr<heif_context, HeifContextFree>;
+using HeifTrackPtr = std::unique_ptr<heif_track, HeifTrackRelease>;
+using HeifImagePtr = std::unique_ptr<heif_image, HeifImageRelease>;
+using HeifDecodingOptionsPtr =
+    std::unique_ptr<heif_decoding_options, HeifDecodingOptionsFree>;
 
-[[nodiscard]] ImagePtr load_image(std::span<const std::byte> body)
+constexpr char heif_image_owner_key[] =
+    "mediaproxy-avif-sequence-image";
+
+void release_heif_image(void* image) noexcept
+{
+    heif_image_release(static_cast<heif_image*>(image));
+}
+
+[[nodiscard]] bool heif_ok(heif_error error) noexcept
+{
+    return error.code == heif_error_Ok;
+}
+
+[[nodiscard]] ImagePtr load_avif_sequence_first_frame(
+    std::span<const std::byte> body)
+{
+    HeifContextPtr context(heif_context_alloc());
+    if (!context
+        || !heif_ok(heif_context_read_from_memory_without_copy(context.get(),
+            body.data(), body.size(), nullptr))
+        || heif_context_has_sequence(context.get()) == 0) {
+        return {};
+    }
+
+    HeifTrackPtr track(heif_context_get_track(context.get(), 0));
+    if (!track
+        || heif_track_get_track_handler_type(track.get())
+            != heif_track_type_image_sequence) {
+        return {};
+    }
+    std::uint16_t track_width = 0;
+    std::uint16_t track_height = 0;
+    if (!heif_ok(heif_track_get_image_resolution(
+            track.get(), &track_width, &track_height))
+        || !validate_dimensions(track_width, track_height, 1, false)) {
+        return {};
+    }
+
+    HeifDecodingOptionsPtr options(heif_decoding_options_alloc());
+    if (!options) {
+        return {};
+    }
+    options->ignore_sequence_editlist = 1;
+    heif_image* raw_decoded = nullptr;
+    if (!heif_ok(heif_track_decode_next_image(track.get(), &raw_decoded,
+            heif_colorspace_RGB, heif_chroma_interleaved_RGBA,
+            options.get()))) {
+        return {};
+    }
+    HeifImagePtr decoded(raw_decoded);
+
+    const int width =
+        heif_image_get_width(decoded.get(), heif_channel_interleaved);
+    const int height =
+        heif_image_get_height(decoded.get(), heif_channel_interleaved);
+    if (!validate_dimensions(width, height, 1, false)) {
+        return {};
+    }
+    std::size_t stride = 0;
+    const std::uint8_t* pixels = heif_image_get_plane_readonly2(
+        decoded.get(), heif_channel_interleaved, &stride);
+    constexpr std::size_t bands = 4;
+    const std::size_t packed_width = static_cast<std::size_t>(width) * bands;
+    if (pixels == nullptr || stride < packed_width || stride % bands != 0
+        || stride / bands
+            > static_cast<std::size_t>(std::numeric_limits<int>::max())
+        || static_cast<std::size_t>(height)
+            > std::numeric_limits<std::size_t>::max() / stride) {
+        return {};
+    }
+
+    ImagePtr memory(vips_image_new_from_memory(pixels,
+        stride * static_cast<std::size_t>(height),
+        static_cast<int>(stride / bands), height, bands, VIPS_FORMAT_UCHAR));
+    if (!memory) {
+        return {};
+    }
+    g_object_set_data_full(G_OBJECT(memory.get()), heif_image_owner_key,
+        decoded.release(), release_heif_image);
+    if (stride == packed_width) {
+        return memory;
+    }
+
+    VipsImage* raw_cropped = nullptr;
+    if (vips_crop(memory.get(), &raw_cropped, 0, 0, width, height, nullptr)
+        != 0) {
+        return {};
+    }
+    ImagePtr cropped(raw_cropped);
+    void* owner =
+        g_object_steal_data(G_OBJECT(memory.get()), heif_image_owner_key);
+    g_object_set_data_full(G_OBJECT(cropped.get()), heif_image_owner_key,
+        owner, release_heif_image);
+    return cropped;
+}
+
+[[nodiscard]] ImagePtr load_image(
+    std::span<const std::byte> body,
+    MimeType mime)
 {
     ImagePtr loaded(vips_image_new_from_buffer(
         body.data(), body.size(), "", "n", -1, nullptr));
@@ -41,8 +175,13 @@ using BufferPtr = std::unique_ptr<void, GFree>;
     }
     // Static loaders such as PNG expose no page-count option.
     vips_error_clear();
-    return ImagePtr(vips_image_new_from_buffer(
+    ImagePtr loaded_without_pages(vips_image_new_from_buffer(
         body.data(), body.size(), "", nullptr));
+    if (loaded_without_pages || mime != MimeType::image_avif) {
+        return loaded_without_pages;
+    }
+    vips_error_clear();
+    return load_avif_sequence_first_frame(body);
 }
 
 [[nodiscard]] std::uint16_t read_u16(
@@ -138,7 +277,7 @@ StaticConversionResult convert_static_image(
         return fail(StaticConversionError::decode);
     }
 
-    ImagePtr loaded = load_image(body);
+    ImagePtr loaded = load_image(body, mime);
     if (!loaded
         && (mime == MimeType::image_ico
             || mime == MimeType::image_x_icon)) {

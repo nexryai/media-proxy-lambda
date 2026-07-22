@@ -306,6 +306,13 @@ Load images from the in-memory body with all pages enabled. No loader may make
 network requests or read arbitrary external files. No SVG loader or rendering
 stack is present.
 
+An AVIF image sequence remains non-animated under the classification above. If
+it has no top-level primary image for the libvips HEIF loader, use the pinned
+libheif sequence API to decode only the first frame of the first visual image
+track as RGBA. Keep the request body and decoded libheif plane alive through
+the synchronous libvips pipeline without a PNG intermediate. The result then
+continues through the static resize and selector-selected encoder path.
+
 ## 7. General image conversion
 
 ### 7.1 Decoder fallback and dimensions
