@@ -5,6 +5,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace mediaproxy::runtime {
@@ -33,14 +34,20 @@ public:
     {
         return invocation_;
     }
+    [[nodiscard]] Invocation take_invocation() noexcept
+    {
+        return std::move(invocation_);
+    }
 
 private:
     [[nodiscard]] bool parse_headers(std::size_t header_end);
+    [[nodiscard]] NextParseStatus append_event(
+        std::span<const std::byte> bytes);
 
     NextParseStatus status_ = NextParseStatus::incomplete;
     std::vector<std::byte> buffer_;
-    std::size_t body_offset_ = 0;
     std::size_t content_length_ = 0;
+    bool headers_complete_ = false;
     Invocation invocation_;
 };
 

@@ -86,43 +86,55 @@ NextParseStatus NextResponseParser::feed(std::span<const std::byte> bytes)
     if (status_ != NextParseStatus::incomplete) {
         return status_;
     }
-    if (bytes.size() > maximum_runtime_header_bytes + maximum_runtime_event_bytes
-            - buffer_.size()) {
+    if (headers_complete_) {
+        return append_event(bytes);
+    }
+
+    const std::size_t available_header_bytes =
+        maximum_runtime_header_bytes - buffer_.size();
+    const std::size_t buffered =
+        std::min(bytes.size(), available_header_bytes);
+    buffer_.insert(buffer_.end(), bytes.begin(),
+        bytes.begin() + static_cast<std::ptrdiff_t>(buffered));
+
+    const std::size_t header_end = find_header_end(buffer_);
+    if (header_end == std::string_view::npos) {
+        if (buffered != bytes.size()
+            || buffer_.size() == maximum_runtime_header_bytes) {
+            status_ = NextParseStatus::error;
+        }
+        return status_;
+    }
+    constexpr std::size_t delimiter_size = 4;
+    const std::size_t body_offset = header_end + delimiter_size;
+    if (body_offset > maximum_runtime_header_bytes
+        || !parse_headers(header_end)) {
         status_ = NextParseStatus::error;
         return status_;
     }
-    buffer_.insert(buffer_.end(), bytes.begin(), bytes.end());
-
-    if (body_offset_ == 0) {
-        const std::size_t header_end = find_header_end(buffer_);
-        if (header_end == std::string_view::npos) {
-            if (buffer_.size() > maximum_runtime_header_bytes) {
-                status_ = NextParseStatus::error;
-            }
-            return status_;
-        }
-        if (header_end + 4 > maximum_runtime_header_bytes) {
-            status_ = NextParseStatus::error;
-            return status_;
-        }
-        if (!parse_headers(header_end)) {
-            status_ = NextParseStatus::error;
-            return status_;
-        }
-        body_offset_ = header_end + 4;
-    }
-
-    if (buffer_.size() < body_offset_ + content_length_) {
+    headers_complete_ = true;
+    invocation_.event.reserve(content_length_);
+    const NextParseStatus buffered_status = append_event(
+        std::span<const std::byte>{buffer_}.subspan(body_offset));
+    if (buffered_status == NextParseStatus::error) {
         return status_;
     }
-    if (buffer_.size() != body_offset_ + content_length_) {
+    buffer_.clear();
+    return append_event(bytes.subspan(buffered));
+}
+
+NextParseStatus NextResponseParser::append_event(
+    std::span<const std::byte> bytes)
+{
+    if (bytes.size() > content_length_ - invocation_.event.size()) {
         status_ = NextParseStatus::error;
         return status_;
     }
-    invocation_.event.assign(buffer_.begin()
-            + static_cast<std::ptrdiff_t>(body_offset_),
-        buffer_.end());
-    status_ = NextParseStatus::complete;
+    invocation_.event.insert(
+        invocation_.event.end(), bytes.begin(), bytes.end());
+    if (invocation_.event.size() == content_length_) {
+        status_ = NextParseStatus::complete;
+    }
     return status_;
 }
 

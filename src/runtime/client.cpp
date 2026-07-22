@@ -113,7 +113,7 @@ std::optional<Invocation> poll_next_on(
             return std::nullopt;
         }
     }
-    return parser.invocation();
+    return parser.take_invocation();
 }
 
 bool send_response_on(

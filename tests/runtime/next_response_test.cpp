@@ -52,6 +52,26 @@ TEST(RuntimeNextResponse, ParsesOneByteFragments)
     EXPECT_EQ(event, "{\"x\":1}");
 }
 
+TEST(RuntimeNextResponse, MovesCompletedInvocationWithoutBodyCopy)
+{
+    const std::string response =
+        "HTTP/1.1 200 OK\r\n"
+        "Lambda-Runtime-Aws-Request-Id: request-move\r\n"
+        "Lambda-Runtime-Deadline-Ms: 123456789\r\n"
+        "Lambda-Runtime-Trace-Id: Root=trace\r\n"
+        "Content-Length: 4\r\n\r\nbody";
+    NextResponseParser parser;
+    ASSERT_EQ(parser.feed(Bytes(response)), NextParseStatus::complete);
+    const std::byte* const owned_body = parser.invocation().event.data();
+
+    const auto invocation = parser.take_invocation();
+    EXPECT_EQ(invocation.event.data(), owned_body);
+    EXPECT_EQ(std::string_view(
+                  reinterpret_cast<const char*>(invocation.event.data()),
+                  invocation.event.size()),
+        "body");
+}
+
 TEST(RuntimeNextResponse, RejectsDuplicateAndInvalidFraming)
 {
     for (const std::string response : {
