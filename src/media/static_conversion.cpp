@@ -32,6 +32,19 @@ struct GFree {
 using ImagePtr = std::unique_ptr<VipsImage, ImageUnref>;
 using BufferPtr = std::unique_ptr<void, GFree>;
 
+[[nodiscard]] ImagePtr load_image(std::span<const std::byte> body)
+{
+    ImagePtr loaded(vips_image_new_from_buffer(
+        body.data(), body.size(), "", "n", -1, nullptr));
+    if (loaded) {
+        return loaded;
+    }
+    // Static loaders such as PNG expose no page-count option.
+    vips_error_clear();
+    return ImagePtr(vips_image_new_from_buffer(
+        body.data(), body.size(), "", nullptr));
+}
+
 [[nodiscard]] std::uint16_t read_u16(
     std::span<const std::byte> body,
     std::size_t offset) noexcept
@@ -125,8 +138,7 @@ StaticConversionResult convert_static_image(
         return fail(StaticConversionError::decode);
     }
 
-    ImagePtr loaded(vips_image_new_from_buffer(
-        body.data(), body.size(), "", "n", -1, nullptr));
+    ImagePtr loaded = load_image(body);
     if (!loaded
         && (mime == MimeType::image_ico
             || mime == MimeType::image_x_icon)) {

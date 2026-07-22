@@ -450,6 +450,7 @@ add_library(mediaproxy_media STATIC
     src/media/apng_conversion.cpp
     src/media/apng_decoder.cpp
     src/media/classification.cpp
+    src/media/conversion.cpp
     src/media/mime.cpp
     src/media/resize.cpp
     src/media/static_conversion.cpp
@@ -622,6 +623,7 @@ if(BUILD_TESTING)
         tests/media/apng_conversion_test.cpp
         tests/media/apng_decoder_test.cpp
         tests/media/classification_test.cpp
+        tests/media/conversion_test.cpp
         tests/media/mime_test.cpp
         tests/media/resize_test.cpp
         tests/media/static_conversion_test.cpp
