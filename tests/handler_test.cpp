@@ -1,5 +1,7 @@
 #include <algorithm>
+#include <array>
 #include <cstddef>
+#include <cstdio>
 #include <fstream>
 #include <iterator>
 #include <span>
@@ -10,6 +12,7 @@
 #include <curl/curl.h>
 #include <gtest/gtest.h>
 #include <mediaproxy/handler.hpp>
+#include <mediaproxy/logging.hpp>
 #include <mediaproxy/http/origin_download.hpp>
 #include <mediaproxy/http/origin_response.hpp>
 #include <mediaproxy/http/response.hpp>
@@ -17,6 +20,8 @@
 namespace {
 
 using mediaproxy::handle_function_url_event;
+using mediaproxy::HandlerDiagnostics;
+using mediaproxy::HandlerOutcome;
 using mediaproxy::http::HttpResponse;
 using mediaproxy::http::OriginResponseAccumulator;
 using mediaproxy::http::OriginTimeoutApi;
@@ -36,6 +41,19 @@ std::vector<std::byte> ReadFile(const std::string& path)
         std::istreambuf_iterator<char>{input},
         std::istreambuf_iterator<char>{}};
     return Bytes(bytes);
+}
+
+std::string ReadStream(std::FILE* stream)
+{
+    EXPECT_EQ(std::fflush(stream), 0);
+    EXPECT_EQ(std::fseek(stream, 0, SEEK_SET), 0);
+    std::string output;
+    std::array<char, 512> buffer{};
+    while (const std::size_t count =
+               std::fread(buffer.data(), 1, buffer.size(), stream)) {
+        output.append(buffer.data(), count);
+    }
+    return output;
 }
 
 std::string MediaEvent(std::string_view raw_query)
@@ -187,8 +205,10 @@ TEST_F(HandlerTest, ConvertsDownloadedMediaIntoPreferredResponse)
         + "/tests/fixtures/media/apng/palette-static.png");
     const std::string event =
         MediaEvent("url=https%3A%2F%2F93.184.216.34%2Fimage");
+    HandlerDiagnostics diagnostics;
     const HttpResponse response = handle_function_url_event(
-        std::as_bytes(std::span{event}), Timeout(), {}, Transport(origin));
+        std::as_bytes(std::span{event}), Timeout(), {}, Transport(origin),
+        &diagnostics);
     ASSERT_EQ(response.status, 200);
     EXPECT_EQ(HeaderValue(response, "Content-Type"), "image/webp");
     EXPECT_EQ(HeaderValue(response, "CDN-Cache-Control"), "max-age=604800");
@@ -199,6 +219,39 @@ TEST_F(HandlerTest, ConvertsDownloadedMediaIntoPreferredResponse)
     EXPECT_EQ(std::string_view(
                   reinterpret_cast<const char*>(response.body.data() + 8), 4),
         "WEBP");
+    EXPECT_EQ(diagnostics.outcome, HandlerOutcome::media_success);
+    EXPECT_EQ(diagnostics.origin_bytes, origin.body.size());
+    EXPECT_EQ(diagnostics.origin_error,
+        mediaproxy::http::OriginDownloadError::none);
+    EXPECT_EQ(diagnostics.media_error,
+        mediaproxy::media::MediaConversionError::none);
+}
+
+TEST_F(HandlerTest, LogsBoundedDiagnosticsWithoutRequestData)
+{
+    std::FILE* const stream = std::tmpfile();
+    ASSERT_NE(stream, nullptr);
+    HandlerDiagnostics diagnostics{
+        .outcome = HandlerOutcome::origin_failure,
+        .origin_error = mediaproxy::http::OriginDownloadError::transfer,
+        .media_error = mediaproxy::media::MediaConversionError::none,
+        .origin_bytes = 123,
+        .fetch_microseconds = 456,
+        .media_microseconds = 0,
+    };
+    mediaproxy::log_invocation(stream, "request-\"1", diagnostics,
+        500, 1000, 22, 789);
+    const std::string output = ReadStream(stream);
+    std::fclose(stream);
+
+    EXPECT_EQ(output,
+        "{\"category\":\"invocation\",\"requestId\":\"request-\\\"1\""
+        ",\"outcome\":\"origin_failure\",\"originError\":\"transfer\""
+        ",\"mediaError\":\"none\",\"status\":500,\"eventBytes\":1000"
+        ",\"originBytes\":123,\"responseBytes\":22,\"fetchMicros\":456"
+        ",\"mediaMicros\":0,\"handlerMicros\":789}\n");
+    EXPECT_EQ(output.find("url"), std::string::npos);
+    EXPECT_EQ(output.find("query"), std::string::npos);
 }
 
 } // namespace

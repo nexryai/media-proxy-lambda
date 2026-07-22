@@ -484,6 +484,7 @@ target_link_libraries(mediaproxy_runtime
 
 add_library(mediaproxy_handler STATIC
     src/handler.cpp
+    src/logging.cpp
 )
 target_include_directories(mediaproxy_handler PUBLIC
     "${CMAKE_SOURCE_DIR}/include"
