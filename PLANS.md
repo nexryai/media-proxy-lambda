@@ -2,10 +2,10 @@
 
 ## Document status
 
-- Status: revised for self-contained compatibility, corrected APNG blending,
-  and musl static-PIE dynamic metadata
+- Status: revised for a self-contained arm64 runtime artifact, corrected APNG
+  blending, and musl static-PIE dynamic metadata
 - Normative behavior: `SPECIFICATION.md`
-- Target: AWS Lambda custom runtime with Function URL `RESPONSE_STREAM`
+- Target: arm64 AWS Lambda custom runtime with Function URL `RESPONSE_STREAM`
 - Artifact: one statically linked musl C++ `bootstrap` binary
 - Build: CMake superbuild using LLVM/Clang and LLD
 
@@ -20,7 +20,10 @@ Deliver a C++ Lambda MediaProxy that implements the complete local
 compatibility specification, including exact HTTP errors, query precedence,
 URL/SSRF rules, MIME detection, resize/encode behavior, and retained edge
 cases. Correct APNG `BLEND_OP_OVER` composition using a full-canvas state
-machine while leaving unrelated compatibility behavior unchanged.
+machine while leaving unrelated compatibility behavior unchanged. The final
+repository deliverable is a working arm64 `bootstrap` that continuously polls
+the Runtime API and completes Function URL invocations. Deployment automation,
+AWS resource ownership, and cost management are handled outside this project.
 
 The release is complete only when the artifact has no dynamic runtime
 dependency and all offline compatibility, security, media, APNG, and Runtime
@@ -36,6 +39,12 @@ API tests pass.
 - Using Lambda Web Adapter, a sidecar server, managed runtime, or buffered
   Lambda response.
 - Depending on shared objects from a Lambda base image or layer.
+- Creating or updating Lambda functions, Function URLs, IAM roles, log groups,
+  alarms, budgets, or any other AWS resource.
+- CloudFormation, SAM, CDK, Terraform, deployment scripts, and cost-management
+  policy.
+- Requiring an `x86_64` release artifact for completion of the current arm64
+  runtime milestone.
 
 ## Target architecture
 
@@ -464,9 +473,9 @@ Exit criteria:
 - `BACKGROUND` and `PREVIOUS` state-transition tests prove the next frame starts
   from the correct canvas.
 - Encoded hashes and timestamp/loop diagnostics match the approved golden
-  manifest for both architectures.
+  manifest on arm64.
 
-### Phase 7 — End-to-end handler and deployment
+### Phase 7 — End-to-end arm64 bootstrap
 
 Deliverables:
 
@@ -474,26 +483,30 @@ Deliverables:
   error-to-response mapping.
 - Add non-sensitive structured logs and metrics for cold start, fetch, decode,
   compose, resize, encode, byte counts, and error categories.
-- Add CloudFormation/SAM for custom `provided.al2023`, Function URL
-  `InvokeMode: RESPONSE_STREAM`, parameterized auth, memory, timeout, ephemeral
-  storage, concurrency, logs, and alarms.
-- Package only `bootstrap` and notices; CA data is compiled in.
-- Document optional CloudFront use without changing specified cache headers.
+- Replace the dependency probe entry point with one-time immutable
+  initialization followed by the Runtime API warm invocation loop.
+- Keep each invocation's deadline, trace, request buffers, download state, and
+  conversion state bounded and isolated from later warm invocations.
+- Produce the arm64 `bootstrap` and compliance materials as build outputs; CA
+  data remains compiled in.
 
 Exit criteria:
 
-- A canary returns correct raw binary bodies and headers through the Function
-  URL with `curl --no-buffer`.
-- A body above the buffered-response limit proves the streaming path is active.
-- Cold/warm, disconnect, origin-stall, deadline, and concurrency tests have
-  bounded documented behavior.
+- A strict local Runtime API integration test drives `bootstrap` through
+  status, media, specified HTTP error, and invocation error responses.
+- A body above the buffered-response limit proves the response uses the
+  streaming wire format without buffering in the Runtime API protocol layer.
+- Cold/warm, disconnect, origin-stall, and deadline tests have bounded
+  documented behavior.
+- The arm64 binary runs from a minimal filesystem with only the Runtime API
+  environment supplied externally.
 
 ### Phase 8 — Release verification and evidence
 
 Deliverables:
 
-- Run the dual-architecture release matrix, static checks, SBOM, license/source
-  and relink bundles, and reproducibility comparison.
+- Run the arm64 release build, static checks, SBOM, license/source and relink
+  bundles, and reproducibility comparison.
 - Verify the Phase 1 hardening manifest and performance budget without adding
   late release-only compiler flags or weakening the tested baseline.
 - Review vulnerabilities and every enabled loader/codec.
@@ -554,16 +567,14 @@ A technically self-contained ELF can still require notices, corresponding
 source, and relinking materials. Generate these with the release rather than
 treating them as manual follow-up.
 
-## Open deployment choices
+## External deployment boundary
 
-- Primary performance architecture; both `arm64` and `x86_64` remain required
-  until scope is narrowed.
-- Direct public Function URL versus CloudFront fronting it.
-- Memory, timeout, ephemeral storage, and reserved concurrency values after
-  benchmark data exists.
-
-These choices may affect deployment or performance but must not change the
-normative request and image contract.
+The consumer of `bootstrap` chooses and manages the Lambda resource, Function
+URL or other streaming-capable ingress, IAM, memory, timeout, ephemeral
+storage, concurrency, logs, alarms, budgets, CDN, and deployment workflow. The
+runtime remains compatible with the Function URL `RESPONSE_STREAM` contract,
+but this repository neither provisions those resources nor treats an AWS
+deployment as a completion gate.
 
 ## Primary external references
 

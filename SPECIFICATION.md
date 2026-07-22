@@ -17,6 +17,11 @@ remains part of this contract.
 Where this document labels a rule as a security exception, the safer rule is
 normative even if a historical implementation accepted more input.
 
+The repository deliverable is an arm64 `bootstrap` implementing this runtime
+and HTTP contract. Provisioning or updating AWS resources, deployment
+automation, IAM, monitoring, budgets, and cost controls are outside this
+specification and are supplied by the consumer of the artifact.
+
 ## 2. HTTP request contract
 
 ### 2.1 Lambda event input
@@ -506,9 +511,9 @@ bytes are never base64 encoded. End with a valid terminal chunk and close the
 underlying connection. A failure after streaming begins uses the declared
 trailers, with the error body base64 encoded as required by the Runtime API.
 
-## 10. Deployment artifact contract
+## 10. Runtime artifact contract
 
-The deployed `bootstrap` is a statically linked musl PIE. Its ELF type is
+The produced arm64 `bootstrap` is a statically linked musl PIE. Its ELF type is
 `ET_DYN`, it has no `PT_INTERP` program header, and it has no runtime shared
 library or loadable-module dependency.
 
