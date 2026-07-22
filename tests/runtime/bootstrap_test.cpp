@@ -1,9 +1,11 @@
 #include <array>
+#include <charconv>
 #include <cerrno>
 #include <csignal>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -190,6 +192,42 @@ private:
     return response;
 }
 
+[[nodiscard]] std::optional<std::string> DecodeChunkedEntity(
+    std::string_view encoded)
+{
+    std::string decoded;
+    std::size_t cursor = 0;
+    while (cursor < encoded.size()) {
+        const std::size_t line_end = encoded.find("\r\n", cursor);
+        if (line_end == std::string_view::npos || line_end == cursor) {
+            return std::nullopt;
+        }
+        std::size_t chunk_size = 0;
+        const char* const first = encoded.data() + cursor;
+        const char* const last = encoded.data() + line_end;
+        const auto [end, error] =
+            std::from_chars(first, last, chunk_size, 16);
+        if (error != std::errc{} || end != last) {
+            return std::nullopt;
+        }
+        cursor = line_end + 2;
+        if (chunk_size == 0U) {
+            if (encoded.substr(cursor) != "\r\n") {
+                return std::nullopt;
+            }
+            return decoded;
+        }
+        if (chunk_size > encoded.size() - cursor
+            || encoded.size() - cursor - chunk_size < 2U
+            || encoded.substr(cursor + chunk_size, 2) != "\r\n") {
+            return std::nullopt;
+        }
+        decoded.append(encoded.substr(cursor, chunk_size));
+        cursor += chunk_size + 2;
+    }
+    return std::nullopt;
+}
+
 [[nodiscard]] bool InstallNoFileOpenFilter() noexcept
 {
     const sock_filter filter[] = {
@@ -217,6 +255,7 @@ private:
 
 [[nodiscard]] std::string ServeInvocation(
     int listener,
+    std::string_view authority,
     std::string_view request_id,
     std::string_view trace_id,
     std::string_view event)
@@ -224,8 +263,10 @@ private:
     FileDescriptor poll = Accept(listener);
     EXPECT_GE(poll.get(), 0);
     const std::string poll_request = ReadHeaders(poll.get());
-    EXPECT_TRUE(poll_request.starts_with(
-        "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\n"));
+    EXPECT_EQ(poll_request,
+        "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\nHost: "
+            + std::string{authority}
+            + "\r\nConnection: close\r\n\r\n");
     EXPECT_TRUE(SendAll(
         poll.get(), InvocationResponse(request_id, trace_id, event)));
 
@@ -239,25 +280,35 @@ private:
 
 void ExpectStreamingResponse(
     const std::string& request,
+    std::string_view authority,
     std::string_view request_id,
     unsigned int status,
+    std::string_view content_type,
     std::string_view body)
 {
-    const std::string request_line =
+    const std::string expected_head =
         "POST /2018-06-01/runtime/invocation/" + std::string{request_id}
-        + "/response HTTP/1.1\r\n";
-    EXPECT_TRUE(request.starts_with(request_line));
-    EXPECT_NE(request.find(
-                  "Lambda-Runtime-Function-Response-Mode: streaming\r\n"),
-        std::string::npos);
-    EXPECT_NE(request.find("Transfer-Encoding: chunked\r\n"),
-        std::string::npos);
-    EXPECT_NE(request.find(
-                  "{\"statusCode\":" + std::to_string(status)),
-        std::string::npos);
-    EXPECT_NE(request.find(std::string(8, '\0')), std::string::npos);
-    EXPECT_NE(request.find(body), std::string::npos);
-    EXPECT_TRUE(request.ends_with("0\r\n\r\n"));
+        + "/response HTTP/1.1\r\nHost: " + std::string{authority}
+        + "\r\nLambda-Runtime-Function-Response-Mode: streaming"
+          "\r\nTransfer-Encoding: chunked"
+          "\r\nContent-Type: "
+          "application/vnd.awslambda.http-integration-response"
+          "\r\nTrailer: Lambda-Runtime-Function-Error-Type, "
+          "Lambda-Runtime-Function-Error-Body"
+          "\r\nConnection: close\r\n\r\n";
+    const std::size_t head_end = request.find("\r\n\r\n");
+    ASSERT_NE(head_end, std::string::npos);
+    EXPECT_EQ(request.substr(0, head_end + 4), expected_head);
+
+    const auto decoded = DecodeChunkedEntity(
+        std::string_view{request}.substr(head_end + 4));
+    ASSERT_TRUE(decoded.has_value());
+    std::string expected = "{\"statusCode\":" + std::to_string(status)
+        + ",\"headers\":{\"Content-Type\":\""
+        + std::string{content_type} + "\"}}";
+    expected.append(8, '\0');
+    expected.append(body);
+    EXPECT_EQ(*decoded, expected);
 }
 
 TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsWithoutOpeningFiles)
@@ -266,12 +317,12 @@ TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsWithoutOpeningFiles)
     FileDescriptor listener = CreateListener(port);
     ASSERT_GE(listener.get(), 0);
     ASSERT_NE(port, 0);
+    const std::string authority = "127.0.0.1:" + std::to_string(port);
 
     const pid_t pid = ::fork();
     ASSERT_GE(pid, 0);
     if (pid == 0) {
         ::close(listener.get());
-        const std::string authority = "127.0.0.1:" + std::to_string(port);
         if (::setenv("AWS_LAMBDA_RUNTIME_API", authority.c_str(), 1) != 0) {
             _exit(126);
         }
@@ -287,20 +338,22 @@ TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsWithoutOpeningFiles)
     const std::string status_event =
         R"({"version":"2.0","rawPath":"/status","rawQueryString":"","requestContext":{"http":{"method":"GET"}}})";
     const std::string status_response = ServeInvocation(
-        listener.get(), "request-1", "Root=trace-1", status_event);
+        listener.get(), authority, "request-1", "Root=trace-1", status_event);
     ExpectStreamingResponse(
-        status_response, "request-1", 200, R"({"status":"OK"})");
+        status_response, authority, "request-1", 200, "application/json",
+        R"({"status":"OK"})");
 
     const std::string bad_response = ServeInvocation(
-        listener.get(), "request-2", "Root=trace-2", "{}");
-    ExpectStreamingResponse(
-        bad_response, "request-2", 400, "Bad request\n");
+        listener.get(), authority, "request-2", "Root=trace-2", "{}");
+    ExpectStreamingResponse(bad_response, authority, "request-2", 400,
+        "text/plain; charset=utf-8", "Bad request\n");
 
     {
         FileDescriptor final_poll = Accept(listener.get());
         ASSERT_GE(final_poll.get(), 0);
-        EXPECT_TRUE(ReadHeaders(final_poll.get()).starts_with(
-            "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\n"));
+        EXPECT_EQ(ReadHeaders(final_poll.get()),
+            "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\nHost: "
+                + authority + "\r\nConnection: close\r\n\r\n");
     }
 
     const int status = child.wait();
