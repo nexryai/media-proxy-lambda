@@ -62,20 +62,21 @@ http::HttpResponse handle_function_url_event(
     }
     const std::string_view payload{
         reinterpret_cast<const char*>(event.data()), event.size()};
-    const http::EventParseResult parsed =
-        http::parse_function_url_event(payload);
-    http::RequestPlan plan = http::plan_request(parsed);
-    if (std::holds_alternative<http::HttpResponse>(plan)) {
-        record_outcome(diagnostics,
-            parsed.request
-                    && parsed.request->route == http::RequestRoute::status
-                ? HandlerOutcome::status
-                : HandlerOutcome::bad_request);
-        return std::get<http::HttpResponse>(std::move(plan));
+    http::MediaRequest request;
+    {
+        const http::EventParseResult parsed =
+            http::parse_function_url_event(payload);
+        http::RequestPlan plan = http::plan_request(parsed);
+        if (std::holds_alternative<http::HttpResponse>(plan)) {
+            record_outcome(diagnostics,
+                parsed.request
+                        && parsed.request->route == http::RequestRoute::status
+                    ? HandlerOutcome::status
+                    : HandlerOutcome::bad_request);
+            return std::get<http::HttpResponse>(std::move(plan));
+        }
+        request = std::get<http::MediaRequest>(std::move(plan));
     }
-
-    http::MediaRequest request =
-        std::get<http::MediaRequest>(std::move(plan));
     http::UrlPolicyResult origin =
         http::validate_origin_url(request.source_url);
     if (!origin) {
