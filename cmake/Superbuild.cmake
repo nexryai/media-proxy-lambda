@@ -2243,6 +2243,9 @@ ExternalProject_Add(application
         "${application_binary_directory}/bootstrap.map"
         "${application_binary_directory}/bootstrap.undefined-symbols.txt"
         "${CMAKE_BINARY_DIR}/artifact/bootstrap"
+        "${CMAKE_BINARY_DIR}/artifact/compliance/.stamp"
+        "${CMAKE_BINARY_DIR}/artifact/compliance/sbom.spdx"
+        "${CMAKE_BINARY_DIR}/artifact/compliance/THIRD_PARTY_NOTICES.md"
 )
 
 if(MEDIAPROXY_ENABLE_SANITIZERS)

@@ -496,6 +496,12 @@ Deliverables:
   conversion state bounded and isolated from later warm invocations.
 - Produce the arm64 `bootstrap` and compliance materials as build outputs; CA
   data remains compiled in.
+- Generate a deterministic SPDX 2.3 tag-value SBOM from the dependency lock,
+  retain upstream notices, bundle the exact LGPL source archives plus local
+  changes, and prove that the packaged first-party objects and link-time
+  sysroot reproduce the unstripped `bootstrap` byte for byte.
+- Mark test-only lock entries explicitly so production SBOM and distribution
+  notices describe only the graph shipped in `bootstrap`.
 
 Exit criteria:
 

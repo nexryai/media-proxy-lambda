@@ -21,6 +21,9 @@ ctest --preset arm64-release
 成果物は`out/build/arm64-release/artifact/bootstrap`です。AWSリソースの
 デプロイ、IaC、コスト管理はこのリポジトリの対象外です。
 
+SBOM、第三者ライセンス通知、LGPL対応ソース、再リンク材料は
+`out/build/arm64-release/artifact/compliance`に生成されます。
+
 ASan/UBSan診断はproduction成果物と分離した動的musl PIEで実行します。
 
 ```sh

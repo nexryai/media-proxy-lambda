@@ -576,6 +576,72 @@ add_custom_target(bootstrap-artifact-inner ALL
     DEPENDS "${bootstrap_artifact}"
 )
 
+if(NOT MEDIAPROXY_SANITIZER_BUILD)
+    foreach(required_compliance_variable IN ITEMS
+            MEDIAPROXY_SOURCE_CACHE
+            MEDIAPROXY_SYSROOT
+            MEDIAPROXY_CLANGXX
+            MEDIAPROXY_READELF
+            MEDIAPROXY_NM)
+        if(NOT DEFINED ${required_compliance_variable})
+            message(FATAL_ERROR
+                "${required_compliance_variable} is required for compliance materials")
+        endif()
+    endforeach()
+    file(GLOB compliance_source_archives CONFIGURE_DEPENDS
+        LIST_DIRECTORIES FALSE
+        "${MEDIAPROXY_SOURCE_CACHE}/*")
+    file(GLOB_RECURSE compliance_project_sources CONFIGURE_DEPENDS
+        LIST_DIRECTORIES FALSE
+        "${CMAKE_SOURCE_DIR}/.devcontainer/*"
+        "${CMAKE_SOURCE_DIR}/.github/*"
+        "${CMAKE_SOURCE_DIR}/cmake/*"
+        "${CMAKE_SOURCE_DIR}/include/*"
+        "${CMAKE_SOURCE_DIR}/src/*"
+        "${CMAKE_SOURCE_DIR}/tests/*")
+    list(APPEND compliance_project_sources
+        "${CMAKE_SOURCE_DIR}/.editorconfig"
+        "${CMAKE_SOURCE_DIR}/.gitattributes"
+        "${CMAKE_SOURCE_DIR}/.gitignore"
+        "${CMAKE_SOURCE_DIR}/AGENTS.md"
+        "${CMAKE_SOURCE_DIR}/CMakeLists.txt"
+        "${CMAKE_SOURCE_DIR}/CMakePresets.json"
+        "${CMAKE_SOURCE_DIR}/dependencies.lock.json"
+        "${CMAKE_SOURCE_DIR}/LICENSE"
+        "${CMAKE_SOURCE_DIR}/README.md"
+        "${CMAKE_SOURCE_DIR}/SPECIFICATION.md"
+        "${CMAKE_SOURCE_DIR}/PLANS.md")
+    set(compliance_directory
+        "${MEDIAPROXY_ARTIFACT_DIR}/compliance")
+    set(compliance_stamp "${compliance_directory}/.stamp")
+    add_custom_command(
+        OUTPUT "${compliance_stamp}"
+        COMMAND "${CMAKE_COMMAND}"
+            "-DLOCK_FILE=${CMAKE_SOURCE_DIR}/dependencies.lock.json"
+            "-DSOURCE_CACHE=${MEDIAPROXY_SOURCE_CACHE}"
+            "-DPROJECT_SOURCE_DIRECTORY=${CMAKE_SOURCE_DIR}"
+            "-DAPPLICATION_BUILD_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}"
+            "-DSYSROOT=${MEDIAPROXY_SYSROOT}"
+            "-DNINJA=${CMAKE_MAKE_PROGRAM}"
+            "-DCLANGXX=${MEDIAPROXY_CLANGXX}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DBOOTSTRAP_ARTIFACT=${bootstrap_artifact}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DUNDEFINED_SYMBOLS_FILE=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.undefined-symbols.txt"
+            "-DARTIFACT_DIRECTORY=${MEDIAPROXY_ARTIFACT_DIR}"
+            "-DOUTPUT_DIRECTORY=${compliance_directory}"
+            "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/GenerateCompliance.cmake"
+        DEPENDS
+            bootstrap
+            "${bootstrap_artifact}"
+            ${compliance_project_sources}
+            ${compliance_source_archives}
+        VERBATIM)
+    add_custom_target(compliance-materials-inner ALL
+        DEPENDS "${compliance_stamp}")
+endif()
+
 if(BUILD_TESTING)
     if(NOT DEFINED MEDIAPROXY_LIBFUZZER_LIBRARY
             OR NOT EXISTS "${MEDIAPROXY_LIBFUZZER_LIBRARY}")
@@ -1354,4 +1420,18 @@ if(BUILD_TESTING)
             "-DNM=${MEDIAPROXY_NM}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/ReleaseBinaryPolicyTest.cmake"
     )
+
+    if(NOT MEDIAPROXY_SANITIZER_BUILD)
+        add_test(
+            NAME compliance-bundle
+            COMMAND "${CMAKE_COMMAND}"
+                "-DCOMPLIANCE_DIRECTORY=${compliance_directory}"
+                "-DLOCK_FILE=${CMAKE_SOURCE_DIR}/dependencies.lock.json"
+                "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+                "-DBOOTSTRAP_ARTIFACT=${bootstrap_artifact}"
+                "-DREADELF=${MEDIAPROXY_READELF}"
+                "-DNM=${MEDIAPROXY_NM}"
+                -P "${CMAKE_SOURCE_DIR}/tests/cmake/ComplianceBundleTest.cmake")
+        set_tests_properties(compliance-bundle PROPERTIES TIMEOUT 360)
+    endif()
 endif()
