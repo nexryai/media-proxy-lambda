@@ -1,0 +1,1 @@
+url=https%3A%2F%2Fexample.com%2Fimage.png&width=64&static=1

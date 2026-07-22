@@ -413,7 +413,7 @@ set_target_properties(mediaproxy_curl PROPERTIES
         "mediaproxy_boringssl_ssl;mediaproxy_nghttp2;mediaproxy_zlib"
 )
 
-add_library(mediaproxy_http STATIC
+set(mediaproxy_http_sources
     "${ca_bundle_object}"
     src/http/address_policy.cpp
     src/http/ca_bundle.cpp
@@ -431,6 +431,7 @@ add_library(mediaproxy_http STATIC
     src/http/response.cpp
     src/http/url_policy.cpp
 )
+add_library(mediaproxy_http STATIC ${mediaproxy_http_sources})
 target_include_directories(mediaproxy_http PUBLIC
     "${CMAKE_SOURCE_DIR}/include"
 )
@@ -443,7 +444,7 @@ target_link_libraries(mediaproxy_http
         mediaproxy_yyjson
 )
 
-add_library(mediaproxy_media STATIC
+set(mediaproxy_media_sources
     src/media/animated_conversion.cpp
     src/media/apng.cpp
     src/media/apng_compositor.cpp
@@ -456,6 +457,7 @@ add_library(mediaproxy_media STATIC
     src/media/static_conversion.cpp
     src/media/vips_runtime.cpp
 )
+add_library(mediaproxy_media STATIC ${mediaproxy_media_sources})
 target_include_directories(mediaproxy_media PUBLIC
     "${CMAKE_SOURCE_DIR}/include"
 )
@@ -466,7 +468,7 @@ target_link_libraries(mediaproxy_media
         mediaproxy_libvips
 )
 
-add_library(mediaproxy_runtime STATIC
+set(mediaproxy_runtime_sources
     src/runtime/client.cpp
     src/runtime/deadline.cpp
     src/runtime/invocation.cpp
@@ -474,6 +476,7 @@ add_library(mediaproxy_runtime STATIC
     src/runtime/socket_transport.cpp
     src/runtime/streaming.cpp
 )
+add_library(mediaproxy_runtime STATIC ${mediaproxy_runtime_sources})
 target_include_directories(mediaproxy_runtime PUBLIC
     "${CMAKE_SOURCE_DIR}/include"
 )
@@ -574,6 +577,61 @@ add_custom_target(bootstrap-artifact-inner ALL
 )
 
 if(BUILD_TESTING)
+    if(NOT DEFINED MEDIAPROXY_LIBFUZZER_LIBRARY
+            OR NOT EXISTS "${MEDIAPROXY_LIBFUZZER_LIBRARY}")
+        message(FATAL_ERROR
+            "Pinned musl libFuzzer is required when BUILD_TESTING is enabled")
+    endif()
+    add_library(mediaproxy_libfuzzer STATIC IMPORTED GLOBAL)
+    set_target_properties(mediaproxy_libfuzzer PROPERTIES
+        IMPORTED_LOCATION "${MEDIAPROXY_LIBFUZZER_LIBRARY}"
+    )
+    add_library(mediaproxy_fuzzing INTERFACE)
+    target_compile_options(mediaproxy_fuzzing INTERFACE
+        -fsanitize=fuzzer-no-link
+    )
+    target_link_options(mediaproxy_fuzzing INTERFACE
+        -fno-sanitize-link-runtime
+    )
+
+    add_library(mediaproxy_http_fuzz STATIC ${mediaproxy_http_sources})
+    target_include_directories(mediaproxy_http_fuzz PUBLIC
+        "${CMAKE_SOURCE_DIR}/include"
+    )
+    target_link_libraries(mediaproxy_http_fuzz
+        PRIVATE
+            mediaproxy_hardening
+            mediaproxy_warnings
+            mediaproxy_fuzzing
+            mediaproxy_ada_idna
+            mediaproxy_curl
+            mediaproxy_yyjson
+    )
+
+    add_library(mediaproxy_media_fuzz STATIC ${mediaproxy_media_sources})
+    target_include_directories(mediaproxy_media_fuzz PUBLIC
+        "${CMAKE_SOURCE_DIR}/include"
+    )
+    target_link_libraries(mediaproxy_media_fuzz
+        PRIVATE
+            mediaproxy_hardening
+            mediaproxy_warnings
+            mediaproxy_fuzzing
+            mediaproxy_libvips
+    )
+
+    add_library(mediaproxy_runtime_fuzz STATIC
+        ${mediaproxy_runtime_sources})
+    target_include_directories(mediaproxy_runtime_fuzz PUBLIC
+        "${CMAKE_SOURCE_DIR}/include"
+    )
+    target_link_libraries(mediaproxy_runtime_fuzz
+        PRIVATE
+            mediaproxy_hardening
+            mediaproxy_warnings
+            mediaproxy_fuzzing
+    )
+
     FetchContent_Declare(googletest
         URL "${MEDIAPROXY_GOOGLETEST_URL}"
         URL_HASH "SHA256=${MEDIAPROXY_GOOGLETEST_SHA256}"
@@ -774,6 +832,64 @@ if(BUILD_TESTING)
             mediaproxy_bootstrap_test
             DISCOVERY_MODE PRE_TEST)
     endif()
+
+    function(mediaproxy_add_fuzzer target source library corpus max_length)
+        set(fuzz_corpus_directory
+            "${CMAKE_CURRENT_BINARY_DIR}/fuzz-corpus/${target}")
+        file(MAKE_DIRECTORY "${fuzz_corpus_directory}")
+        file(COPY "${corpus}/" DESTINATION "${fuzz_corpus_directory}")
+        foreach(additional_corpus IN LISTS ARGN)
+            file(COPY "${additional_corpus}/"
+                DESTINATION "${fuzz_corpus_directory}")
+        endforeach()
+
+        add_executable(${target} ${source})
+        target_link_libraries(${target}
+            PRIVATE
+                mediaproxy_hardening
+                mediaproxy_warnings
+                mediaproxy_fuzzing
+                ${library}
+                mediaproxy_libfuzzer
+        )
+        add_test(
+            NAME "fuzz-${target}"
+            COMMAND ${target}
+                -runs=256
+                "-max_len=${max_length}"
+                "${fuzz_corpus_directory}"
+        )
+        set_tests_properties("fuzz-${target}" PROPERTIES
+            TIMEOUT 30
+        )
+    endfunction()
+
+    mediaproxy_add_fuzzer(mediaproxy_request_fuzzer
+        tests/fuzz/request_fuzzer.cpp
+        mediaproxy_http_fuzz
+        "${CMAKE_SOURCE_DIR}/tests/fuzz/corpus/request"
+        65536)
+    mediaproxy_add_fuzzer(mediaproxy_mime_fuzzer
+        tests/fuzz/mime_fuzzer.cpp
+        mediaproxy_media_fuzz
+        "${CMAKE_SOURCE_DIR}/tests/fixtures/media/apng"
+        65536)
+    mediaproxy_add_fuzzer(mediaproxy_apng_fuzzer
+        tests/fuzz/apng_fuzzer.cpp
+        mediaproxy_media_fuzz
+        "${CMAKE_SOURCE_DIR}/tests/fixtures/media/apng"
+        65536)
+    mediaproxy_add_fuzzer(mediaproxy_ico_fuzzer
+        tests/fuzz/ico_fuzzer.cpp
+        mediaproxy_media_fuzz
+        "${CMAKE_SOURCE_DIR}/tests/fuzz/corpus/ico"
+        65536
+        "${CMAKE_SOURCE_DIR}/tests/fixtures/media/apng")
+    mediaproxy_add_fuzzer(mediaproxy_runtime_fuzzer
+        tests/fuzz/runtime_fuzzer.cpp
+        mediaproxy_runtime_fuzz
+        "${CMAKE_SOURCE_DIR}/tests/fuzz/corpus/runtime"
+        65536)
 
     add_executable(mediaproxy_stack_smash_probe
         tests/hardening/stack_smash.cpp

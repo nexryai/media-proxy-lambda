@@ -1272,6 +1272,57 @@ ExternalProject_Add(llvm_runtimes
         "${sysroot}/usr/lib/libunwind.a"
 )
 
+set(compiler_rt_fuzzer_library
+    "${sysroot}/usr/lib/linux/libclang_rt.fuzzer-${compiler_rt_arch}.a")
+set(application_fuzz_dependency)
+if(BUILD_TESTING)
+    ExternalProject_Add(compiler_rt_fuzzer
+        DEPENDS llvm_runtimes llvm_source
+        SOURCE_DIR "${llvm_source_directory}/compiler-rt"
+        DOWNLOAD_COMMAND ""
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        CMAKE_GENERATOR Ninja
+        CMAKE_ARGS
+            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_INSTALL_PREFIX=/usr"
+            "-DCMAKE_C_COMPILER=${host_clang}"
+            "-DCMAKE_CXX_COMPILER=${host_clangxx}"
+            "-DCMAKE_ASM_COMPILER=${host_clang}"
+            "-DCMAKE_C_COMPILER_TARGET=${target_triple}"
+            "-DCMAKE_CXX_COMPILER_TARGET=${target_triple}"
+            "-DCMAKE_ASM_COMPILER_TARGET=${target_triple}"
+            "-DCMAKE_SYSROOT=${sysroot}"
+            "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+            "-DCMAKE_AR=${host_ar}"
+            "-DCMAKE_RANLIB=${host_ranlib}"
+            "-DCMAKE_NM=${host_nm}"
+            "-DCMAKE_LINKER=${host_lld}"
+            "-DCMAKE_C_FLAGS=-fPIC"
+            "-DCMAKE_CXX_FLAGS=-fPIC -nostdinc++ -isystem ${sysroot}/usr/include/c++/v1"
+            "-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON"
+            "-DCOMPILER_RT_BUILD_BUILTINS=OFF"
+            "-DCOMPILER_RT_BUILD_SANITIZERS=OFF"
+            "-DCOMPILER_RT_BUILD_XRAY=OFF"
+            "-DCOMPILER_RT_BUILD_LIBFUZZER=ON"
+            "-DCOMPILER_RT_BUILD_PROFILE=OFF"
+            "-DCOMPILER_RT_BUILD_ORC=OFF"
+            "-DCOMPILER_RT_INCLUDE_TESTS=OFF"
+            "-DCOMPILER_RT_USE_LIBCXX=OFF"
+            "-DLLVM_CONFIG_PATH="
+        BUILD_COMMAND
+            "${CMAKE_COMMAND}" --build <BINARY_DIR>
+            --parallel 2 --target
+            "clang_rt.fuzzer-${compiler_rt_arch}"
+        INSTALL_COMMAND
+            "${CMAKE_COMMAND}" -E env "DESTDIR=${sysroot}"
+            "${CMAKE_COMMAND}" --build <BINARY_DIR>
+            --target "install-clang_rt.fuzzer-${compiler_rt_arch}"
+        BUILD_BYPRODUCTS "${compiler_rt_fuzzer_library}"
+    )
+    set(application_fuzz_dependency compiler_rt_fuzzer)
+endif()
+
 set(ada_idna_binary_directory "${CMAKE_BINARY_DIR}/ada-idna-build")
 set(ada_idna_library "${sysroot}/usr/lib/libada_idna.a")
 set(ada_idna_include_dir "${sysroot}/usr/include")
@@ -1927,7 +1978,7 @@ ExternalProject_Add(ca_bundle
 
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 ExternalProject_Add(application
-    DEPENDS ada_idna boringssl ca_bundle curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
+    DEPENDS ada_idna boringssl ca_bundle curl fortify_headers glib lcms2 libaom libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib ${application_fuzz_dependency}
     BUILD_ALWAYS TRUE
     SOURCE_DIR "${CMAKE_SOURCE_DIR}"
     BINARY_DIR "${application_binary_directory}"
@@ -2055,6 +2106,7 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_ZLIB_PKGCONFIG=${zlib_pkgconfig}"
         "-DMEDIAPROXY_GOOGLETEST_URL=${googletest_url}"
         "-DMEDIAPROXY_GOOGLETEST_SHA256=${googletest_sha256}"
+        "-DMEDIAPROXY_LIBFUZZER_LIBRARY=${compiler_rt_fuzzer_library}"
         "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
