@@ -16,6 +16,7 @@
 #include <mediaproxy/http/origin_download.hpp>
 #include <mediaproxy/http/origin_response.hpp>
 #include <mediaproxy/http/response.hpp>
+#include <vips/vips.h>
 
 namespace {
 
@@ -225,6 +226,7 @@ TEST_F(HandlerTest, ConvertsDownloadedMediaIntoPreferredResponse)
         mediaproxy::http::OriginDownloadError::none);
     EXPECT_EQ(diagnostics.media_error,
         mediaproxy::media::MediaConversionError::none);
+    EXPECT_EQ(vips_cache_get_size(), 0);
 }
 
 TEST_F(HandlerTest, LogsBoundedDiagnosticsWithoutRequestData)

@@ -28,6 +28,18 @@ struct ImageUnref {
 
 using ImagePtr = std::unique_ptr<VipsImage, ImageUnref>;
 
+class RequestStateReset final {
+public:
+    ~RequestStateReset()
+    {
+        // Cached lazy operations can retain references to invocation-owned
+        // input buffers. Keep the configured cache available within a
+        // conversion, then release all request state before returning.
+        vips_cache_drop_all();
+        vips_error_clear();
+    }
+};
+
 [[nodiscard]] MediaConversionResult fail(MediaConversionError error)
 {
     vips_error_clear();
@@ -72,6 +84,11 @@ MediaConversionResult convert_media(
     OutputFormat preferred_output,
     ImageDimensions limits)
 {
+    if (!initialize_vips()) {
+        return fail(MediaConversionError::decode);
+    }
+    const RequestStateReset request_state_reset;
+
     if (mime == MimeType::image_png) {
         const auto apng = classify_apng(body);
         if (apng == ApngClassification::animated) {
