@@ -544,6 +544,35 @@ add_custom_command(
     VERBATIM
 )
 
+if(NOT DEFINED MEDIAPROXY_ARTIFACT_DIR)
+    set(MEDIAPROXY_ARTIFACT_DIR "${CMAKE_CURRENT_BINARY_DIR}/artifact")
+endif()
+set(bootstrap_artifact "${MEDIAPROXY_ARTIFACT_DIR}/bootstrap")
+set(bootstrap_artifact_staging "${bootstrap_artifact}.tmp")
+add_custom_command(
+    OUTPUT "${bootstrap_artifact}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "${MEDIAPROXY_ARTIFACT_DIR}"
+    COMMAND "${MEDIAPROXY_STRIP}" --strip-all
+        -o "${bootstrap_artifact_staging}" $<TARGET_FILE:bootstrap>
+    COMMAND "${CMAKE_COMMAND}"
+        "-DBOOTSTRAP=${bootstrap_artifact_staging}"
+        "-DREADELF=${MEDIAPROXY_READELF}"
+        "-DNM=${MEDIAPROXY_NM}"
+        "-DUNDEFINED_SYMBOLS_FILE=${CMAKE_CURRENT_BINARY_DIR}/bootstrap-artifact.undefined-symbols.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/VerifyStaticElf.cmake"
+    COMMAND "${CMAKE_COMMAND}" -E rename
+        "${bootstrap_artifact_staging}" "${bootstrap_artifact}"
+    DEPENDS
+        bootstrap
+        "${CMAKE_SOURCE_DIR}/cmake/StaticElfPolicy.cmake"
+        "${CMAKE_SOURCE_DIR}/cmake/VerifyStaticElf.cmake"
+    VERBATIM
+)
+add_custom_target(bootstrap-artifact-inner ALL
+    DEPENDS "${bootstrap_artifact}"
+)
+
 if(BUILD_TESTING)
     FetchContent_Declare(googletest
         URL "${MEDIAPROXY_GOOGLETEST_URL}"
@@ -737,9 +766,9 @@ if(BUILD_TESTING)
             GTest::gtest_main
     )
     target_compile_definitions(mediaproxy_bootstrap_test PRIVATE
-        "MEDIAPROXY_BOOTSTRAP_PATH=\"$<TARGET_FILE:bootstrap>\""
+        "MEDIAPROXY_BOOTSTRAP_PATH=\"${bootstrap_artifact}\""
     )
-    add_dependencies(mediaproxy_bootstrap_test bootstrap)
+    add_dependencies(mediaproxy_bootstrap_test bootstrap-artifact-inner)
     if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
         gtest_discover_tests(
             mediaproxy_bootstrap_test
@@ -1144,6 +1173,15 @@ if(BUILD_TESTING)
             "-DREADELF=${MEDIAPROXY_READELF}"
             "-DNM=${MEDIAPROXY_NM}"
             "-DUNDEFINED_SYMBOLS_FILE=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.undefined-symbols.txt"
+            -P "${CMAKE_SOURCE_DIR}/cmake/VerifyStaticElf.cmake"
+    )
+    add_test(
+        NAME bootstrap-artifact-static-elf
+        COMMAND "${CMAKE_COMMAND}"
+            "-DBOOTSTRAP=${bootstrap_artifact}"
+            "-DREADELF=${MEDIAPROXY_READELF}"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DUNDEFINED_SYMBOLS_FILE=${CMAKE_CURRENT_BINARY_DIR}/bootstrap-artifact.undefined-symbols.txt"
             -P "${CMAKE_SOURCE_DIR}/cmake/VerifyStaticElf.cmake"
     )
     add_test(

@@ -6,3 +6,17 @@ WIP: AWS Lambdaに最適化されたMediaProxyです。
  - AWS Lambda以外での環境での動作には対応していません。
  - SVGには意図的に対応していません。SVGは数々のセキュリティ上の問題を引き起こす上に、対応に必要となる依存関係が膨大です。
  - HEICには法的な問題を避けるために、意図的に対応していません。AVIFには対応しています。
+
+## arm64 bootstrapのビルド
+
+`.devcontainer`で定義された開発環境から、次のCMakeインターフェースで
+strip・静的ELF検証済みの成果物を生成します。
+
+```console
+cmake --preset arm64-release
+cmake --build --preset arm64-release --target bootstrap-artifact --parallel 2
+ctest --preset arm64-release
+```
+
+成果物は`out/build/arm64-release/artifact/bootstrap`です。AWSリソースの
+デプロイ、IaC、コスト管理はこのリポジトリの対象外です。

@@ -1951,6 +1951,7 @@ ExternalProject_Add(application
         "-DMEDIAPROXY_STRIP=${host_strip}"
         "-DMEDIAPROXY_READELF=${host_readelf}"
         "-DMEDIAPROXY_OBJCOPY=${host_objcopy}"
+        "-DMEDIAPROXY_ARTIFACT_DIR=${CMAKE_BINARY_DIR}/artifact"
         "-DMEDIAPROXY_SOURCE_CACHE=${source_cache}"
         "-DMEDIAPROXY_FORTIFY_INCLUDE_DIR=${fortify_headers_include_dir}"
         "-DMEDIAPROXY_ADA_IDNA_INCLUDE_DIR=${ada_idna_include_dir}"
@@ -2063,7 +2064,10 @@ ExternalProject_Add(application
         "${application_binary_directory}/bootstrap"
         "${application_binary_directory}/bootstrap.map"
         "${application_binary_directory}/bootstrap.undefined-symbols.txt"
+        "${CMAKE_BINARY_DIR}/artifact/bootstrap"
 )
+
+add_custom_target(bootstrap-artifact DEPENDS application)
 
 if(BUILD_TESTING)
     add_test(
