@@ -722,6 +722,25 @@ if(BUILD_TESTING)
             DISCOVERY_MODE PRE_TEST)
     endif()
 
+    add_executable(mediaproxy_bootstrap_test
+        tests/runtime/bootstrap_test.cpp
+    )
+    target_link_libraries(mediaproxy_bootstrap_test
+        PRIVATE
+            mediaproxy_hardening
+            mediaproxy_warnings
+            GTest::gtest_main
+    )
+    target_compile_definitions(mediaproxy_bootstrap_test PRIVATE
+        "MEDIAPROXY_BOOTSTRAP_PATH=\"$<TARGET_FILE:bootstrap>\""
+    )
+    add_dependencies(mediaproxy_bootstrap_test bootstrap)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        gtest_discover_tests(
+            mediaproxy_bootstrap_test
+            DISCOVERY_MODE PRE_TEST)
+    endif()
+
     add_executable(mediaproxy_stack_smash_probe
         tests/hardening/stack_smash.cpp
     )
