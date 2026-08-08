@@ -1,0 +1,107 @@
+name: Deploy
+
+on:
+    push:
+        branches:
+            - main
+
+permissions: {}
+
+jobs:
+    build:
+        name: Deploy to AWS Lambda
+        runs-on: ubuntu-latest
+        timeout-minutes: 180
+        permissions:
+            id-token: write
+            contents: read
+        
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - arch: x86_64
+                      runner: ubuntu-24.04
+                      runner_arch: x86_64
+                      platform: linux/amd64
+                      preset: x86_64-release
+
+        steps:
+            - name: Check out source
+              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+            - name: Verify native runner architecture
+              env:
+                  EXPECTED_RUNNER_ARCH: ${{ matrix.runner_arch }}
+              run: test "$(uname -m)" = "${EXPECTED_RUNNER_ARCH}"
+
+            - name: Restore pinned source archives
+              uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+              with:
+                  path: .cache/sources
+                  key: dependency-sources-v1-${{ hashFiles('dependencies.lock.json') }}
+
+            - name: Build CI toolchain container
+              env:
+                  CI_IMAGE: mediaproxy-ci:${{ matrix.arch }}
+                  CI_PLATFORM: ${{ matrix.platform }}
+              run: >-
+                  docker build
+                  --platform "${CI_PLATFORM}"
+                  --target ci
+                  --tag "${CI_IMAGE}"
+                  --file .devcontainer/Dockerfile
+                  .devcontainer
+
+            - name: Configure deployment build
+              env:
+                  CI_IMAGE: mediaproxy-ci:${{ matrix.arch }}
+                  CI_PLATFORM: ${{ matrix.platform }}
+                  CMAKE_PRESET: ${{ matrix.preset }}
+              run: >-
+                  docker run --rm
+                  --platform "${CI_PLATFORM}"
+                  --volume "${GITHUB_WORKSPACE}:/workspace"
+                  --workdir /workspace
+                  "${CI_IMAGE}"
+                  cmake --preset "${CMAKE_PRESET}" -DBUILD_TESTING=OFF
+
+            - name: Build deployment bootstrap
+              env:
+                  CI_IMAGE: mediaproxy-ci:${{ matrix.arch }}
+                  CI_PLATFORM: ${{ matrix.platform }}
+                  CMAKE_PRESET: ${{ matrix.preset }}
+              run: >-
+                  docker run --rm
+                  --platform "${CI_PLATFORM}"
+                  --volume "${GITHUB_WORKSPACE}:/workspace"
+                  --workdir /workspace
+                  "${CI_IMAGE}"
+                  cmake --build --preset "${CMAKE_PRESET}"
+                  --target application --parallel 2
+
+            - name: Copy bootstrap
+              env:
+                  BOOTSTRAP: out/build/${{ matrix.preset }}/application/bootstrap
+              run: |
+                  mkdir ./deploy
+                  cp "${BOOTSTRAP}" ./deploy/
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-region: ${{ secrets.AWS_LAMBDA_REGION }}
+                role-to-assume: ${{ secrets.AWS_LAMBDA_DEPLOY_ROLE_ARN }}
+                role-session-name: lambda-deploy
+        
+            - name: Deploy Lambda Function
+              uses: aws-actions/aws-lambda-deploy@v1
+              env:
+                  ARCH: ${{ matrix.arch }}
+                  BOOTSTRAP: out/build/${{ matrix.preset }}/application/bootstrap
+              with:
+                function-name: danbooru-proxy
+                code-artifacts-dir: deploy
+                handler: main.handler
+                runtime: provided.al2023 # Amazon Linux 2023
+                architectures: x86_64           
