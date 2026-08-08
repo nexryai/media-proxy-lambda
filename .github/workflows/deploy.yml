@@ -100,7 +100,7 @@ jobs:
                   ARCH: ${{ matrix.arch }}
                   BOOTSTRAP: out/build/${{ matrix.preset }}/application/bootstrap
               with:
-                function-name: danbooru-proxy
+                function-name: media-proxy
                 code-artifacts-dir: deploy
                 handler: main.handler
                 runtime: provided.al2023 # Amazon Linux 2023
