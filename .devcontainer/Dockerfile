@@ -11,4 +11,4 @@ FROM toolchain AS development
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 RUN apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
-RUN npm install -g pnpm @openai/codex
+RUN npm install -g pnpm opencode-ai @openai/codex
