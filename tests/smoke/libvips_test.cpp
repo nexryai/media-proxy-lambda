@@ -33,7 +33,7 @@ TEST(LibvipsBuild, ProvidesAvifWithoutOptionalForeignLoaders)
     vips_concurrency_set(1);
     vips_cache_set_max(0);
 
-    EXPECT_STREQ(vips_version_string(), "8.18.2");
+    EXPECT_STREQ(vips_version_string(), "8.18.6");
     EXPECT_NE(vips_type_find("VipsOperation", "heifload"), 0U);
     EXPECT_NE(vips_type_find("VipsOperation", "heifsave"), 0U);
     EXPECT_NE(vips_type_find("VipsOperation", "jpegload"), 0U);

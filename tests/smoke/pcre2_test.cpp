@@ -22,7 +22,7 @@ TEST(BuildSmoke, MatchesBoundedUnicodeWithPinnedPcre2)
     ASSERT_GE(pcre2_config(PCRE2_CONFIG_VERSION, version), 0);
     EXPECT_TRUE(
         std::string_view{reinterpret_cast<const char*>(version)}.starts_with(
-            "10.47 "));
+            "10.48 "));
 
     std::uint32_t jit_enabled = 1U;
     ASSERT_GE(pcre2_config(PCRE2_CONFIG_JIT, &jit_enabled), 0);

@@ -104,7 +104,7 @@ endforeach()
 
 file(READ "${PKGCONFIG}" pkgconfig)
 foreach(required_pc_line IN ITEMS
-        "Version: 2.8.2"
+        "Version: 2.8.4"
         "Libs: -L\${libdir} -lexpat"
         "Cflags: -I\${includedir}"
         "Cflags.private: -DXML_STATIC")

@@ -146,11 +146,11 @@ foreach(required_config IN ITEMS
 endforeach()
 
 foreach(pkgconfig_check IN ITEMS
-        "${GLIB_PKGCONFIG}|Name: GLib|Version: 2.88.2|Requires: libpcre2-8 >= 10.32|Libs: -L\${libdir} -lglib-2.0 -lm -pthread"
-        "${GOBJECT_PKGCONFIG}|Name: GObject|Version: 2.88.2|Requires: glib-2.0, libffi >=  3.0.0"
-        "${GTHREAD_PKGCONFIG}|Name: GThread|Version: 2.88.2|Requires: glib-2.0"
-        "${GMODULE_PKGCONFIG}|Name: GModule|Version: 2.88.2|gmodule_supported=false"
-        "${GIO_PKGCONFIG}|Name: GIO|Version: 2.88.2|Requires: glib-2.0, gobject-2.0, gmodule-no-export-2.0, zlib|giomoduledir=\${prefix}/lib/mediaproxy-gio-modules-disabled")
+        "${GLIB_PKGCONFIG}|Name: GLib|Version: 2.88.3|Requires: libpcre2-8 >= 10.32|Libs: -L\${libdir} -lglib-2.0 -lm -pthread"
+        "${GOBJECT_PKGCONFIG}|Name: GObject|Version: 2.88.3|Requires: glib-2.0, libffi >=  3.0.0"
+        "${GTHREAD_PKGCONFIG}|Name: GThread|Version: 2.88.3|Requires: glib-2.0"
+        "${GMODULE_PKGCONFIG}|Name: GModule|Version: 2.88.3|gmodule_supported=false"
+        "${GIO_PKGCONFIG}|Name: GIO|Version: 2.88.3|Requires: glib-2.0, gobject-2.0, gmodule-no-export-2.0, zlib|giomoduledir=\${prefix}/lib/mediaproxy-gio-modules-disabled")
     string(REPLACE "|" ";" pkgconfig_fields "${pkgconfig_check}")
     list(POP_FRONT pkgconfig_fields pkgconfig_file)
     file(READ "${pkgconfig_file}" pkgconfig)

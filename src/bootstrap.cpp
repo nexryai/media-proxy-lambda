@@ -149,7 +149,7 @@ int main()
     constexpr std::string_view required_jpeg_version =
         MEDIAPROXY_STRINGIFY(LIBJPEG_TURBO_VERSION);
     if (jpeg_error_function(&jpeg_errors) != &jpeg_errors
-            || required_jpeg_version != "3.1.4.1") {
+            || required_jpeg_version != "3.2.0") {
         return 1;
     }
     auto* volatile nsgif_error_function = &nsgif_strerror;
@@ -170,7 +170,7 @@ int main()
     auto* volatile expat_version_function = &XML_ExpatVersion;
     const XML_LChar* const expat_version = expat_version_function();
     if (expat_version == nullptr
-        || std::string_view{expat_version} != "expat_2.8.2") {
+        || std::string_view{expat_version} != "expat_2.8.4") {
         return 1;
     }
     ffi_cif ffi_call_interface{};
@@ -179,7 +179,7 @@ int main()
         &ffi_type_sint32,
     };
     auto* volatile ffi_prepare_function = &ffi_prep_cif;
-    if (std::string_view{FFI_VERSION_STRING} != "3.7.1"
+    if (std::string_view{FFI_VERSION_STRING} != "3.8.0"
             || ffi_prepare_function(&ffi_call_interface, FFI_DEFAULT_ABI,
                 2, &ffi_type_sint32, ffi_argument_types)
                 != FFI_OK) {
@@ -247,7 +247,7 @@ int main()
     PCRE2_UCHAR pcre2_version[32] = {};
     if (pcre2_config_function(PCRE2_CONFIG_VERSION, pcre2_version) < 0
         || !std::string_view{reinterpret_cast<const char*>(pcre2_version)}
-                .starts_with("10.47 ")) {
+                .starts_with("10.48 ")) {
         return 1;
     }
     constexpr int required_webp_version = 0x010600;

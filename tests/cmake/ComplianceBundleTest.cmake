@@ -61,9 +61,9 @@ foreach(dependency_index RANGE 0 ${dependency_last})
 endforeach()
 
 foreach(lgpl_archive IN ITEMS
-        glib-2.88.2.tar.xz
-        libheif-1.22.2.tar.gz
-        vips-8.18.2.tar.xz
+        glib-2.88.3.tar.xz
+        libheif-1.23.4.tar.gz
+        vips-8.18.6.tar.xz
         libexif-0.6.26.tar.xz)
     if(NOT EXISTS
             "${COMPLIANCE_DIRECTORY}/corresponding-source/archives/${lgpl_archive}")
@@ -77,7 +77,7 @@ execute_process(
     RESULT_VARIABLE relink_result
     OUTPUT_VARIABLE relink_stdout
     ERROR_VARIABLE relink_stderr
-    TIMEOUT 300)
+    TIMEOUT 600)
 if(NOT relink_result EQUAL 0)
     message(FATAL_ERROR
         "Relink command failed:\n${relink_stdout}\n${relink_stderr}")

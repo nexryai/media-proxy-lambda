@@ -149,7 +149,7 @@ endforeach()
 file(READ "${PKGCONFIG}" pkgconfig)
 foreach(required_pc_line IN ITEMS
         "Name: libpcre2-8"
-        "Version: 10.47"
+        "Version: 10.48"
         "License: BSD-3-Clause WITH PCRE2-exception"
         "Libs: -L\${libdir} -lpcre2-8"
         "Cflags: -I\${includedir} -DPCRE2_STATIC")

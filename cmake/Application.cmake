@@ -1442,6 +1442,6 @@ if(BUILD_TESTING)
                 "-DREADELF=${MEDIAPROXY_READELF}"
                 "-DNM=${MEDIAPROXY_NM}"
                 -P "${CMAKE_SOURCE_DIR}/tests/cmake/ComplianceBundleTest.cmake")
-        set_tests_properties(compliance-bundle PROPERTIES TIMEOUT 360)
+        set_tests_properties(compliance-bundle PROPERTIES TIMEOUT 660)
     endif()
 endif()

@@ -6,9 +6,9 @@
 TEST(BuildSmoke, ExposesOnlyPinnedLibheifAv1Codecs)
 {
     EXPECT_EQ(heif_get_version_number_major(), 1);
-    EXPECT_EQ(heif_get_version_number_minor(), 22);
-    EXPECT_EQ(heif_get_version_number_maintenance(), 2);
-    EXPECT_EQ(std::string_view{heif_get_version()}, "1.22.2");
+    EXPECT_EQ(heif_get_version_number_minor(), 23);
+    EXPECT_EQ(heif_get_version_number_maintenance(), 4);
+    EXPECT_EQ(std::string_view{heif_get_version()}, "1.23.4");
 
     const heif_error init_error = heif_init(nullptr);
     ASSERT_EQ(init_error.code, heif_error_Ok) << init_error.message;

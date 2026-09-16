@@ -3,10 +3,10 @@
     "dependencies": [
         {
             "name": "linux-uapi-headers",
-            "version": "6.18.38",
-            "revision": "v6.18.38",
-            "url": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.38.tar.xz",
-            "sha256": "ac26e508abd56e9f8b89872b6e10c49fc823bcc70d8068a5d8504c1a7c4ff045",
+            "version": "6.18.52",
+            "revision": "v6.18.52",
+            "url": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.52.tar.xz",
+            "sha256": "2b69564f7d4fea0c859b1959ba33709ee6e9139bd100e30a853b57159a8221b8",
             "license": "GPL-2.0-only WITH Linux-syscall-note",
             "buildOptions": [
                 "headers_install only",
@@ -78,10 +78,10 @@
         },
         {
             "name": "boringssl",
-            "version": "0.20260713.0",
-            "revision": "8b43ff0f72137b31b23d482f0b2344186d797b03",
-            "url": "https://github.com/google/boringssl/releases/download/0.20260713.0/boringssl-0.20260713.0.tar.gz",
-            "sha256": "8176853e9d5c0f1af15270587f3c577171a60fddbd0ee903f7763663c04db949",
+            "version": "0.20260813.0",
+            "revision": "7c1efd8d6ffb36a57feba44e8c73cf674801f3cb",
+            "url": "https://github.com/google/boringssl/releases/download/0.20260813.0/boringssl-0.20260813.0.tar.gz",
+            "sha256": "37e23cb9a5fa54f01b07cadd653cebc1d1b235945439a6c334fea58ea47b5b0a",
             "license": "Apache-2.0",
             "buildOptions": [
                 "BUILD_SHARED_LIBS=OFF",
@@ -97,10 +97,10 @@
         },
         {
             "name": "nghttp2",
-            "version": "1.69.0",
-            "revision": "68cb6900fde14c77f0cd7add0e094a862960eb99",
-            "url": "https://github.com/nghttp2/nghttp2/releases/download/v1.69.0/nghttp2-1.69.0.tar.xz",
-            "sha256": "1fb324b6ec2c56f6bde0658f4139ffd8209fa9e77ce98fd7a5f63af8d0e508ad",
+            "version": "1.70.0",
+            "revision": "85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2",
+            "url": "https://github.com/nghttp2/nghttp2/releases/download/v1.70.0/nghttp2-1.70.0.tar.xz",
+            "sha256": "e05cb1388eaca3830aded4ccf20044b6e1ac1a61411dcca11b0437c4285c8bc2",
             "license": "MIT",
             "buildOptions": [
                 "ENABLE_LIB_ONLY=ON",
@@ -122,10 +122,10 @@
         },
         {
             "name": "curl",
-            "version": "8.21.0",
-            "revision": "68720b4837284335b2d63cb358f8f6ce65f5bc55",
-            "url": "https://curl.se/download/curl-8.21.0.tar.xz",
-            "sha256": "aa1b66a70eace83dc624508745646c08ae561de512ab403adffb93ac87fc72e6",
+            "version": "8.22.0",
+            "revision": "01346829096c61b372692f6dc43ffa778c6caccd",
+            "url": "https://curl.se/download/curl-8.22.0.tar.xz",
+            "sha256": "f7ef3ae8a22e521f289803fe93543eb64c329b58aa73a9e224dfd915a2a5f4f7",
             "license": "curl",
             "buildOptions": [
                 "HTTP_ONLY=ON",
@@ -143,6 +143,10 @@
                 "production hardening flags including fortify, ThinLTO, and trapping CFI",
                 "warnings as errors",
                 "LLVM tools only"
+            ],
+            "securityNotes": [
+                "8.22.0 fixes nine CVEs affecting 8.21.0, including CVE-2026-80229 and CVE-2026-18924",
+                "cookies, authentication, proxying, native CA lookup, wolfSSL, LDAP, SSH, GSSAPI, and WebSockets remain excluded, reducing exposure to several fixed code paths"
             ],
             "reason": "Bounded HTTP/HTTPS transport for the Lambda Runtime API and validated origins"
         },
@@ -168,10 +172,10 @@
         },
         {
             "name": "ada-idna",
-            "version": "3.4.4",
-            "revision": "8d50724a7dea209a05234a445e28f97994b0a5f6",
-            "url": "https://github.com/ada-url/ada/archive/refs/tags/v3.4.4.tar.gz",
-            "sha256": "77bc5bbc383ed098cc60266ad6ee912de2431bb62d89248c0e17c4e712dcdaf9",
+            "version": "4.0.0",
+            "revision": "b12a893a45809da8103bb4f1e2f6f5ee13f9100b",
+            "url": "https://github.com/ada-url/ada/archive/refs/tags/v4.0.0.tar.gz",
+            "sha256": "6d6c7ef7dd2e329320d34eb2ab29ccdc879ee3935af9dfb894a6640e58dc381d",
             "license": "MIT",
             "buildOptions": [
                 "first-party CMake adapter compiles only the generated src/ada_idna.cpp translation unit",
@@ -193,10 +197,10 @@
         },
         {
             "name": "libexpat",
-            "version": "2.8.2",
-            "revision": "c61098da494eea1cbd091118118dcee417faacea",
-            "url": "https://github.com/libexpat/libexpat/releases/download/R_2_8_2/expat-2.8.2.tar.xz",
-            "sha256": "3ad89b8588e6644bd4e49981480d48b21289eebbcd4f0a1a4afb1c29f99b6ab4",
+            "version": "2.8.4",
+            "revision": "12cf0b1f25f026a022fe728ad8f7e3d017285b80",
+            "url": "https://github.com/libexpat/libexpat/releases/download/R_2_8_4/expat-2.8.4.tar.xz",
+            "sha256": "656ae1cc8da3b4ea513bb4e254f33e6243938084c0ec6239da873376b09985a7",
             "license": "MIT",
             "buildOptions": [
                 "EXPAT_SHARED_LIBS=OFF",
@@ -216,17 +220,17 @@
                 "LLVM tools only"
             ],
             "securityNotes": [
-                "2.8.2 fixes CVE-2026-50219, CVE-2026-56131, CVE-2026-56132, CVE-2026-56403 through CVE-2026-56408, and CVE-2026-56412 in the library",
+                "2.8.4 includes the security fixes shipped in 2.8.2 through 2.8.4, including CVE-2026-50219, CVE-2026-56131, CVE-2026-56132, CVE-2026-56403 through CVE-2026-56408, and CVE-2026-56412",
                 "xmlwf-only fixes CVE-2026-56409 through CVE-2026-56411 are present upstream while xmlwf is excluded from this build"
             ],
             "reason": "Pinned XML parser required by libvips metadata and serialization support"
         },
         {
             "name": "libffi",
-            "version": "3.7.1",
-            "revision": "5c1c43091ed611fdea774374355eb938c73a9157",
-            "url": "https://github.com/libffi/libffi/releases/download/v3.7.1/libffi-3.7.1.tar.gz",
-            "sha256": "d5e9a6638ddbd2513ddb54518eb67e4bbe6fa707bcc01c10f6212f0a088d819d",
+            "version": "3.8.0",
+            "revision": "12ffd1f9dc56fcea79d2f742f424301ae668d663",
+            "url": "https://github.com/libffi/libffi/releases/download/v3.8.0/libffi-3.8.0.tar.gz",
+            "sha256": "7da3e2d9a171eb0a038f592ecad3ff2bb2550f3496d87b3b29ad0cf4430c0db4",
             "license": "MIT",
             "buildOptions": [
                 "curated CMake static-only source build after upstream cross-configuration",
@@ -244,18 +248,18 @@
                 "LLVM tools only"
             ],
             "securityNotes": [
-                "3.7.1 fixes aarch64 ffi_call memory corruption when passing many large structs by value",
-                "3.7.1 includes the 3.5.2 close-on-exec fix for static trampoline file descriptors",
+                "3.8.0 includes the 3.7.1 aarch64 ffi_call memory-corruption fix for calls passing many large structs by value",
+                "3.8.0 includes the 3.5.2 close-on-exec fix for static trampoline file descriptors",
                 "the x86_64 smoke test exercises both ffi_call and an allocated closure through the static PIE"
             ],
             "reason": "Pinned foreign-call ABI and closure support required by GLib GObject"
         },
         {
             "name": "pcre2",
-            "version": "10.47",
-            "revision": "f454e231fe5006dd7ff8f4693fd2b8eb94333429",
-            "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.47/pcre2-10.47.tar.gz",
-            "sha256": "c08ae2388ef333e8403e670ad70c0a11f1eed021fd88308d7e02f596fcd9dc16",
+            "version": "10.48",
+            "revision": "7978954dbd2efc6f2196869290553cf1871b4ce6",
+            "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.48/pcre2-10.48.tar.gz",
+            "sha256": "ebcc25aadf2a51fa1fefa9b8bc9e7a79b3dae86870a0f1152a22e42befd46888",
             "license": "BSD-3-Clause WITH PCRE2-exception",
             "buildOptions": [
                 "BUILD_SHARED_LIBS=OFF and BUILD_STATIC_LIBS=ON",
@@ -272,7 +276,8 @@
                 "LLVM tools only"
             ],
             "securityNotes": [
-                "10.47 fixes an easily reachable pcre2_callout_enumerate crash for patterns containing a Unicode character class",
+                "10.48 fixes the 10.45 through 10.47 serialization-padding information disclosure (GHSA-q7rw-r7qq-2hx6)",
+                "10.48 includes the 10.47 fix for an easily reachable pcre2_callout_enumerate crash involving Unicode character classes",
                 "JIT is excluded so the production process does not allocate executable memory for regular expressions"
             ],
             "reason": "Pinned Unicode regular-expression engine required by GLib GRegex"
@@ -297,10 +302,10 @@
         },
         {
             "name": "glib",
-            "version": "2.88.2",
-            "revision": "07233788db387cc362f09c4882ce4838f4a553a4",
-            "url": "https://download.gnome.org/sources/glib/2.88/glib-2.88.2.tar.xz",
-            "sha256": "cf3f215a640c8a4257f14317586b8f1fdd25a10a93cb4bdda147c0f9ad88e74f",
+            "version": "2.88.3",
+            "revision": "43bc79ea8803e33c5eb368085e2d5906f9f98079",
+            "url": "https://download.gnome.org/sources/glib/2.88/glib-2.88.3.tar.xz",
+            "sha256": "ab24d24e698dfa1e408b7bcdb508f4aafc906185a8b8ce72fdf79bbbdc9b383b",
             "license": "LGPL-2.1-or-later",
             "buildOptions": [
                 "Meson cross build driven by the CMake superbuild",
@@ -367,10 +372,10 @@
         },
         {
             "name": "libheif",
-            "version": "1.22.2",
-            "revision": "763bc8bb87788d64d39ece623ceed988de12dc5b",
-            "url": "https://github.com/strukturag/libheif/releases/download/v1.22.2/libheif-1.22.2.tar.gz",
-            "sha256": "eea48e4841f83fbe51d029337ffd2d14512d0203015dad40b90213d872958af3",
+            "version": "1.23.4",
+            "revision": "4e14f5942c1732ace9611b9522cc991501445463",
+            "url": "https://github.com/strukturag/libheif/releases/download/v1.23.4/libheif-1.23.4.tar.gz",
+            "sha256": "d0c02b4b0e978f34a1974b6f3eea7975a537bf7a9195ffeea38e7242ff316fdd",
             "license": "LGPL-3.0-or-later",
             "buildOptions": [
                 "BUILD_SHARED_LIBS=OFF",
@@ -396,6 +401,8 @@
                 }
             ],
             "securityNotes": [
+                "1.23.4 fixes high-severity unbounded iinf child parsing and reference-cycle recursion issues that are reachable before codec dispatch",
+                "1.23.4 includes the 1.23.2 fixes for multiple integer-overflow, out-of-bounds, infinite-loop, and uninitialized-memory vulnerabilities",
                 "HEIC decode and encode report unavailable at runtime because no HEVC codec backend is linked",
                 "plugin loading is compiled out, so codec shared objects cannot extend the deployment graph",
                 "generic HEIF container parsing remains in libheif but image/heif is rejected by first-party MIME policy",
@@ -406,10 +413,10 @@
         },
         {
             "name": "libvips",
-            "version": "8.18.2",
-            "revision": "17ad2f62dda7e39985955da189183e594683d45e",
-            "url": "https://github.com/libvips/libvips/releases/download/v8.18.2/vips-8.18.2.tar.xz",
-            "sha256": "a30d4aede16f1c2899c1a2241870f8a7409feafa38484bcdcdac113d6d6f8ff5",
+            "version": "8.18.6",
+            "revision": "426af3f44246fce9cfa8dd51a353aa4dfd48c553",
+            "url": "https://github.com/libvips/libvips/releases/download/v8.18.6/vips-8.18.6.tar.xz",
+            "sha256": "3c41e1d5458081bfa4a5bc54e116c46259c75c6760a18027764555632b9dda3e",
             "license": "LGPL-2.1-or-later",
             "buildOptions": [
                 "Meson cross-build with --default-library=static and b_staticpic=true",
@@ -466,10 +473,10 @@
         },
         {
             "name": "libjpeg-turbo",
-            "version": "3.1.4.1",
-            "revision": "9217719d3a58633923b096af4c1d50d304768a64",
-            "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.4.1/libjpeg-turbo-3.1.4.1.tar.gz",
-            "sha256": "ecae8008e2cc9ade2f2c1bb9d5e6d4fb73e7c433866a056bd82980741571a022",
+            "version": "3.2.0",
+            "revision": "c85e6b905bf237038faa936dab160ebfc5da0344",
+            "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0.tar.gz",
+            "sha256": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",
             "license": "IJG AND BSD-3-Clause AND Zlib",
             "buildOptions": [
                 "ENABLE_SHARED=OFF",
@@ -494,7 +501,7 @@
                 "LLVM tools only"
             ],
             "securityNotes": [
-                "3.1.4.1 includes the 3.1.4 fix for TurboJPEG destination-buffer reallocation paths that could leak memory or lead to a caller double free; the TurboJPEG API is nevertheless excluded from this build"
+                "3.2.0 includes the 3.1.4 fix for TurboJPEG destination-buffer reallocation paths that could leak memory or lead to a caller double free; the TurboJPEG API is nevertheless excluded from this build"
             ],
             "reason": "Pinned JPEG decode/encode primitives for libvips and first-entry ICO fallback"
         },
@@ -600,10 +607,10 @@
         },
         {
             "name": "yyjson",
-            "version": "0.12.0",
-            "revision": "8b4a38dc994a110abaec8a400615567bd996105f",
-            "url": "https://github.com/ibireme/yyjson/archive/refs/tags/0.12.0.tar.gz",
-            "sha256": "b16246f617b2a136c78d73e5e2647c6f1de1313e46678062985bdcf1f40bb75d",
+            "version": "0.13.0",
+            "revision": "6447536015f3d600f3d65323b10976103b337ca7",
+            "url": "https://github.com/ibireme/yyjson/archive/refs/tags/0.13.0.tar.gz",
+            "sha256": "34e0f62a2bc11ab20d601e8ca1cc2b2079503aa45119a19133d89d19b94a0fae",
             "license": "MIT",
             "buildOptions": [
                 "BUILD_SHARED_LIBS=OFF",
@@ -621,10 +628,10 @@
         },
         {
             "name": "googletest",
-            "version": "1.17.0",
-            "revision": "v1.17.0",
-            "url": "https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz",
-            "sha256": "65fab701d9829d38cb77c14acdc431d2108bfdbf8979e40eb8ae567edf10b27c",
+            "version": "1.18.0",
+            "revision": "v1.18.0",
+            "url": "https://github.com/google/googletest/archive/refs/tags/v1.18.0.tar.gz",
+            "sha256": "6e3191c1455468b3fc35a417fb565c1c5071aee1b7e7f85e30cf48a98d37d8b5",
             "license": "BSD-3-Clause",
             "scope": "test",
             "buildOptions": [

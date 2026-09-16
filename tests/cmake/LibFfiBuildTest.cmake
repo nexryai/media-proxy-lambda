@@ -137,7 +137,7 @@ endforeach()
 file(READ "${PKGCONFIG}" pkgconfig)
 foreach(required_pc_line IN ITEMS
         "Name: libffi"
-        "Version: 3.7.1"
+        "Version: 3.8.0"
         "Libs: -L\${toolexeclibdir} -lffi"
         "Cflags: -I\${includedir}")
     string(FIND "${pkgconfig}" "${required_pc_line}" pc_offset)

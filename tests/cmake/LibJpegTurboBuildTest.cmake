@@ -67,8 +67,8 @@ endforeach()
 file(READ "${CONFIG_HEADER}" config_header)
 foreach(required_definition IN ITEMS
         "JPEG_LIB_VERSION[ \t]+62"
-        "LIBJPEG_TURBO_VERSION[ \t]+3\\.1\\.4\\.1"
-        "LIBJPEG_TURBO_VERSION_NUMBER[ \t]+3001004"
+        "LIBJPEG_TURBO_VERSION[ \t]+3\\.2\\.0"
+        "LIBJPEG_TURBO_VERSION_NUMBER[ \t]+3002000"
         "D_ARITH_CODING_SUPPORTED[ \t]+1"
         "MEM_SRCDST_SUPPORTED[ \t]+1"
         "BITS_IN_JSAMPLE[ \t]+8")
