@@ -399,6 +399,20 @@
             "variants": ["all pages loaded from memory", "loader cannot fetch network URL", "loader cannot read external file", "no SVG loader present"]
         },
         {
+            "id": "jxl.first-frame-decode",
+            "sections": ["6", "7.1", "7.4"],
+            "suite": "media-golden",
+            "variants": [
+                "container signature decode through decoder-only libjxl",
+                "bare codestream decode through decoder-only libjxl",
+                "bounded first displayed frame",
+                "animated input encodes only its first displayed frame",
+                "WebP selector remains WebP",
+                "AVIF selector remains AVIF",
+                "malformed JXL rejected"
+            ]
+        },
+        {
             "id": "vips.process-initialization",
             "sections": ["7.1"],
             "suite": "media-golden",

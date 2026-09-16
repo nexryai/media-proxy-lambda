@@ -312,7 +312,7 @@ Deliverables:
 - Remove every build/test/documentation dependency on a temporary reference
   directory.
 - Add a manifest enumerating every required HTTP, URL, MIME, resize, encoder,
-  ICO, and APNG vector from the specification.
+  ICO, JXL, and APNG vector from the specification.
 - Import any one-time historical expected outputs into `tests/golden/`; retain
   only redistributable fixtures, hashes, metadata, and provenance—not the
   historical source or a runtime harness for it.
@@ -533,7 +533,7 @@ Deliverables:
 - Verify the Phase 1 hardening manifest and performance budget without adding
   late release-only compiler flags or weakening the tested baseline.
 - Review vulnerabilities and every enabled loader/codec.
-- Fuzz event/query/URL, MIME, PNG/APNG, ICO, and streaming parsers for the
+- Fuzz event/query/URL, MIME, PNG/APNG, ICO, JXL, and streaming parsers for the
   agreed duration; retain failures as regression inputs.
 - Publish a report containing specification revision, fixture count, hashes,
   security exceptions, performance, maximum memory, and binary size.

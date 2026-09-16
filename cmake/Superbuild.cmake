@@ -100,6 +100,14 @@ mediaproxy_lock_get(libheif sha256 libheif_sha256)
 mediaproxy_lock_get(libheif version libheif_version)
 mediaproxy_lock_get_patch(libheif 0 path libheif_patch_relative)
 mediaproxy_lock_get_patch(libheif 0 sha256 libheif_patch_sha256)
+mediaproxy_lock_get(highway url highway_url)
+mediaproxy_lock_get(highway sha256 highway_sha256)
+mediaproxy_lock_get(highway version highway_version)
+mediaproxy_lock_get(libjxl url libjxl_url)
+mediaproxy_lock_get(libjxl sha256 libjxl_sha256)
+mediaproxy_lock_get(libjxl version libjxl_version)
+mediaproxy_lock_get_patch(libjxl 0 path libjxl_patch_relative)
+mediaproxy_lock_get_patch(libjxl 0 sha256 libjxl_patch_sha256)
 mediaproxy_lock_get(libvips url libvips_url)
 mediaproxy_lock_get(libvips sha256 libvips_sha256)
 mediaproxy_lock_get(libvips version libvips_version)
@@ -166,6 +174,12 @@ set(libvips_patch "${CMAKE_SOURCE_DIR}/${libvips_patch_relative}")
 file(SHA256 "${libvips_patch}" actual_libvips_patch_sha256)
 if(NOT actual_libvips_patch_sha256 STREQUAL libvips_patch_sha256)
     message(FATAL_ERROR "libvips build patch does not match dependencies.lock.json")
+endif()
+
+set(libjxl_patch "${CMAKE_SOURCE_DIR}/${libjxl_patch_relative}")
+file(SHA256 "${libjxl_patch}" actual_libjxl_patch_sha256)
+if(NOT actual_libjxl_patch_sha256 STREQUAL libjxl_patch_sha256)
+    message(FATAL_ERROR "libjxl build patch does not match dependencies.lock.json")
 endif()
 
 ExternalProject_Add(linux_headers
@@ -880,6 +894,174 @@ ExternalProject_Add(lcms2
         "${lcms2_pkgconfig}"
 )
 
+set(highway_binary_directory "${CMAKE_BINARY_DIR}/highway-build")
+set(highway_library "${sysroot}/usr/lib/libhwy.a")
+set(highway_include_dir "${sysroot}/usr/include")
+set(highway_pkgconfig "${sysroot}/usr/lib/pkgconfig/libhwy.pc")
+ExternalProject_Add(highway
+    DEPENDS fortify_headers
+    URL "${highway_url}"
+    URL_HASH "SHA256=${highway_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "highway-${highway_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    BINARY_DIR "${highway_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DMEDIAPROXY_TARGET_TRIPLE=${target_triple}"
+        "-DMEDIAPROXY_TARGET_PROCESSOR=${target_processor}"
+        "-DMEDIAPROXY_COMPILER_RT_ARCH=${compiler_rt_arch}"
+        "-DMEDIAPROXY_SYSROOT=${sysroot}"
+        "-DMEDIAPROXY_CLANG=${host_clang}"
+        "-DMEDIAPROXY_CLANGXX=${host_clangxx}"
+        "-DMEDIAPROXY_LLD=${host_lld}"
+        "-DMEDIAPROXY_AR=${host_ar}"
+        "-DMEDIAPROXY_RANLIB=${host_ranlib}"
+        "-DMEDIAPROXY_NM=${host_nm}"
+        "-DMEDIAPROXY_STRIP=${host_strip}"
+        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"
+        "-DCMAKE_CXX_STANDARD=20"
+        "-DCMAKE_CXX_FLAGS=${dependency_hardening_cxx_flags} -DHWY_COMPILE_ONLY_SCALAR=1"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DBUILD_TESTING=OFF"
+        "-DHWY_FORCE_STATIC_LIBS=ON"
+        "-DHWY_ENABLE_CONTRIB=OFF"
+        "-DHWY_ENABLE_EXAMPLES=OFF"
+        "-DHWY_ENABLE_INSTALL=ON"
+        "-DHWY_ENABLE_TESTS=OFF"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target hwy
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E env "DESTDIR=${sysroot}"
+        "${CMAKE_COMMAND}" --install <BINARY_DIR> --config Release
+    BUILD_BYPRODUCTS
+        "${highway_library}"
+        "${highway_include_dir}/hwy/highway.h"
+        "${highway_pkgconfig}"
+)
+
+string(SHA256 libjxl_build_configuration_sha256
+    "${libjxl_sha256}:${libjxl_patch_sha256}:decoder-scalar-v1")
+string(SUBSTRING "${libjxl_build_configuration_sha256}" 0 12
+    libjxl_build_id)
+set(libjxl_prefix_directory
+    "${CMAKE_BINARY_DIR}/libjxl-${libjxl_version}-${libjxl_build_id}-prefix")
+set(libjxl_binary_directory
+    "${CMAKE_BINARY_DIR}/libjxl-${libjxl_version}-${libjxl_build_id}-build")
+set(libjxl_library "${sysroot}/usr/lib/libjxl_dec.a")
+set(libjxl_include_dir "${sysroot}/usr/include")
+ExternalProject_Add(libjxl
+    DEPENDS highway lcms2
+    PREFIX "${libjxl_prefix_directory}"
+    URL "${libjxl_url}"
+    URL_HASH "SHA256=${libjxl_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "libjxl-${libjxl_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    PATCH_COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "GIT_CEILING_DIRECTORIES=${CMAKE_BINARY_DIR}"
+        "${host_git}" apply "${libjxl_patch}"
+    BINARY_DIR "${libjxl_binary_directory}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        "-DCMAKE_PREFIX_PATH=${sysroot}/usr"
+        "-DMEDIAPROXY_TARGET_TRIPLE=${target_triple}"
+        "-DMEDIAPROXY_TARGET_PROCESSOR=${target_processor}"
+        "-DMEDIAPROXY_COMPILER_RT_ARCH=${compiler_rt_arch}"
+        "-DMEDIAPROXY_SYSROOT=${sysroot}"
+        "-DMEDIAPROXY_CLANG=${host_clang}"
+        "-DMEDIAPROXY_CLANGXX=${host_clangxx}"
+        "-DMEDIAPROXY_LLD=${host_lld}"
+        "-DMEDIAPROXY_AR=${host_ar}"
+        "-DMEDIAPROXY_RANLIB=${host_ranlib}"
+        "-DMEDIAPROXY_NM=${host_nm}"
+        "-DMEDIAPROXY_STRIP=${host_strip}"
+        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/toolchains/llvm-musl.cmake"
+        "-DCMAKE_CXX_STANDARD=20"
+        "-DCMAKE_C_FLAGS=${dependency_hardening_c_flags}"
+        "-DCMAKE_CXX_FLAGS=${dependency_hardening_cxx_flags} -DHWY_COMPILE_ONLY_SCALAR=1"
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+        "-DBUILD_SHARED_LIBS=OFF"
+        "-DBUILD_TESTING=OFF"
+        "-DJPEGXL_WARNINGS_AS_ERRORS=ON"
+        "-DJPEGXL_VERSION=${libjxl_version}"
+        "-DJPEGXL_ENABLE_TOOLS=OFF"
+        "-DJPEGXL_ENABLE_DEVTOOLS=OFF"
+        "-DJPEGXL_ENABLE_FUZZERS=OFF"
+        "-DJPEGXL_ENABLE_BENCHMARK=OFF"
+        "-DJPEGXL_ENABLE_EXAMPLES=OFF"
+        "-DJPEGXL_ENABLE_DOXYGEN=OFF"
+        "-DJPEGXL_ENABLE_MANPAGES=OFF"
+        "-DJPEGXL_ENABLE_JNI=OFF"
+        "-DJPEGXL_ENABLE_SJPEG=OFF"
+        "-DJPEGXL_ENABLE_OPENEXR=OFF"
+        "-DJPEGXL_ENABLE_SKCMS=OFF"
+        "-DJPEGXL_ENABLE_VIEWERS=OFF"
+        "-DJPEGXL_ENABLE_TCMALLOC=OFF"
+        "-DJPEGXL_ENABLE_PLUGINS=OFF"
+        "-DJPEGXL_ENABLE_COVERAGE=OFF"
+        "-DJPEGXL_ENABLE_TRANSCODE_JPEG=OFF"
+        "-DJPEGXL_ENABLE_BOXES=OFF"
+        "-DJPEGXL_ENABLE_LTO=OFF"
+        "-DJPEGXL_FORCE_SYSTEM_HWY=ON"
+        "-DJPEGXL_FORCE_SYSTEM_LCMS2=ON"
+        "-DJPEGXL_ENABLE_HWY_AVX2=OFF"
+        "-DJPEGXL_ENABLE_HWY_AVX3=OFF"
+        "-DJPEGXL_ENABLE_HWY_AVX3_DL=OFF"
+        "-DJPEGXL_ENABLE_HWY_AVX3_SPR=OFF"
+        "-DJPEGXL_ENABLE_HWY_AVX3_ZEN4=OFF"
+        "-DJPEGXL_ENABLE_HWY_EMU128=OFF"
+        "-DJPEGXL_ENABLE_HWY_NEON=OFF"
+        "-DJPEGXL_ENABLE_HWY_NEON_BF16=OFF"
+        "-DJPEGXL_ENABLE_HWY_NEON_WITHOUT_AES=OFF"
+        "-DJPEGXL_ENABLE_HWY_PPC10=OFF"
+        "-DJPEGXL_ENABLE_HWY_PPC8=OFF"
+        "-DJPEGXL_ENABLE_HWY_PPC9=OFF"
+        "-DJPEGXL_ENABLE_HWY_RVV=OFF"
+        "-DJPEGXL_ENABLE_HWY_SCALAR=ON"
+        "-DJPEGXL_ENABLE_HWY_SSE2=OFF"
+        "-DJPEGXL_ENABLE_HWY_SSE4=OFF"
+        "-DJPEGXL_ENABLE_HWY_SSSE3=OFF"
+        "-DJPEGXL_ENABLE_HWY_SVE=OFF"
+        "-DJPEGXL_ENABLE_HWY_SVE_256=OFF"
+        "-DJPEGXL_ENABLE_HWY_SVE2=OFF"
+        "-DJPEGXL_ENABLE_HWY_SVE2_128=OFF"
+        "-DJPEGXL_ENABLE_HWY_WASM=OFF"
+        "-DJPEGXL_ENABLE_HWY_WASM_EMU256=OFF"
+        "-DJPEGXL_ENABLE_HWY_Z14=OFF"
+        "-DJPEGXL_ENABLE_HWY_Z15=OFF"
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" --build <BINARY_DIR>
+        --parallel 2 --target jxl_dec
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${libjxl_include_dir}/jxl" "${sysroot}/usr/lib"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        <SOURCE_DIR>/lib/include/jxl "${libjxl_include_dir}/jxl"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        <BINARY_DIR>/lib/include/jxl "${libjxl_include_dir}/jxl"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <BINARY_DIR>/lib/libjxl_dec.a "${libjxl_library}"
+    BUILD_BYPRODUCTS
+        "${libjxl_library}"
+        "${libjxl_include_dir}/jxl/decode.h"
+        "${libjxl_include_dir}/jxl/jxl_export.h"
+        "${libjxl_include_dir}/jxl/version.h"
+)
+
 string(SHA256 libexpat_build_configuration_sha256
     "${libexpat_sha256}:no-cfi-icall-for-parser-callback-abi-v1")
 string(SUBSTRING "${libexpat_build_configuration_sha256}" 0 12
@@ -1297,6 +1479,9 @@ ExternalProject_Add(llvm_runtimes
         "${sysroot}/usr/lib/libc++abi.a"
         "${sysroot}/usr/lib/libunwind.a"
 )
+
+ExternalProject_Add_StepDependencies(highway configure llvm_runtimes)
+ExternalProject_Add_StepDependencies(libjxl configure llvm_runtimes)
 
 set(compiler_rt_fuzzer_library
     "${sysroot}/usr/lib/linux/libclang_rt.fuzzer-${compiler_rt_arch}.a")
@@ -2118,7 +2303,7 @@ ExternalProject_Add(ca_bundle
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 set(application_dependencies
     ada_idna boringssl ca_bundle curl fortify_headers glib lcms2 libaom
-    libheif libexif libexpat libffi libjpeg_turbo libnsgif libpng libvips
+    highway libheif libexif libexpat libffi libjpeg_turbo libjxl libnsgif libpng libvips
     libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
     ${application_fuzz_dependency})
 set(application_cmake_args
@@ -2221,6 +2406,12 @@ set(application_cmake_args
         "-DMEDIAPROXY_LIBHEIF_CONFIG_HEADER=${libheif_config_header}"
         "-DMEDIAPROXY_LIBHEIF_CMAKE_CACHE=${libheif_binary_directory}/CMakeCache.txt"
         "-DMEDIAPROXY_LIBHEIF_PKGCONFIG=${libheif_pkgconfig}"
+        "-DMEDIAPROXY_HIGHWAY_INCLUDE_DIR=${highway_include_dir}"
+        "-DMEDIAPROXY_HIGHWAY_LIBRARY=${highway_library}"
+        "-DMEDIAPROXY_HIGHWAY_COMPILE_COMMANDS=${highway_binary_directory}/compile_commands.json"
+        "-DMEDIAPROXY_LIBJXL_INCLUDE_DIR=${libjxl_include_dir}"
+        "-DMEDIAPROXY_LIBJXL_LIBRARY=${libjxl_library}"
+        "-DMEDIAPROXY_LIBJXL_COMPILE_COMMANDS=${libjxl_binary_directory}/compile_commands.json"
         "-DMEDIAPROXY_LIBVIPS_INCLUDE_DIR=${libvips_include_dir}"
         "-DMEDIAPROXY_LIBVIPS_LIBRARY=${libvips_library}"
         "-DMEDIAPROXY_LIBVIPS_COMPILE_COMMANDS=${libvips_binary_directory}/compile_commands.json"
@@ -2300,6 +2491,7 @@ if(MEDIAPROXY_ENABLE_SANITIZERS)
                 mediaproxy_mime_fuzzer
                 mediaproxy_apng_fuzzer
                 mediaproxy_ico_fuzzer
+                mediaproxy_jxl_fuzzer
                 mediaproxy_runtime_fuzzer
                 mediaproxy_sanitizer_probe
         INSTALL_COMMAND ""
@@ -2308,6 +2500,7 @@ if(MEDIAPROXY_ENABLE_SANITIZERS)
             "${sanitizer_application_binary_directory}/mediaproxy_mime_fuzzer"
             "${sanitizer_application_binary_directory}/mediaproxy_apng_fuzzer"
             "${sanitizer_application_binary_directory}/mediaproxy_ico_fuzzer"
+            "${sanitizer_application_binary_directory}/mediaproxy_jxl_fuzzer"
             "${sanitizer_application_binary_directory}/mediaproxy_runtime_fuzzer"
             "${sanitizer_application_binary_directory}/mediaproxy_sanitizer_probe")
     add_custom_target(sanitizer-tests DEPENDS sanitizer_application)

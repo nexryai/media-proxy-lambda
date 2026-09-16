@@ -412,6 +412,63 @@
             "reason": "Pinned AVIF container decode and encode for libvips without libde265, HEVC, or HEIC support"
         },
         {
+            "name": "highway",
+            "version": "1.2.0",
+            "revision": "457c891775a7397bdb0376bb1031e6e027af1c48",
+            "url": "https://github.com/google/highway/archive/refs/tags/1.2.0.tar.gz",
+            "sha256": "7e0be78b8318e8bdbf6fa545d2ecb4c90f947df03f7aadc42c1967f019e63343",
+            "license": "Apache-2.0",
+            "buildOptions": [
+                "BUILD_SHARED_LIBS=OFF and HWY_FORCE_STATIC_LIBS=ON",
+                "HWY_ENABLE_CONTRIB=OFF, HWY_ENABLE_EXAMPLES=OFF, and HWY_ENABLE_TESTS=OFF",
+                "HWY_COMPILE_ONLY_SCALAR=1 for architecture-independent decoder behavior without runtime SIMD dispatch",
+                "static libhwy archive and public headers only",
+                "production hardening flags including libc++ hardening, fortify, ThinLTO, trapping CFI, stack protection, zero initialization, hidden visibility, and architecture branch protection",
+                "warnings as errors",
+                "LLVM tools only"
+            ],
+            "securityNotes": [
+                "runtime CPU dispatch and architecture-specific SIMD implementations are excluded from the deployment graph"
+            ],
+            "reason": "Pinned scalar vector primitives required by the decoder-only libjxl build"
+        },
+        {
+            "name": "libjxl",
+            "version": "0.12.0",
+            "revision": "a7a9c787341cf703dede03c2009fa460cae5e5df",
+            "url": "https://github.com/libjxl/libjxl/archive/refs/tags/v0.12.0.tar.gz",
+            "sha256": "03e9be69a30be4011f559da75328b6d7cea8ad921fabfbd551ce10bf45cdc992",
+            "license": "BSD-3-Clause",
+            "buildOptions": [
+                "BUILD_SHARED_LIBS=OFF",
+                "only the jxl_dec target is built and installed; encoder objects and APIs are absent from the deployment link",
+                "upstream language selection raised from C++17 to C++20",
+                "JPEGXL_ENABLE_TRANSCODE_JPEG=OFF and JPEGXL_ENABLE_BOXES=OFF",
+                "tools, developer tools, fuzzers, benchmarks, examples, documentation, man pages, JNI, viewers, plugins, coverage, OpenEXR, sjpeg, and tcmalloc disabled",
+                "pinned system Highway with scalar-only code generation",
+                "Brotli omitted because JPEG reconstruction, box extraction, tools, and developer tools are disabled",
+                "lcms2 is available at configure time but is not linked by the decoder-only target",
+                "single-threaded public decoder use; libjxl thread-runner archive excluded",
+                "production hardening flags including libc++ hardening, fortify, ThinLTO, trapping CFI, stack protection, zero initialization, hidden visibility, and architecture branch protection",
+                "warnings as errors",
+                "LLVM tools only"
+            ],
+            "patches": [
+                {
+                    "path": "cmake/patches/libjxl-0.12.0-decoder-only.patch",
+                    "sha256": "9da724a52b29000018a166f111e139334652f03133bf4fa0755adcc7821a05ff",
+                    "upstreamCommit": null,
+                    "reason": "Skip unused Brotli discovery and enforce the repository's C++20 minimum"
+                }
+            ],
+            "securityNotes": [
+                "0.12.0 includes extensive decoder hardening for integer overflow and underflow, out-of-bounds access, buffer overflow, and null-pointer cases",
+                "input remains capped at 10 MiB and first-party code validates dimensions before allocating the output pixel buffer",
+                "JPEG reconstruction and arbitrary box extraction are compiled out to reduce reachable parsing surface"
+            ],
+            "reason": "Pinned decoder-only JPEG XL implementation for bounded in-memory input conversion"
+        },
+        {
             "name": "libvips",
             "version": "8.18.6",
             "revision": "426af3f44246fce9cfa8dd51a353aa4dfd48c553",

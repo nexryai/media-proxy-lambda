@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <glib.h>
+#include <jxl/decode.h>
 #include <libheif/heif.h>
 #include <libheif/heif_sequences.h>
 #include <mediaproxy/media/vips_runtime.hpp>
@@ -67,6 +68,8 @@ using HeifTrackPtr = std::unique_ptr<heif_track, HeifTrackRelease>;
 using HeifImagePtr = std::unique_ptr<heif_image, HeifImageRelease>;
 using HeifDecodingOptionsPtr =
     std::unique_ptr<heif_decoding_options, HeifDecodingOptionsFree>;
+using JxlDecoderPtr =
+    std::unique_ptr<JxlDecoder, decltype(&JxlDecoderDestroy)>;
 
 constexpr char heif_image_owner_key[] =
     "mediaproxy-avif-sequence-image";
@@ -164,10 +167,118 @@ void release_heif_image(void* image) noexcept
     return cropped;
 }
 
+[[nodiscard]] ImagePtr load_jxl_first_frame(
+    std::span<const std::byte> body)
+{
+    JxlDecoderPtr decoder(JxlDecoderCreate(nullptr), &JxlDecoderDestroy);
+    if (!decoder
+        || JxlDecoderSubscribeEvents(decoder.get(), JXL_DEC_BASIC_INFO
+                | JXL_DEC_COLOR_ENCODING | JXL_DEC_FULL_IMAGE)
+            != JXL_DEC_SUCCESS
+        || JxlDecoderSetUnpremultiplyAlpha(decoder.get(), JXL_TRUE)
+            != JXL_DEC_SUCCESS) {
+        return {};
+    }
+
+    JxlDecoderSetInput(decoder.get(),
+        reinterpret_cast<const std::uint8_t*>(body.data()), body.size());
+    JxlDecoderCloseInput(decoder.get());
+
+    constexpr JxlPixelFormat format{
+        4, JXL_TYPE_UINT8, JXL_NATIVE_ENDIAN, 0};
+    constexpr std::size_t maximum_icc_bytes = 10U * 1024U * 1024U;
+    int width = 0;
+    int height = 0;
+    std::vector<std::uint8_t> pixels;
+    std::vector<std::uint8_t> icc_profile;
+
+    for (;;) {
+        const JxlDecoderStatus status =
+            JxlDecoderProcessInput(decoder.get());
+        if (status == JXL_DEC_BASIC_INFO) {
+            JxlBasicInfo info{};
+            if (JxlDecoderGetBasicInfo(decoder.get(), &info)
+                    != JXL_DEC_SUCCESS
+                || info.xsize
+                    > static_cast<std::uint32_t>(
+                        std::numeric_limits<int>::max())
+                || info.ysize
+                    > static_cast<std::uint32_t>(
+                        std::numeric_limits<int>::max())
+                || !validate_dimensions(static_cast<int>(info.xsize),
+                    static_cast<int>(info.ysize), 1, false)) {
+                return {};
+            }
+            width = static_cast<int>(info.xsize);
+            height = static_cast<int>(info.ysize);
+        } else if (status == JXL_DEC_COLOR_ENCODING) {
+            std::size_t icc_size = 0;
+            if (JxlDecoderGetICCProfileSize(decoder.get(),
+                    JXL_COLOR_PROFILE_TARGET_DATA, &icc_size)
+                == JXL_DEC_SUCCESS) {
+                if (icc_size > maximum_icc_bytes) {
+                    return {};
+                }
+                if (icc_size != 0) {
+                    icc_profile.resize(icc_size);
+                    if (JxlDecoderGetColorAsICCProfile(decoder.get(),
+                            JXL_COLOR_PROFILE_TARGET_DATA,
+                            icc_profile.data(), icc_profile.size())
+                        != JXL_DEC_SUCCESS) {
+                        return {};
+                    }
+                }
+            }
+        } else if (status == JXL_DEC_NEED_IMAGE_OUT_BUFFER) {
+            if (width <= 0 || height <= 0) {
+                return {};
+            }
+            std::size_t output_size = 0;
+            constexpr std::size_t bands = 4;
+            const std::size_t expected_size =
+                static_cast<std::size_t>(width)
+                * static_cast<std::size_t>(height) * bands;
+            if (JxlDecoderImageOutBufferSize(
+                    decoder.get(), &format, &output_size)
+                    != JXL_DEC_SUCCESS
+                || output_size != expected_size) {
+                return {};
+            }
+            pixels.resize(output_size);
+            if (JxlDecoderSetImageOutBuffer(decoder.get(), &format,
+                    pixels.data(), pixels.size())
+                != JXL_DEC_SUCCESS) {
+                return {};
+            }
+        } else if (status == JXL_DEC_FULL_IMAGE) {
+            if (pixels.empty()) {
+                return {};
+            }
+            ImagePtr image(vips_image_new_from_memory_copy(pixels.data(),
+                pixels.size(), width, height, 4, VIPS_FORMAT_UCHAR));
+            if (!image) {
+                return {};
+            }
+            if (!icc_profile.empty()) {
+                vips_image_set_blob_copy(image.get(), VIPS_META_ICC_NAME,
+                    icc_profile.data(), icc_profile.size());
+            }
+            return image;
+        } else if (status == JXL_DEC_SUCCESS
+            || status == JXL_DEC_ERROR
+            || status == JXL_DEC_NEED_MORE_INPUT) {
+            return {};
+        }
+    }
+}
+
 [[nodiscard]] ImagePtr load_image(
     std::span<const std::byte> body,
     MimeType mime)
 {
+    if (mime == MimeType::image_jxl) {
+        return load_jxl_first_frame(body);
+    }
     ImagePtr loaded(vips_image_new_from_buffer(
         body.data(), body.size(), "", "n", -1, nullptr));
     if (loaded) {

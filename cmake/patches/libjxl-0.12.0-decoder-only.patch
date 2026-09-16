@@ -1,0 +1,28 @@
+diff --git a/third_party/CMakeLists.txt b/third_party/CMakeLists.txt
+index 08ab90b..172f9ea 100644
+--- a/third_party/CMakeLists.txt
++++ b/third_party/CMakeLists.txt
+@@ -41,4 +41,9 @@
+ # brotli
+-if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/brotli/c/include/brotli/decode.h" OR
++if (NOT JPEGXL_ENABLE_TRANSCODE_JPEG AND
++    NOT JPEGXL_ENABLE_BOXES AND
++    NOT JPEGXL_ENABLE_TOOLS AND
++    NOT JPEGXL_ENABLE_DEVTOOLS)
++  add_library(brotlicommon INTERFACE)
++elseif (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/brotli/c/include/brotli/decode.h" OR
+     JPEGXL_FORCE_SYSTEM_BROTLI)
+   find_package(Brotli)
+   if (NOT Brotli_FOUND)
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6766da4..698e95c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -274,2 +274,4 @@
+-if ("cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
++if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
++  set(CMAKE_CXX_STANDARD 20)
++elseif ("cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+   set(CMAKE_CXX_STANDARD 17)
+ else()
+   if ("cxx_std_14" IN_LIST CMAKE_CXX_COMPILE_FEATURES)

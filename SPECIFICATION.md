@@ -319,8 +319,10 @@ continues through the static resize and selector-selected encoder path.
 JPEG XL input is decoded by the pinned decoder-only libjxl library. Both bare
 codestream and ISO BMFF container signatures are accepted. JPEG reconstruction
 and box extraction are disabled, and only the first displayed frame is passed
-to the static resize path. JXL never selects a JXL encoder: output remains AVIF
-or WebP under the rules above.
+to the static resize path. Preserve the decoder-output ICC profile when one is
+available, rejecting a generated or embedded profile larger than the 10 MiB
+origin-body limit. JXL never selects a JXL encoder: output remains AVIF or WebP
+under the rules above.
 
 ## 7. General image conversion
 

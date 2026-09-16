@@ -214,6 +214,25 @@ foreach(required_libheif_artifact IN ITEMS
     endif()
 endforeach()
 
+foreach(required_highway_artifact IN ITEMS
+        "${MEDIAPROXY_HIGHWAY_INCLUDE_DIR}/hwy/highway.h"
+        "${MEDIAPROXY_HIGHWAY_LIBRARY}")
+    if(NOT EXISTS "${required_highway_artifact}")
+        message(FATAL_ERROR
+            "Pinned Highway artifact is absent: ${required_highway_artifact}")
+    endif()
+endforeach()
+
+foreach(required_libjxl_artifact IN ITEMS
+        "${MEDIAPROXY_LIBJXL_INCLUDE_DIR}/jxl/decode.h"
+        "${MEDIAPROXY_LIBJXL_INCLUDE_DIR}/jxl/version.h"
+        "${MEDIAPROXY_LIBJXL_LIBRARY}")
+    if(NOT EXISTS "${required_libjxl_artifact}")
+        message(FATAL_ERROR
+            "Pinned libjxl artifact is absent: ${required_libjxl_artifact}")
+    endif()
+endforeach()
+
 foreach(required_libvips_artifact IN ITEMS
         "${MEDIAPROXY_LIBVIPS_INCLUDE_DIR}/vips/vips.h"
         "${MEDIAPROXY_LIBVIPS_INCLUDE_DIR}/vips/version.h"
@@ -370,6 +389,17 @@ set_target_properties(mediaproxy_lcms2 PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LCMS2_LIBRARY}"
 )
 
+add_library(mediaproxy_highway STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_highway PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_HIGHWAY_LIBRARY}"
+)
+add_library(mediaproxy_libjxl STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_libjxl PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_LIBJXL_LIBRARY}"
+    INTERFACE_COMPILE_DEFINITIONS JXL_STATIC_DEFINE
+    INTERFACE_LINK_LIBRARIES "mediaproxy_highway;m"
+)
+
 add_library(mediaproxy_libwebp_sharpyuv STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_libwebp_sharpyuv PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
@@ -465,6 +495,7 @@ target_link_libraries(mediaproxy_media
     PRIVATE
         mediaproxy_hardening
         mediaproxy_warnings
+        mediaproxy_libjxl
         mediaproxy_libvips
 )
 
@@ -521,6 +552,7 @@ target_link_libraries(bootstrap
         mediaproxy_gthread
         mediaproxy_libaom
         mediaproxy_libheif
+        mediaproxy_libjxl
         mediaproxy_pcre2
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
@@ -691,6 +723,7 @@ if(BUILD_TESTING)
             mediaproxy_hardening
             mediaproxy_warnings
             mediaproxy_fuzzing
+            mediaproxy_libjxl
             mediaproxy_libvips
     )
 
@@ -980,6 +1013,11 @@ if(BUILD_TESTING)
         "${CMAKE_SOURCE_DIR}/tests/fuzz/corpus/ico"
         65536
         "${CMAKE_SOURCE_DIR}/tests/fixtures/media/apng")
+    mediaproxy_add_fuzzer(mediaproxy_jxl_fuzzer
+        tests/fuzz/jxl_fuzzer.cpp
+        mediaproxy_media_fuzz
+        "${CMAKE_SOURCE_DIR}/tests/fuzz/corpus/jxl"
+        65536)
     mediaproxy_add_fuzzer(mediaproxy_runtime_fuzzer
         tests/fuzz/runtime_fuzzer.cpp
         mediaproxy_runtime_fuzz
@@ -1285,6 +1323,21 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibheifBuildTest.cmake"
+    )
+    add_test(
+        NAME libjxl-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DAR=${MEDIAPROXY_AR}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DFORTIFY_INCLUDE_DIR=${MEDIAPROXY_FORTIFY_INCLUDE_DIR}"
+            "-DHIGHWAY_ARCHIVE=${MEDIAPROXY_HIGHWAY_LIBRARY}"
+            "-DHIGHWAY_COMPILE_COMMANDS=${MEDIAPROXY_HIGHWAY_COMPILE_COMMANDS}"
+            "-DLIBJXL_ARCHIVE=${MEDIAPROXY_LIBJXL_LIBRARY}"
+            "-DLIBJXL_COMPILE_COMMANDS=${MEDIAPROXY_LIBJXL_COMPILE_COMMANDS}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibjxlBuildTest.cmake"
     )
     add_test(
         NAME libvips-build-policy
