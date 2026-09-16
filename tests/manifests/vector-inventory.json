@@ -301,7 +301,7 @@
             "id": "mime.image-signatures",
             "sections": ["5.1"],
             "suite": "mime",
-            "variants": ["ICO", "BMP", "GIF87a", "GIF89a", "WebP wildcard length", "PNG", "JPEG"]
+            "variants": ["ICO", "BMP", "GIF87a", "GIF89a", "WebP wildcard length", "PNG", "JPEG", "JXL codestream", "JXL container"]
         },
         {
             "id": "mime.non-image-signatures",
@@ -367,7 +367,7 @@
             "id": "media.convertible-mimes",
             "sections": ["6"],
             "suite": "media-classification",
-            "variants": ["AVIF", "ICO", "JPEG", "PNG", "WebP", "GIF", "x-icon", "SVG rejected", "HEIF rejected", "all other MIME rejected"]
+            "variants": ["AVIF", "ICO", "JPEG", "JXL", "PNG", "WebP", "GIF", "x-icon", "SVG rejected", "HEIF rejected", "all other MIME rejected"]
         },
         {
             "id": "media.animation-classification",

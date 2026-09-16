@@ -19,6 +19,7 @@ TEST(MediaClassification, AcceptsExactlySpecifiedMimeTypes)
         MimeType::image_avif,
         MimeType::image_ico,
         MimeType::image_jpeg,
+        MimeType::image_jxl,
         MimeType::image_png,
         MimeType::image_webp,
         MimeType::image_gif,
@@ -116,6 +117,11 @@ TEST(MediaClassification, OtherImagesRemainStaticAndUsePreference)
         MimeType::image_avif, {}, false, OutputFormat::webp);
     ASSERT_TRUE(webp.has_value());
     EXPECT_EQ(*webp, (MediaPlan{false, OutputFormat::webp}));
+
+    const auto jxl = classify_media(
+        MimeType::image_jxl, {}, false, OutputFormat::avif);
+    ASSERT_TRUE(jxl.has_value());
+    EXPECT_EQ(*jxl, (MediaPlan{false, OutputFormat::avif}));
 }
 
 } // namespace

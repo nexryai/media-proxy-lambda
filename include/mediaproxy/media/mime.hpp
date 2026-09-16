@@ -17,6 +17,7 @@ enum class MimeType {
     image_webp,
     image_png,
     image_jpeg,
+    image_jxl,
     application_pdf,
     application_postscript,
     audio_mpeg,

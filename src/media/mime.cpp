@@ -154,6 +154,10 @@ template <std::size_t Size>
     constexpr std::array<unsigned char, 8> png{
         0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
     constexpr std::array<unsigned char, 3> jpeg{0xff, 0xd8, 0xff};
+    constexpr std::array<unsigned char, 2> jxl_codestream{0xff, 0x0a};
+    constexpr std::array<unsigned char, 12> jxl_container{
+        0x00, 0x00, 0x00, 0x0c, 0x4a, 0x58,
+        0x4c, 0x20, 0x0d, 0x0a, 0x87, 0x0a};
     constexpr std::array<unsigned char, 5> ogg{0x4f, 0x67, 0x67, 0x53, 0x00};
     constexpr std::array<unsigned char, 4> webm{0x1a, 0x45, 0xdf, 0xa3};
     constexpr std::array<unsigned char, 4> zip{0x50, 0x4b, 0x03, 0x04};
@@ -182,6 +186,10 @@ template <std::size_t Size>
     }
     if (starts_with(sample, jpeg)) {
         return MimeType::image_jpeg;
+    }
+    if (starts_with(sample, jxl_codestream)
+        || starts_with(sample, jxl_container)) {
+        return MimeType::image_jxl;
     }
     if (starts_with(sample, "%PDF-")) {
         return MimeType::application_pdf;
@@ -290,6 +298,8 @@ std::string_view mime_type_name(MimeType type) noexcept
         return "image/png";
     case MimeType::image_jpeg:
         return "image/jpeg";
+    case MimeType::image_jxl:
+        return "image/jxl";
     case MimeType::application_pdf:
         return "application/pdf";
     case MimeType::application_postscript:

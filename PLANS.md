@@ -242,6 +242,8 @@ fortification, or link/branch protections.
 - **nghttp2**: curl origin HTTP/2 support.
 - **yyjson**: bounded Function URL event parsing and response metadata writing.
 - **libvips C API**: loaders, page handling, resize, and WebP/AVIF conversion.
+- **libjxl decoder API**: first-frame JPEG XL input decode into bounded RGBA;
+  the encoder and libvips JXL loader/saver remain outside the graph.
 - **libwebp**, including mux/demux: WebP and APNG animation assembly.
 
 The AWS SDK and Lambda C++ Runtime Interface Client are not needed. A small
@@ -255,6 +257,9 @@ The pinned graph is expected to include:
 - GLib, GObject, GIO, libffi, PCRE2, libexpat;
 - zlib and libpng;
 - libjpeg-turbo;
+- libjxl's decoder-only archive and scalar Highway dependency for JXL input;
+  JPEG reconstruction, box extraction, tools, examples, and encoder linkage
+  disabled;
 - libheif and libaom for AVIF decode and encode, with libheif's HEVC decoders,
   HEVC encoders, and plugin loading disabled; do not include libde265 or x265,
   and reject HEIF/HEIC input;
@@ -280,8 +285,9 @@ directly into resize and output encoding without an intermediate PNG or
 full-image lifetime copy.
 
 Disable ImageMagick/GraphicsMagick, PDF/PostScript loaders, OpenSlide, TIFF,
-OpenEXR, JPEG XL, FFTW, video support, runtime modules, introspection tools, and
-x265 unless a future specification revision explicitly requires one.
+OpenEXR, libvips JPEG XL integration, FFTW, video support, runtime modules,
+introspection tools, and x265. JPEG XL is decoded only through the pinned
+decoder-only libjxl integration described above.
 
 ### Test-only tools
 

@@ -9,6 +9,8 @@
         {"id": "mime.image-signatures.webp", "sampleHex": "5249464611223344574542505650", "expected": "image/webp"},
         {"id": "mime.image-signatures.png", "sampleHex": "89504e470d0a1a0a", "expected": "image/png"},
         {"id": "mime.image-signatures.jpeg", "sampleHex": "ffd8ff00", "expected": "image/jpeg"},
+        {"id": "mime.image-signatures.jxl-codestream", "sampleHex": "ff0a", "expected": "image/jxl"},
+        {"id": "mime.image-signatures.jxl-container", "sampleHex": "0000000c4a584c200d0a870a", "expected": "image/jxl"},
         {"id": "mime.non-image-signatures.pdf", "sampleUtf8": "%PDF-1.7", "expected": "application/pdf"},
         {"id": "mime.non-image-signatures.postscript", "sampleUtf8": "%!PS-Adobe-3.0", "expected": "application/postscript"},
         {"id": "mime.non-image-signatures.mp3", "sampleUtf8": "ID3", "expected": "audio/mpeg"},

@@ -244,6 +244,8 @@ case-sensitive unless noted.
 | `RIFF` + four wildcard bytes + `WEBPVP` | `image/webp` |
 | `89 50 4e 47 0d 0a 1a 0a` | `image/png` |
 | `ff d8 ff` | `image/jpeg` |
+| `ff 0a` | `image/jxl` |
+| `00 00 00 0c 4a 58 4c 20 0d 0a 87 0a` | `image/jxl` |
 | `%PDF-` | `application/pdf` |
 | `%!PS-Adobe-` | `application/postscript` |
 | `ID3` | `audio/mpeg` |
@@ -283,6 +285,7 @@ Convertible MIME values are exactly:
 - `image/avif`
 - `image/ico`
 - `image/jpeg`
+- `image/jxl`
 - `image/png`
 - `image/webp`
 - `image/gif`
@@ -312,6 +315,12 @@ libheif sequence API to decode only the first frame of the first visual image
 track as RGBA. Keep the request body and decoded libheif plane alive through
 the synchronous libvips pipeline without a PNG intermediate. The result then
 continues through the static resize and selector-selected encoder path.
+
+JPEG XL input is decoded by the pinned decoder-only libjxl library. Both bare
+codestream and ISO BMFF container signatures are accepted. JPEG reconstruction
+and box extraction are disabled, and only the first displayed frame is passed
+to the static resize path. JXL never selects a JXL encoder: output remains AVIF
+or WebP under the rules above.
 
 ## 7. General image conversion
 
@@ -382,7 +391,8 @@ remain unresized when the width limit is non-zero.
 - AVIF: quality 65, effort 1, lossy.
 - A static request for an animation encodes only the first decoded page.
 
-Pin libvips, libwebp, libheif, libaom, and every decoding/resampling dependency.
+Pin libvips, libjxl, libwebp, libheif, libaom, and every
+decoding/resampling dependency.
 Build libheif with only its built-in libaom AV1 decoder and encoder. Disable
 libde265, x265, every other HEVC backend, and plugin loading. An HEIF/HEIC input
 is not convertible even if libheif can parse generic ISO base-media metadata.
