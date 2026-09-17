@@ -109,6 +109,56 @@ template <std::size_t Size>
     return html_prefix(sample, "<!--", false);
 }
 
+[[nodiscard]] bool consume_markup(
+    std::span<const std::byte>& sample,
+    std::string_view prefix,
+    std::string_view suffix) noexcept
+{
+    if (!starts_with(sample, prefix)) {
+        return false;
+    }
+    for (std::size_t offset = prefix.size();
+         offset + suffix.size() <= sample.size(); ++offset) {
+        if (starts_with(sample.subspan(offset), suffix)) {
+            sample = skip_ascii_whitespace(
+                sample.subspan(offset + suffix.size()));
+            return true;
+        }
+    }
+    sample = {};
+    return true;
+}
+
+[[nodiscard]] bool is_svg(std::span<const std::byte> sample) noexcept
+{
+    constexpr std::array<unsigned char, 3> utf8_bom{0xef, 0xbb, 0xbf};
+    if (starts_with(sample, utf8_bom)) {
+        sample = sample.subspan(utf8_bom.size());
+    }
+    sample = skip_ascii_whitespace(sample);
+    for (;;) {
+        if (consume_markup(sample, "<!--", "-->")) {
+            if (sample.empty()) {
+                return false;
+            }
+            continue;
+        }
+        if (consume_markup(sample, "<?", "?>")) {
+            if (sample.empty()) {
+                return false;
+            }
+            continue;
+        }
+        break;
+    }
+
+    if (!starts_with(sample, "<svg") || sample.size() <= 4) {
+        return false;
+    }
+    const unsigned char boundary = octet(sample[4]);
+    return ascii_whitespace(boundary) || boundary == '>' || boundary == '/';
+}
+
 [[nodiscard]] bool riff_type(
     std::span<const std::byte> sample,
     std::string_view type) noexcept
@@ -221,6 +271,9 @@ template <std::size_t Size>
     if (starts_with(sample, wasm)) {
         return MimeType::application_wasm;
     }
+    if (is_svg(sample)) {
+        return MimeType::image_svg_xml;
+    }
     if (is_html(sample)) {
         return MimeType::text_html_utf8;
     }
@@ -300,6 +353,8 @@ std::string_view mime_type_name(MimeType type) noexcept
         return "image/jpeg";
     case MimeType::image_jxl:
         return "image/jxl";
+    case MimeType::image_svg_xml:
+        return "image/svg+xml";
     case MimeType::application_pdf:
         return "application/pdf";
     case MimeType::application_postscript:

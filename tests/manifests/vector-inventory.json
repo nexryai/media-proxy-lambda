@@ -351,13 +351,15 @@
             ]
         },
         {
-            "id": "mime.overrides",
-            "sections": ["5.2"],
+            "id": "mime.svg-and-overrides",
+            "sections": ["5.1", "5.2"],
             "suite": "mime",
             "variants": [
-                "exact SVG origin type does not override plain text",
-                "SVG parameters do not override plain text",
-                "SVG case variant does not override plain text",
+                "direct SVG root signature",
+                "SVG after XML declaration",
+                "SVG after UTF-8 BOM and comment",
+                "SVG root name is case-sensitive and boundary checked",
+                "DOCTYPE prefix is not skipped",
                 "exact ftypavif at bytes 4 through 11 overrides octet stream",
                 "other AVIF or HEIF brands do not override and HEIF remains unsupported",
                 "override precondition MIME must match"
@@ -367,7 +369,7 @@
             "id": "media.convertible-mimes",
             "sections": ["6"],
             "suite": "media-classification",
-            "variants": ["AVIF", "ICO", "JPEG", "JXL", "PNG", "WebP", "GIF", "x-icon", "SVG rejected", "HEIF rejected", "all other MIME rejected"]
+            "variants": ["AVIF", "ICO", "JPEG", "JXL", "SVG", "PNG", "WebP", "GIF", "x-icon", "HEIF rejected", "all other MIME rejected"]
         },
         {
             "id": "media.animation-classification",
@@ -410,6 +412,24 @@
                 "WebP selector remains WebP",
                 "AVIF selector remains AVIF",
                 "malformed JXL rejected"
+            ]
+        },
+        {
+            "id": "svg.bounded-static-render",
+            "sections": ["5", "6", "7.1", "7.4"],
+            "suite": "media-golden",
+            "variants": [
+                "static vector and fixed-font text render",
+                "WebP selector remains WebP",
+                "AVIF selector remains AVIF",
+                "premultiplied RGBA is converted to unassociated alpha",
+                "DOCTYPE rejected",
+                "absolute relative and URL resources cannot be read",
+                "bounded embedded raster and nested SVG data URLs",
+                "data URL count and decoded-byte limits",
+                "100000-node limit",
+                "oversized intrinsic canvas rejected",
+                "malformed SVG rejected"
             ]
         },
         {

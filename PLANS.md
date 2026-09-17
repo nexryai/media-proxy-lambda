@@ -244,6 +244,8 @@ fortification, or link/branch protections.
 - **libvips C API**: loaders, page handling, resize, and WebP/AVIF conversion.
 - **libjxl decoder API**: first-frame JPEG XL input decode into bounded RGBA;
   the encoder and libvips JXL loader/saver remain outside the graph.
+- **resvg through a first-party Rust C-ABI shim**: bounded static SVG parsing
+  and RGBA rendering with external resource resolution disabled.
 - **libwebp**, including mux/demux: WebP and APNG animation assembly.
 
 The AWS SDK and Lambda C++ Runtime Interface Client are not needed. A small
@@ -265,9 +267,10 @@ The pinned graph is expected to include:
   and reject HEIF/HEIC input;
 - nsgif or giflib, selected and pinned with libvips;
 - Highway or ORC when enabled in the pinned libvips graph;
-- SVG is intentionally unsupported; keep librsvg, Cairo, pixman, libxml2,
-  FreeType, fontconfig, HarfBuzz, Pango, and fribidi outside the dependency
-  graph unless a future specification revision restores SVG input;
+- resvg, usvg, tiny-skia, the selected Cargo dependency closure, a pinned Rust
+  musl standard-library component, and the bundled M PLUS 1p font for SVG;
+  keep librsvg, Cairo, pixman, libxml2, FreeType, fontconfig, Pango, and fribidi
+  outside the graph;
 - lcms2 and libexif if enabled for the golden media graph;
 - Ada URL's standalone IDNA translation unit, built without the full URL parser
   or simdutf, for pinned Unicode 17.0.0 UTS #46 nontransitional conversion;
@@ -285,9 +288,9 @@ directly into resize and output encoding without an intermediate PNG or
 full-image lifetime copy.
 
 Disable ImageMagick/GraphicsMagick, PDF/PostScript loaders, OpenSlide, TIFF,
-OpenEXR, libvips JPEG XL integration, FFTW, video support, runtime modules,
-introspection tools, and x265. JPEG XL is decoded only through the pinned
-decoder-only libjxl integration described above.
+OpenEXR, libvips JPEG XL and SVG integrations, FFTW, video support, runtime
+modules, introspection tools, and x265. JPEG XL and SVG are decoded only
+through the pinned direct integrations described above.
 
 ### Test-only tools
 
@@ -444,9 +447,8 @@ Exit criteria:
 
 Deliverables:
 
-- Implement the 512-byte signature priority, binary fallback, deliberate
-  absence of an SVG override, and exact AVIF brand check from specification
-  section 5.
+- Implement the 512-byte signature priority, bounded SVG root recognition,
+  binary fallback, and exact AVIF brand check from specification section 5.
 - Initialize libvips once with concurrency/cache settings from section 7.
 - Implement supported MIME classification, all-pages loading, ICO first-entry
   fallback, AVIF-sequence first-frame fallback, 7680-by-4320 rejection
@@ -561,11 +563,13 @@ libvips, libwebp, libheif, libaom, SIMD choices, and profiles can alter bytes or
 pixels. The lock and golden manifest, not a distribution's current packages,
 define the release graph.
 
-### 3. SVG is intentionally outside the format set
+### 3. SVG must not reopen filesystem or network access
 
-Do not add librsvg, Cairo, pixman, font or text-rendering libraries as dormant
-future support. The MIME vectors must prove that even an exact
-`image/svg+xml` origin type does not activate an SVG loader.
+Use the first-party resvg shim rather than a libvips SVG loader. Disable string
+href resolution, system-font discovery, memory-mapped fonts, and SVGZ. Keep
+librsvg, Cairo, pixman, libxml2, FreeType, fontconfig, Pango, and fribidi out of
+the graph. Test absolute paths, relative paths, URLs, data-URL budgets,
+DOCTYPEs, malformed XML, node limits, and oversized canvases.
 
 ### 4. Static plugin registration can fail silently
 

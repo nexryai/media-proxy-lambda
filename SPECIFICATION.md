@@ -8,11 +8,11 @@ process must not require a legacy source tree or a separately downloaded
 reference implementation. Historical projects may be cited as provenance, but
 the behavior to implement is completely stated here.
 
-The intentional media changes in the initial C++ release are the APNG
-`BLEND_OP_OVER` fix in section 8 and removal of SVG input support. All other
-unrelated legacy behavior, including unusual resize decisions, fixed-offset
-format checks, APNG first-frame handling, and response content-type selection,
-remains part of this contract.
+The intentional media changes in the C++ release are the APNG
+`BLEND_OP_OVER` fix in section 8 and the bounded resvg-based SVG input path in
+section 6. All other unrelated legacy behavior, including unusual resize
+decisions, fixed-offset format checks, APNG first-frame handling, and response
+content-type selection, remains part of this contract.
 
 Where this document labels a rule as a security exception, the safer rule is
 normative even if a historical implementation accepted more input.
@@ -258,10 +258,17 @@ case-sensitive unless noted.
 | `00 61 73 6d` | `application/wasm` |
 
 Before binary fallback, recognize the standard HTML leading tags after
-skipping ASCII whitespace, `<?xml` as `text/xml; charset=utf-8`, Unicode BOMs
-as their corresponding `text/plain` charset, common MP4 `ftyp` brands, and
-standard TrueType/OpenType/WOFF/EOT font signatures. These signatures must be
-captured in unit vectors so non-image input remains rejected consistently.
+skipping ASCII whitespace. Before that HTML check, recognize SVG as follows:
+optionally consume a UTF-8 BOM, skip ASCII whitespace, consume zero or more
+complete XML processing instructions or comments with intervening ASCII
+whitespace, and require the next bytes to be lowercase `<svg` followed by
+ASCII whitespace, `>`, or `/`. The complete prefix and root-name boundary must
+occur within the 512-byte sample. Do not skip a DOCTYPE. Uppercase or prefixed
+root names are not SVG signatures. Then recognize `<?xml` as
+`text/xml; charset=utf-8`, Unicode BOMs as their corresponding `text/plain`
+charset, common MP4 `ftyp` brands, and standard TrueType/OpenType/WOFF/EOT font
+signatures. These signatures must be captured in unit vectors so non-image
+input remains rejected consistently.
 
 If no signature matches, return `text/plain; charset=utf-8` when the sample has
 no binary control byte; otherwise return `application/octet-stream`. Binary
@@ -269,9 +276,8 @@ control bytes are `0x00..0x08`, `0x0b`, `0x0e..0x1a`, and `0x1c..0x1f`.
 
 ### 5.2 Overrides
 
-- SVG has no origin `Content-Type` override. SVG-looking text remains
-  `text/plain; charset=utf-8`, including when the origin value is exactly
-  `image/svg+xml`, and is rejected as unsupported media.
+- SVG is selected only by the body signature above. Origin `Content-Type` does
+  not override an absent or malformed SVG signature.
 - If sniffing returns `application/octet-stream` and bytes 4 through 11 are
   exactly `ftypavif`, use `image/avif`.
 - No analogous override exists for other AVIF brands or HEIF. HEIF/HEIC is
@@ -286,6 +292,7 @@ Convertible MIME values are exactly:
 - `image/ico`
 - `image/jpeg`
 - `image/jxl`
+- `image/svg+xml`
 - `image/png`
 - `image/webp`
 - `image/gif`
@@ -305,9 +312,8 @@ AVIF only when its selector prefers AVIF; otherwise it uses WebP. Animated
 output remains WebP even when the successful response header is selected as
 `image/avif` under section 2.4.
 
-Load images from the in-memory body with all pages enabled. No loader may make
-network requests or read arbitrary external files. No SVG loader or rendering
-stack is present.
+Load raster images from the in-memory body with all pages enabled. No loader
+may make network requests or read arbitrary external files.
 
 An AVIF image sequence remains non-animated under the classification above. If
 it has no top-level primary image for the libvips HEIF loader, use the pinned
@@ -323,6 +329,33 @@ to the static resize path. Preserve the decoder-output ICC profile when one is
 available, rejecting a generated or embedded profile larger than the 10 MiB
 origin-body limit. JXL never selects a JXL encoder: output remains AVIF or WebP
 under the rules above.
+
+SVG input is parsed and rendered by the pinned resvg library through a
+first-party Rust C-ABI shim. Only static SVG is supported; scripts, events,
+animations, SVGZ, and DOCTYPE declarations are unsupported. Reject an input
+containing the exact ASCII sequence `<!DOCTYPE` anywhere in the body before
+parsing. The shim must construct its own usvg options for every parse. Its
+string href resolver always returns no resource, so an SVG cannot read a URL,
+absolute path, relative path, or other external resource. Its data-URL resolver
+accepts resvg-supported embedded PNG, JPEG, GIF, WebP, and nested SVG content,
+but skips a resource after either 128 decoded data URLs or 10 MiB of aggregate
+decoded data. These skipped resources do not make an otherwise valid document
+fail.
+
+Enable resvg text conversion without system-font or memory-mapped-font
+discovery. Load only the pinned M PLUS 1p Regular font from the resvg source
+archive into an in-memory font database and map all generic default families
+to it. Missing glyphs follow resvg's fixed-font fallback behavior. Limit the
+parsed XML document to 100,000 nodes.
+
+Use resvg's intrinsic size rounded to its integer canvas size. Validate that
+size against the same 7680-by-4320 static-image limits before allocating the
+checked `width * height * 4` buffer. Render once at that intrinsic canvas size.
+resvg produces premultiplied RGBA8888; convert each nonzero-alpha channel to
+unassociated alpha as `min(255, (channel * 255 + alpha / 2) / alpha)`, force
+RGB to zero when alpha is zero, and pass the resulting sRGB RGBA image into the
+unchanged static resize and selector-selected AVIF/WebP encoder path. SVG never
+selects an SVG encoder.
 
 ## 7. General image conversion
 

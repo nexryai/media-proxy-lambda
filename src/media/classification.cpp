@@ -34,6 +34,7 @@ bool is_convertible_mime(MimeType mime) noexcept
     case MimeType::image_ico:
     case MimeType::image_jpeg:
     case MimeType::image_jxl:
+    case MimeType::image_svg_xml:
     case MimeType::image_png:
     case MimeType::image_webp:
     case MimeType::image_gif:
