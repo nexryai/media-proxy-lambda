@@ -26,7 +26,7 @@ std::vector<std::byte> ReadFixture(const char* name)
     return {begin, begin + bytes.size()};
 }
 
-TEST(ApngClassification, PreservesFixedOffsetChecks)
+TEST(ApngClassification, ScansChunkBoundaries)
 {
     EXPECT_EQ(classify_apng(ReadFixture("over-none.png")),
         ApngClassification::animated);
@@ -36,7 +36,7 @@ TEST(ApngClassification, PreservesFixedOffsetChecks)
         ApngClassification::not_apng);
     EXPECT_EQ(classify_apng(
                   ReadFixture("animation-control-other-offset.png")),
-        ApngClassification::not_apng);
+        ApngClassification::animated);
 }
 
 TEST(ApngParser, ReadsCanvasAnimationAndFrameControls)

@@ -9,9 +9,9 @@ reference implementation. Historical projects may be cited as provenance, but
 the behavior to implement is completely stated here.
 
 The intentional media changes in the C++ release are the APNG
-`BLEND_OP_OVER` fix in section 8 and the bounded resvg-based SVG input path in
-section 6. All other unrelated legacy behavior, including unusual resize
-decisions, fixed-offset format checks, APNG first-frame handling, and response
+`BLEND_OP_OVER` and chunk-classification fixes in section 8 and the bounded
+resvg-based SVG input path in section 6. All other unrelated legacy behavior,
+including unusual resize decisions, APNG first-frame handling, and response
 content-type selection, remains part of this contract.
 
 Where this document labels a rule as a security exception, the safer rule is
@@ -449,11 +449,16 @@ An input is treated as APNG only when:
 
 - it starts with the PNG signature; and
 - total length is greater than 41; and
-- bytes 37 through 40 are exactly `acTL`.
+- a bounded PNG chunk scan finds an `acTL` chunk before `IEND`.
 
-Palette use is detected only when total length is greater than 64 and bytes 57
-through 60 are exactly `PLTE`. Do not replace either fixed-offset check with a
-general chunk scan in the compatibility path.
+The classifier advances only across complete length/type/data/CRC-sized chunk
+bounds and rejects a truncated or over-limit chunk as non-APNG. It does not
+interpret bytes inside ancillary payloads as chunk types; full CRC, sequence,
+frame, and rectangle validation remains the responsibility of the APNG parser.
+
+Palette use is detected when the same scan finds a `PLTE` chunk before the
+first `IDAT` chunk. Ancillary chunks such as `pHYs`, `iCCP`, and `tEXt` may
+occur between `IHDR` and `acTL` without changing APNG classification.
 
 A palette APNG is converted as a static image through section 7, so
 `static=1` and AVIF preference take effect normally. A non-palette APNG always
@@ -544,6 +549,7 @@ The fixture matrix must include:
 - frame rectangles touching each canvas edge and invalid out-of-bounds frames;
 - the retained first-callback omission and non-cumulative timestamp rule;
 - palette APNG static fallback;
+- APNG classification with ancillary chunks before `acTL`;
 - `static=1` on non-palette APNG still producing animated WebP;
 - an AVIF-preferring selector producing WebP bytes with the compatibility
   response content type;

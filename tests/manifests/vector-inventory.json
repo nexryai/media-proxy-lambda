@@ -509,16 +509,16 @@
             ]
         },
         {
-            "id": "apng.fixed-offset-detection",
+            "id": "apng.chunk-scan-detection",
             "sections": ["8.1"],
             "suite": "apng-parser",
             "variants": [
-                "PNG signature plus acTL at bytes 37 through 40",
+                "PNG signature plus bounded chunk scan finding acTL before IEND",
                 "length exactly 41 is not APNG",
-                "acTL at other offset is not compatibility APNG",
-                "PLTE at bytes 57 through 60 with length above 64",
-                "length exactly 64 is non-palette",
-                "PLTE at other offset is ignored"
+                "ancillary chunks before acTL are accepted",
+                "PLTE before IDAT selects palette fallback",
+                "PLTE after IDAT does not select palette fallback",
+                "truncated or over-limit chunks are not APNG"
             ]
         },
         {

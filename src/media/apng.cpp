@@ -74,11 +74,46 @@ constexpr std::size_t maximum_chunk_length = 10U * 1024U * 1024U;
 ApngClassification classify_apng(
     std::span<const std::byte> body) noexcept
 {
-    if (body.size() <= 41 || !has_png_signature(body)
-        || !tag_at(body, 37, "acTL")) {
+    if (body.size() <= 41 || !has_png_signature(body)) {
         return ApngClassification::not_apng;
     }
-    return body.size() > 64 && tag_at(body, 57, "PLTE")
+
+    bool has_animation_control = false;
+    bool has_palette = false;
+    bool saw_image_data = false;
+    bool saw_end = false;
+    std::size_t offset = png_signature.size();
+    while (offset < body.size()) {
+        constexpr std::size_t chunk_overhead = 12;
+        if (body.size() - offset < chunk_overhead) {
+            return ApngClassification::not_apng;
+        }
+        const std::size_t length = read_u32(body, offset);
+        if (length > maximum_chunk_length
+            || length > body.size() - offset - chunk_overhead) {
+            return ApngClassification::not_apng;
+        }
+
+        const std::size_t type_offset = offset + 4;
+        if (tag_at(body, type_offset, "acTL")) {
+            has_animation_control = true;
+        } else if (!saw_image_data && tag_at(body, type_offset, "PLTE")) {
+            has_palette = true;
+        } else if (tag_at(body, type_offset, "IDAT")) {
+            saw_image_data = true;
+        }
+
+        offset += chunk_overhead + length;
+        if (tag_at(body, type_offset, "IEND")) {
+            saw_end = true;
+            break;
+        }
+    }
+
+    if (!saw_end || !has_animation_control) {
+        return ApngClassification::not_apng;
+    }
+    return has_palette
         ? ApngClassification::palette
         : ApngClassification::animated;
 }

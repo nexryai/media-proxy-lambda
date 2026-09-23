@@ -86,6 +86,21 @@ TEST_F(MediaConversionTest, PaletteApngUsesStaticPreferredOutput)
     EXPECT_EQ(vips_image_get_height(decoded.get()), 2);
 }
 
+TEST_F(MediaConversionTest, ApngWithAncillaryChunksRemainsAnimated)
+{
+    const auto result = convert_media(
+        ReadFixture("animation-control-other-offset.png"),
+        MimeType::image_png, false, OutputFormat::avif,
+        ImageDimensions{320, 320});
+    ASSERT_TRUE(result) << static_cast<int>(result.error) << ": "
+                        << vips_error_buffer();
+    EXPECT_EQ(result.encoded_format, OutputFormat::webp);
+    const ImagePtr decoded = LoadAll(result.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    EXPECT_EQ(vips_image_get_width(decoded.get()), 4);
+    EXPECT_EQ(vips_image_get_height(decoded.get()), 4);
+}
+
 TEST_F(MediaConversionTest, RejectsUnsupportedMime)
 {
     EXPECT_FALSE(convert_media({}, MimeType::text_plain_utf8, false,

@@ -111,7 +111,8 @@ contains every required operation.
 
 Do not change these unrelated APNG behaviors while fixing blend:
 
-- fixed-offset APNG and palette detection;
+- chunk-boundary APNG and palette detection, including ancillary chunks before
+  `acTL`;
 - static fallback for a palette APNG;
 - non-palette APNG ignoring `static=1` and route resize limits;
 - first callback used as the base and omitted from output;
@@ -475,7 +476,8 @@ Deliverables:
 
 - Parse PNG/APNG chunks, CRCs, frame rectangles, delay fields, blend, and
   disposal operations into bounded first-party structures.
-- Preserve fixed-offset entry/palette checks and the palette static fallback.
+- Scan bounded PNG chunks for `acTL` and pre-`IDAT` `PLTE`, including ancillary
+  chunks before `acTL`, while preserving the palette static fallback.
 - Maintain full RGBA `canvas` and `previousCanvas` buffers at IHDR dimensions.
 - Implement offset `SOURCE` and alpha-correct `OVER` composition before resize.
 - Apply disposal after frame capture: keep, clear only frame rectangle, or

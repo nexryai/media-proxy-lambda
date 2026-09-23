@@ -210,6 +210,30 @@ function validateChunkStream(data) {
     }
 }
 
+function classifyApngChunks(data) {
+    let offset = signature.length;
+    let hasAnimationControl = false;
+    let hasPaletteChunk = false;
+    let sawImageData = false;
+    while (offset < data.length) {
+        const length = data.readUInt32BE(offset);
+        const end = offset + 12 + length;
+        const type = data.toString("ascii", offset + 4, offset + 8);
+        if (type === "acTL") {
+            hasAnimationControl = true;
+        } else if (type === "PLTE" && !sawImageData) {
+            hasPaletteChunk = true;
+        } else if (type === "IDAT") {
+            sawImageData = true;
+        }
+        offset = end;
+        if (type === "IEND") {
+            break;
+        }
+    }
+    return {hasAnimationControl, hasPaletteChunk};
+}
+
 function expectedFrames(fixture) {
     if (fixture.palette !== null && fixture.palette !== undefined) {
         return [];
@@ -395,7 +419,7 @@ fixtures.push({
 });
 
 fixtures.push({
-    id: "apng.fixed-offset-detection.other-offset",
+    id: "apng.chunk-scan-detection.ancillary-before-actl",
     file: "animation-control-other-offset.png",
     width: 4,
     height: 4,
@@ -475,7 +499,7 @@ malformedFixtures.push({
     data: Buffer.concat([signature, u32(0xffffffff), Buffer.from("acTL", "ascii")])
 });
 malformedFixtures.push({
-    id: "apng.fixed-offset-detection.length-41",
+    id: "apng.chunk-scan-detection.length-41",
     file: "detection-length-41.png",
     expectedError: "not-apng-length",
     data: crcSource.subarray(0, 41)
@@ -492,18 +516,17 @@ for (const fixture of fixtures) {
     const data = buildApng(fixture);
     validateChunkStream(data);
     writeFileSync(new URL(fixture.file, outputDirectory), data);
-    const fixedOffsetApng = data.length > 41 && data.subarray(37, 41).equals(Buffer.from("acTL"));
-    const fixedOffsetPalette = data.length > 64 && data.subarray(57, 61).equals(Buffer.from("PLTE"));
+    const {hasAnimationControl, hasPaletteChunk} = classifyApngChunks(data);
     manifest.fixtures.push({
         id: fixture.id,
         file: fixture.file,
         inputSha256: sha256(data),
         canvas: {width: fixture.width, height: fixture.height},
-        fixedOffsetApng,
-        fixedOffsetPalette,
-        expectedClassification: !fixedOffsetApng ? "not-apng" : fixedOffsetPalette ? "apng-palette" : "apng-nonpalette",
+        hasAnimationControl,
+        hasPaletteChunk,
+        expectedClassification: !hasAnimationControl ? "not-apng" : hasPaletteChunk ? "apng-palette" : "apng-nonpalette",
         inputLoopCount: fixture.plays ?? 0,
-        emittedFrames: fixedOffsetApng && !fixedOffsetPalette ? expectedFrames(fixture) : []
+        emittedFrames: hasAnimationControl && !hasPaletteChunk ? expectedFrames(fixture) : []
     });
 }
 
@@ -526,7 +549,6 @@ for (const fixture of malformedFixtures) {
         id: fixture.id,
         file: fixture.file,
         inputSha256: sha256(fixture.data),
-        fixedOffsetApng: fixture.data.length > 41 && fixture.data.subarray(37, 41).equals(Buffer.from("acTL")),
         expectedError: fixture.expectedError
     });
 }

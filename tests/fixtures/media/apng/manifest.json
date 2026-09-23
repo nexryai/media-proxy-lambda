@@ -11,8 +11,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -38,8 +38,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -65,8 +65,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -92,8 +92,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -119,8 +119,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -146,8 +146,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -173,8 +173,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -200,8 +200,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -227,8 +227,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -254,8 +254,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -293,8 +293,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 7,
             "emittedFrames": [
@@ -326,8 +326,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -347,8 +347,8 @@
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": false,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
@@ -361,18 +361,25 @@
             ]
         },
         {
-            "id": "apng.fixed-offset-detection.other-offset",
+            "id": "apng.chunk-scan-detection.ancillary-before-actl",
             "file": "animation-control-other-offset.png",
             "inputSha256": "62d002bf1ecb6163339ac630626f1e7d53d3f01c09ffe98f7e5c77001c9acb63",
             "canvas": {
                 "width": 4,
                 "height": 4
             },
-            "fixedOffsetApng": false,
-            "fixedOffsetPalette": false,
-            "expectedClassification": "not-apng",
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
+            "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
-            "emittedFrames": []
+            "emittedFrames": [
+                {
+                    "callbackNumber": 1,
+                    "timestampMs": 200,
+                    "displayedRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7",
+                    "nextCanvasRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7"
+                }
+            ]
         },
         {
             "id": "apng.branching.palette-static",
@@ -382,8 +389,8 @@
                 "width": 2,
                 "height": 2
             },
-            "fixedOffsetApng": true,
-            "fixedOffsetPalette": true,
+            "hasAnimationControl": true,
+            "hasPaletteChunk": true,
             "expectedClassification": "apng-palette",
             "inputLoopCount": 0,
             "emittedFrames": []
@@ -392,63 +399,54 @@
             "id": "apng.chunk-validation.out-of-bounds-right",
             "file": "invalid-out-of-bounds-right.png",
             "inputSha256": "af373dccac48d271ba71c752df5f9f8ca339e8b3aac8a432eb900a914fc73b30",
-            "fixedOffsetApng": true,
             "expectedError": "frame-rectangle"
         },
         {
             "id": "apng.chunk-validation.out-of-bounds-bottom",
             "file": "invalid-out-of-bounds-bottom.png",
             "inputSha256": "4373b9b41db0b82bceb7b575225b7c12bb5eeecaad446a1bcf848cf1362531ee",
-            "fixedOffsetApng": true,
             "expectedError": "frame-rectangle"
         },
         {
             "id": "apng.chunk-validation.zero-denominator",
             "file": "invalid-zero-denominator.png",
             "inputSha256": "7b7d7e1e789e67e12bb1bf9ca3a69b59e0376a6cacb0f4577b307d58c503eda2",
-            "fixedOffsetApng": true,
             "expectedError": "delay-denominator"
         },
         {
             "id": "apng.chunk-validation.unknown-blend",
             "file": "invalid-unknown-blend.png",
             "inputSha256": "779d7a5506a4adb57ed9ae089a4e2164a194c8687d003ccc98d742eaeec8f1c7",
-            "fixedOffsetApng": true,
             "expectedError": "blend-operation"
         },
         {
             "id": "apng.chunk-validation.unknown-dispose",
             "file": "invalid-unknown-dispose.png",
             "inputSha256": "e4f92f7682e4c1b73fa1fe1cdb916c014b36ca571bfb8937b635adb5834c34a3",
-            "fixedOffsetApng": true,
             "expectedError": "dispose-operation"
         },
         {
             "id": "apng.chunk-validation.crc-mismatch",
             "file": "invalid-crc.png",
             "inputSha256": "6e763b05844f37485dc9030e108fd04ba2e72b69a532c03b636f0f54bc3e02ca",
-            "fixedOffsetApng": true,
             "expectedError": "crc"
         },
         {
             "id": "apng.chunk-validation.truncated",
             "file": "invalid-truncated.png",
             "inputSha256": "0b0defacdf4f7e05afb0b7f1a1bd19c552594b8006a43694f0ed637dc4976fe6",
-            "fixedOffsetApng": true,
             "expectedError": "truncated-chunk"
         },
         {
             "id": "apng.chunk-validation.length-overflow",
             "file": "invalid-length-overflow.png",
             "inputSha256": "a2d535a6285cf4028bcdddd0e641ed0fa6fbde0298aa0101fb8cdb50c790ec92",
-            "fixedOffsetApng": false,
             "expectedError": "chunk-length"
         },
         {
-            "id": "apng.fixed-offset-detection.length-41",
+            "id": "apng.chunk-scan-detection.length-41",
             "file": "detection-length-41.png",
             "inputSha256": "6b04fc28fa3f5daaff81c1bdedc647aa85f7d97f3c8ea3c6fabc02ff47a0ec07",
-            "fixedOffsetApng": false,
             "expectedError": "not-apng-length"
         }
     ]
