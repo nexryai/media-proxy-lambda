@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -eu
+
+: "${MEDIAPROXY_RUSTC:?MEDIAPROXY_RUSTC is required}"
+: "${MEDIAPROXY_RUST_SYSROOT:?MEDIAPROXY_RUST_SYSROOT is required}"
+
+exec "${MEDIAPROXY_RUSTC}" --sysroot "${MEDIAPROXY_RUST_SYSROOT}" "$@"

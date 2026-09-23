@@ -104,7 +104,8 @@ foreach(dependency_index RANGE 0 ${dependency_last})
     if(scope_error)
         set(dependency_scope runtime)
     endif()
-    if(dependency_scope STREQUAL "test")
+    if(dependency_scope STREQUAL "test"
+            OR dependency_scope STREQUAL "resolution")
         continue()
     elseif(NOT dependency_scope STREQUAL "runtime")
         message(FATAL_ERROR
@@ -155,7 +156,7 @@ foreach(dependency_index RANGE 0 ${dependency_last})
     set(license_destination
         "${OUTPUT_DIRECTORY}/licenses/${dependency_name}")
     file(MAKE_DIRECTORY "${license_destination}")
-    if(dependency_source_name MATCHES "\\.(tar\\..*|tgz|zip)$")
+    if(dependency_source_name MATCHES "\\.(tar\\..*|tgz|zip|crate)$")
         execute_process(
             COMMAND "${CMAKE_COMMAND}" -E tar tf "${dependency_source}"
             RESULT_VARIABLE archive_list_result
@@ -171,7 +172,8 @@ foreach(dependency_index RANGE 0 ${dependency_last})
             get_filename_component(archive_basename "${archive_entry}" NAME)
             if(archive_basename MATCHES
                     "^(LICENSE([.-].*)?|COPYING([.-].*)?|COPYRIGHT([.-].*)?|NOTICE([.-].*)?|PATENTS([.-].*)?)$"
-                    OR archive_entry MATCHES "/LICENSES/[^/]+$")
+                    OR archive_entry MATCHES "/LICENSES/[^/]+$"
+                    OR archive_entry MATCHES "/MPLUS1p-LICENSE-OFL\\.txt$")
                 list(APPEND license_entries "${archive_entry}")
             endif()
         endforeach()

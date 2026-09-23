@@ -88,6 +88,38 @@ set_source_files_properties("${ca_bundle_object}" PROPERTIES
     EXTERNAL_OBJECT TRUE
     GENERATED TRUE)
 
+foreach(required_resvg_artifact IN ITEMS
+        "${MEDIAPROXY_RESVG_LIBRARY}"
+        "${MEDIAPROXY_SVG_FONT}")
+    if(NOT EXISTS "${required_resvg_artifact}")
+        message(FATAL_ERROR
+            "Pinned resvg artifact is absent: ${required_resvg_artifact}")
+    endif()
+endforeach()
+file(SHA256 "${MEDIAPROXY_SVG_FONT}" actual_svg_font_sha256)
+if(NOT actual_svg_font_sha256 STREQUAL MEDIAPROXY_SVG_FONT_SHA256)
+    message(FATAL_ERROR "Pinned SVG font hash does not match the lock")
+endif()
+get_filename_component(svg_font_directory "${MEDIAPROXY_SVG_FONT}" DIRECTORY)
+get_filename_component(svg_font_name "${MEDIAPROXY_SVG_FONT}" NAME)
+set(svg_font_object "${CMAKE_CURRENT_BINARY_DIR}/mediaproxy-svg-font.o")
+add_custom_command(
+    OUTPUT "${svg_font_object}"
+    COMMAND "${MEDIAPROXY_OBJCOPY}"
+        --input-target=binary
+        "--output-target=${ca_bundle_object_format}"
+        "--binary-architecture=${ca_bundle_object_architecture}"
+        --new-symbol-visibility=hidden
+        "--rename-section=.data=.rodata.mediaproxy_svg_font,alloc,load,readonly,data,contents"
+        "${svg_font_name}"
+        "${svg_font_object}"
+    DEPENDS "${MEDIAPROXY_SVG_FONT}"
+    WORKING_DIRECTORY "${svg_font_directory}"
+    VERBATIM)
+set_source_files_properties("${svg_font_object}" PROPERTIES
+    EXTERNAL_OBJECT TRUE
+    GENERATED TRUE)
+
 foreach(required_nghttp2_artifact IN ITEMS
         "${MEDIAPROXY_NGHTTP2_INCLUDE_DIR}/nghttp2/nghttp2.h"
         "${MEDIAPROXY_NGHTTP2_LIBRARY}")
@@ -400,6 +432,11 @@ set_target_properties(mediaproxy_libjxl PROPERTIES
     INTERFACE_LINK_LIBRARIES "mediaproxy_highway;m"
 )
 
+add_library(mediaproxy_resvg STATIC IMPORTED GLOBAL)
+set_target_properties(mediaproxy_resvg PROPERTIES
+    IMPORTED_LOCATION "${MEDIAPROXY_RESVG_LIBRARY}"
+)
+
 add_library(mediaproxy_libwebp_sharpyuv STATIC IMPORTED GLOBAL)
 set_target_properties(mediaproxy_libwebp_sharpyuv PROPERTIES
     IMPORTED_LOCATION "${MEDIAPROXY_LIBWEBP_SHARPYUV_LIBRARY}"
@@ -475,6 +512,7 @@ target_link_libraries(mediaproxy_http
 )
 
 set(mediaproxy_media_sources
+    "${svg_font_object}"
     src/media/animated_conversion.cpp
     src/media/apng.cpp
     src/media/apng_compositor.cpp
@@ -485,6 +523,7 @@ set(mediaproxy_media_sources
     src/media/mime.cpp
     src/media/resize.cpp
     src/media/static_conversion.cpp
+    src/media/svg_font.cpp
     src/media/vips_runtime.cpp
 )
 add_library(mediaproxy_media STATIC ${mediaproxy_media_sources})
@@ -496,6 +535,7 @@ target_link_libraries(mediaproxy_media
         mediaproxy_hardening
         mediaproxy_warnings
         mediaproxy_libjxl
+        mediaproxy_resvg
         mediaproxy_libvips
 )
 
@@ -553,6 +593,7 @@ target_link_libraries(bootstrap
         mediaproxy_libaom
         mediaproxy_libheif
         mediaproxy_libjxl
+        mediaproxy_resvg
         mediaproxy_pcre2
         mediaproxy_libjpeg_turbo
         mediaproxy_libnsgif
@@ -629,6 +670,7 @@ if(NOT MEDIAPROXY_SANITIZER_BUILD)
         "${CMAKE_SOURCE_DIR}/.github/*"
         "${CMAKE_SOURCE_DIR}/cmake/*"
         "${CMAKE_SOURCE_DIR}/include/*"
+        "${CMAKE_SOURCE_DIR}/rust/*"
         "${CMAKE_SOURCE_DIR}/src/*"
         "${CMAKE_SOURCE_DIR}/tests/*")
     list(FILTER compliance_project_sources EXCLUDE REGEX
@@ -724,6 +766,7 @@ if(BUILD_TESTING)
             mediaproxy_warnings
             mediaproxy_fuzzing
             mediaproxy_libjxl
+            mediaproxy_resvg
             mediaproxy_libvips
     )
 
@@ -967,6 +1010,9 @@ if(BUILD_TESTING)
                 ${library}
                 mediaproxy_libfuzzer
         )
+        if(NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL CMAKE_SYSTEM_PROCESSOR)
+            return()
+        endif()
         if(MEDIAPROXY_SANITIZER_BUILD)
             add_test(
                 NAME "fuzz-${target}"
@@ -1017,6 +1063,11 @@ if(BUILD_TESTING)
         tests/fuzz/jxl_fuzzer.cpp
         mediaproxy_media_fuzz
         "${CMAKE_SOURCE_DIR}/tests/fuzz/corpus/jxl"
+        65536)
+    mediaproxy_add_fuzzer(mediaproxy_svg_fuzzer
+        tests/fuzz/svg_fuzzer.cpp
+        mediaproxy_media_fuzz
+        "${CMAKE_SOURCE_DIR}/tests/fuzz/corpus/svg"
         65536)
     mediaproxy_add_fuzzer(mediaproxy_runtime_fuzzer
         tests/fuzz/runtime_fuzzer.cpp
@@ -1355,6 +1406,20 @@ if(BUILD_TESTING)
             "-DTARGET_ARCH=${MEDIAPROXY_TARGET_ARCH}"
             "-DTARGET_TRIPLE=${MEDIAPROXY_TARGET_TRIPLE}"
             -P "${CMAKE_SOURCE_DIR}/tests/cmake/LibvipsBuildTest.cmake"
+    )
+    add_test(
+        NAME resvg-build-policy
+        COMMAND "${CMAKE_COMMAND}"
+            "-DBOOTSTRAP=$<TARGET_FILE:bootstrap>"
+            "-DFONT=${MEDIAPROXY_SVG_FONT}"
+            "-DFONT_SHA256=${MEDIAPROXY_SVG_FONT_SHA256}"
+            "-DLINK_MAP=${CMAKE_CURRENT_BINARY_DIR}/bootstrap.map"
+            "-DMANIFEST=${MEDIAPROXY_RESVG_MANIFEST}"
+            "-DMANIFEST_LOCK=${MEDIAPROXY_RESVG_MANIFEST_LOCK}"
+            "-DMANIFEST_LOCK_SHA256=${MEDIAPROXY_RESVG_MANIFEST_LOCK_SHA256}"
+            "-DNM=${MEDIAPROXY_NM}"
+            "-DRESVG_ARCHIVE=${MEDIAPROXY_RESVG_LIBRARY}"
+            -P "${CMAKE_SOURCE_DIR}/tests/cmake/ResvgBuildTest.cmake"
     )
     add_test(
         NAME lcms2-build-policy

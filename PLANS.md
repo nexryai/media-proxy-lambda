@@ -271,6 +271,9 @@ The pinned graph is expected to include:
   musl standard-library component, and the bundled M PLUS 1p font for SVG;
   keep librsvg, Cairo, pixman, libxml2, FreeType, fontconfig, Pango, and fribidi
   outside the graph;
+- Cargo packages needed only to resolve rust-src targets other than the two
+  Linux-musl Lambda targets remain hash-locked with `resolution` scope and are
+  excluded from the deployed-artifact SBOM and license payload;
 - lcms2 and libexif if enabled for the golden media graph;
 - Ada URL's standalone IDNA translation unit, built without the full URL parser
   or simdutf, for pinned Unicode 17.0.0 UTS #46 nontransitional conversion;
@@ -566,10 +569,12 @@ define the release graph.
 ### 3. SVG must not reopen filesystem or network access
 
 Use the first-party resvg shim rather than a libvips SVG loader. Disable string
-href resolution, system-font discovery, memory-mapped fonts, and SVGZ. Keep
+href resolution, system-font discovery, memory-mapped fonts, and SVGZ. Bound
+embedded raster dimensions before decoding them. Keep
 librsvg, Cairo, pixman, libxml2, FreeType, fontconfig, Pango, and fribidi out of
 the graph. Test absolute paths, relative paths, URLs, data-URL budgets,
-DOCTYPEs, malformed XML, node limits, and oversized canvases.
+DOCTYPEs, malformed XML, the shim-enforced top-level and nested XML node limit,
+and both declared and content-derived oversized canvases.
 
 ### 4. Static plugin registration can fail silently
 

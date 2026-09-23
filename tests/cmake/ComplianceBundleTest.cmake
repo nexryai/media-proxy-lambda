@@ -38,7 +38,8 @@ foreach(dependency_index RANGE 0 ${dependency_last})
     if(scope_error)
         set(dependency_scope runtime)
     endif()
-    if(dependency_scope STREQUAL "test")
+    if(dependency_scope STREQUAL "test"
+            OR dependency_scope STREQUAL "resolution")
         continue()
     endif()
     string(JSON dependency_name GET "${dependency_lock}"

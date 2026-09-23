@@ -337,20 +337,27 @@ containing the exact ASCII sequence `<!DOCTYPE` anywhere in the body before
 parsing. The shim must construct its own usvg options for every parse. Its
 string href resolver always returns no resource, so an SVG cannot read a URL,
 absolute path, relative path, or other external resource. Its data-URL resolver
-accepts resvg-supported embedded PNG, JPEG, GIF, WebP, and nested SVG content,
-but skips a resource after either 128 decoded data URLs or 10 MiB of aggregate
-decoded data. These skipped resources do not make an otherwise valid document
-fail.
+accepts resvg-supported embedded PNG, JPEG, GIF, WebP, and nested SVG content.
+Embedded raster images are subject to the same width, height, and pixel-count
+bounds as the outer image. Skip a resource after either 128 decoded data URLs
+or 10 MiB of aggregate decoded data. These skipped resources do not make an
+otherwise valid document fail.
 
 Enable resvg text conversion without system-font or memory-mapped-font
 discovery. Load only the pinned M PLUS 1p Regular font from the resvg source
 archive into an in-memory font database and map all generic default families
-to it. Missing glyphs follow resvg's fixed-font fallback behavior. Limit the
-parsed XML document to 100,000 nodes.
+to it. Missing glyphs follow resvg's fixed-font fallback behavior. Before usvg
+conversion, the shim parses the XML and rejects a top-level document containing
+more than 100,000 XML nodes. Apply the same limit before converting every
+nested SVG data URL; a nested document over the limit is skipped as a resource
+without failing the otherwise valid outer document.
 
 Use resvg's intrinsic size rounded to its integer canvas size. Validate that
 size against the same 7680-by-4320 static-image limits before allocating the
 checked `width * height * 4` buffer. Render once at that intrinsic canvas size.
+This validation also rejects an oversized canvas that resvg derives from the
+content bounds when the root has no explicit width, height, or view box, before
+resvg rendering can allocate or iterate that canvas.
 resvg produces premultiplied RGBA8888; convert each nonzero-alpha channel to
 unassociated alpha as `min(255, (channel * 255 + alpha / 2) / alpha)`, force
 RGB to zero when alpha is zero, and pass the resulting sRGB RGBA image into the

@@ -238,20 +238,21 @@ endif()
 
 file(READ "${LINK_MAP}" link_map)
 string(TOLOWER "${link_map}" link_map_lower)
-foreach(forbidden_dependency IN ITEMS
-        cairo
-        freetype
-        fontconfig
-        fribidi
-        harfbuzz
+foreach(forbidden_archive IN ITEMS
+        libcairo
+        libfreetype
+        libfontconfig
+        libfribidi
+        libharfbuzz
         librsvg
         libxml2
-        pango
-        pixman)
-    if(link_map_lower MATCHES "${forbidden_dependency}")
+        libpango
+        libpixman)
+    if(link_map_lower MATCHES
+            "(^|[/ ])${forbidden_archive}[^/ \n]*\\.a([(: \n]|$)")
         message(FATAL_ERROR
-            "bootstrap link map contains forbidden SVG dependency: "
-            "${forbidden_dependency}")
+            "bootstrap link map contains forbidden SVG archive: "
+            "${forbidden_archive}")
     endif()
 endforeach()
 get_filename_component(archive_name "${LIBVIPS_ARCHIVE}" NAME)

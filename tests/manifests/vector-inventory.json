@@ -11,7 +11,7 @@
                 "no live network dependency in normal tests",
                 "arm64 bootstrap is the repository deliverable while AWS resource management remains external",
                 "APNG OVER is the only pixel-semantics divergence",
-                "SVG input is intentionally unsupported"
+                "SVG input uses the bounded first-party resvg shim contract"
             ]
         },
         {

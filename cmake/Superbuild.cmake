@@ -12,6 +12,7 @@ endif()
 
 if(MEDIAPROXY_TARGET_ARCH STREQUAL "x86_64")
     set(target_triple x86_64-linux-musl)
+    set(rust_target_triple x86_64-unknown-linux-musl)
     set(target_processor x86_64)
     set(compiler_rt_arch x86_64)
     set(kernel_arch x86)
@@ -21,6 +22,7 @@ if(MEDIAPROXY_TARGET_ARCH STREQUAL "x86_64")
     )
 elseif(MEDIAPROXY_TARGET_ARCH STREQUAL "arm64")
     set(target_triple aarch64-linux-musl)
+    set(rust_target_triple aarch64-unknown-linux-musl)
     set(target_processor aarch64)
     set(compiler_rt_arch aarch64)
     set(kernel_arch arm64)
@@ -43,11 +45,33 @@ find_program(host_git NAMES git REQUIRED)
 find_program(host_meson NAMES meson REQUIRED)
 find_program(host_ninja NAMES ninja REQUIRED)
 find_program(host_pkgconf NAMES pkgconf REQUIRED)
+find_program(host_cargo NAMES cargo REQUIRED)
+find_program(host_rustc NAMES rustc REQUIRED)
+
+execute_process(
+    COMMAND "${host_rustc}" -vV
+    OUTPUT_VARIABLE rustc_version_details
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY)
+if(NOT rustc_version_details MATCHES "rustc 1\\.93\\.1"
+        OR NOT rustc_version_details MATCHES
+            "commit-hash: 01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf")
+    message(FATAL_ERROR
+        "resvg requires the devcontainer rustc 1.93.1 commit "
+        "01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf")
+endif()
+execute_process(
+    COMMAND "${host_rustc}" --print sysroot
+    OUTPUT_VARIABLE host_rust_sysroot
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY)
 
 if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$")
     set(build_triple x86_64-pc-linux-gnu)
+    set(rust_host_triple x86_64-unknown-linux-gnu)
 elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
     set(build_triple aarch64-pc-linux-gnu)
+    set(rust_host_triple aarch64-unknown-linux-gnu)
 else()
     message(FATAL_ERROR
         "Unsupported superbuild host architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
@@ -108,6 +132,14 @@ mediaproxy_lock_get(libjxl sha256 libjxl_sha256)
 mediaproxy_lock_get(libjxl version libjxl_version)
 mediaproxy_lock_get_patch(libjxl 0 path libjxl_patch_relative)
 mediaproxy_lock_get_patch(libjxl 0 sha256 libjxl_patch_sha256)
+mediaproxy_lock_get(resvg url resvg_url)
+mediaproxy_lock_get(resvg sha256 resvg_sha256)
+mediaproxy_lock_get(resvg version resvg_version)
+mediaproxy_lock_get(rust-src url rust_src_url)
+mediaproxy_lock_get(rust-src sha256 rust_src_sha256)
+mediaproxy_lock_get(rust-src version rust_src_version)
+mediaproxy_lock_get_patch(rust-src 0 path rust_src_patch_relative)
+mediaproxy_lock_get_patch(rust-src 0 sha256 rust_src_patch_sha256)
 mediaproxy_lock_get(libvips url libvips_url)
 mediaproxy_lock_get(libvips sha256 libvips_sha256)
 mediaproxy_lock_get(libvips version libvips_version)
@@ -180,6 +212,12 @@ set(libjxl_patch "${CMAKE_SOURCE_DIR}/${libjxl_patch_relative}")
 file(SHA256 "${libjxl_patch}" actual_libjxl_patch_sha256)
 if(NOT actual_libjxl_patch_sha256 STREQUAL libjxl_patch_sha256)
     message(FATAL_ERROR "libjxl build patch does not match dependencies.lock.json")
+endif()
+
+set(rust_src_patch "${CMAKE_SOURCE_DIR}/${rust_src_patch_relative}")
+file(SHA256 "${rust_src_patch}" actual_rust_src_patch_sha256)
+if(NOT actual_rust_src_patch_sha256 STREQUAL rust_src_patch_sha256)
+    message(FATAL_ERROR "rust-src security patch does not match dependencies.lock.json")
 endif()
 
 ExternalProject_Add(linux_headers
@@ -2300,11 +2338,105 @@ ExternalProject_Add(ca_bundle
     BUILD_BYPRODUCTS "${ca_bundle_file}"
 )
 
+set(rust_target_sysroot "${CMAKE_BINARY_DIR}/rust-sysroot")
+set(rust_target_source
+    "${rust_target_sysroot}/lib/rustlib/src/rust/library")
+ExternalProject_Add(rust_src
+    URL "${rust_src_url}"
+    URL_HASH "SHA256=${rust_src_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "rust-src-${rust_src_version}.tar.xz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    PATCH_COMMAND "${host_git}" apply "${rust_src_patch}"
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND
+        <SOURCE_DIR>/install.sh
+        "--prefix=${rust_target_sysroot}"
+        --disable-ldconfig
+        COMMAND "${CMAKE_COMMAND}" -E create_symlink
+        "${host_rust_sysroot}/lib/rustlib/${rust_host_triple}"
+        "${rust_target_sysroot}/lib/rustlib/${rust_host_triple}"
+    BUILD_BYPRODUCTS
+        "${rust_target_source}/std/src/lib.rs"
+)
+
+set(resvg_library "${sysroot}/usr/lib/libmediaproxy_resvg_shim.a")
+set(svg_font_directory "${sysroot}/usr/share/mediaproxy")
+set(svg_font_file "${svg_font_directory}/mediaproxy-svg-font.ttf")
+set(resvg_cargo_target "${CMAKE_BINARY_DIR}/resvg-cargo-target")
+set(resvg_cargo_home "${CMAKE_BINARY_DIR}/resvg-cargo-home")
+set(resvg_offline_cargo_home
+    "${CMAKE_BINARY_DIR}/resvg-offline-cargo-home")
+set(resvg_vendor_directory "${CMAKE_BINARY_DIR}/resvg-vendor")
+ExternalProject_Add(resvg
+    DEPENDS rust_src
+    URL "${resvg_url}"
+    URL_HASH "SHA256=${resvg_sha256}"
+    DOWNLOAD_DIR "${source_cache}"
+    DOWNLOAD_NAME "resvg-${resvg_version}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    UPDATE_DISCONNECTED TRUE
+    PATCH_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND
+        "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_SOURCE_DIR}/rust/resvg-shim"
+        <SOURCE_DIR>/crates/mediaproxy-resvg-shim
+        COMMAND "${CMAKE_COMMAND}" -E env
+        "CARGO_HOME=${resvg_offline_cargo_home}"
+        "CARGO_TARGET_DIR=${resvg_cargo_target}"
+        "MEDIAPROXY_RUSTC=${host_rustc}"
+        "MEDIAPROXY_RUST_SYSROOT=${rust_target_sysroot}"
+        "RUSTC=${CMAKE_SOURCE_DIR}/cmake/RustcSysrootWrapper.sh"
+        "RUSTC_BOOTSTRAP=1"
+        "RUSTFLAGS=-C relocation-model=pic -C target-feature=+crt-static"
+        "${host_cargo}" build
+        -Z build-std=std,panic_unwind
+        --manifest-path <SOURCE_DIR>/crates/mediaproxy-resvg-shim/Cargo.toml
+        --locked
+        --offline
+        --release
+        "--target=${rust_target_triple}"
+    INSTALL_COMMAND
+        "${CMAKE_COMMAND}" -E make_directory
+        "${sysroot}/usr/lib" "${svg_font_directory}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${resvg_cargo_target}/${rust_target_triple}/release/libmediaproxy_resvg_shim.a"
+        "${resvg_library}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        <SOURCE_DIR>/crates/resvg/tests/fonts/MPLUS1p-Regular.ttf
+        "${svg_font_file}"
+    BUILD_BYPRODUCTS "${resvg_library}" "${svg_font_file}"
+)
+ExternalProject_Add_Step(resvg vendor
+    DEPENDEES configure
+    DEPENDERS build
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/cmake/PrepareCargoVendor.cmake"
+        "${CMAKE_SOURCE_DIR}/rust/resvg-shim/Cargo.toml"
+        "${CMAKE_SOURCE_DIR}/rust/resvg-shim/Cargo.lock"
+        "${CMAKE_SOURCE_DIR}/rust/resvg-shim/src/lib.rs"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_SOURCE_DIR}/rust/resvg-shim"
+        <SOURCE_DIR>/crates/mediaproxy-resvg-shim
+    COMMAND "${CMAKE_COMMAND}"
+        "-DCARGO=${host_cargo}"
+        "-DCARGO_HOME=${resvg_cargo_home}"
+        "-DMANIFEST=<SOURCE_DIR>/crates/mediaproxy-resvg-shim/Cargo.toml"
+        "-DRUST_STD_MANIFEST=${rust_target_source}/Cargo.toml"
+        "-DSOURCE_CACHE=${source_cache}"
+        "-DVENDOR_DIRECTORY=${resvg_vendor_directory}"
+        "-DOFFLINE_CARGO_HOME=${resvg_offline_cargo_home}"
+        -P "${CMAKE_SOURCE_DIR}/cmake/PrepareCargoVendor.cmake"
+)
+
 set(application_binary_directory "${CMAKE_BINARY_DIR}/application")
 set(application_dependencies
     ada_idna boringssl ca_bundle curl fortify_headers glib lcms2 libaom
     highway libheif libexif libexpat libffi libjpeg_turbo libjxl libnsgif libpng libvips
-    libwebp llvm_runtimes nghttp2 pcre2 yyjson zlib
+    libwebp llvm_runtimes nghttp2 pcre2 resvg yyjson zlib
     ${application_fuzz_dependency})
 set(application_cmake_args
         "-DMEDIAPROXY_INNER_BUILD=ON"
@@ -2342,6 +2474,12 @@ set(application_cmake_args
         "-DMEDIAPROXY_CURL_CONFIG_HEADER=${curl_binary_directory}/lib/curl_config.h"
         "-DMEDIAPROXY_CA_BUNDLE=${ca_bundle_file}"
         "-DMEDIAPROXY_CA_BUNDLE_SHA256=${ca_bundle_sha256}"
+        "-DMEDIAPROXY_RESVG_LIBRARY=${resvg_library}"
+        "-DMEDIAPROXY_RESVG_MANIFEST=${CMAKE_SOURCE_DIR}/rust/resvg-shim/Cargo.toml"
+        "-DMEDIAPROXY_RESVG_MANIFEST_LOCK=${CMAKE_SOURCE_DIR}/rust/resvg-shim/Cargo.lock"
+        "-DMEDIAPROXY_RESVG_MANIFEST_LOCK_SHA256=4757e4967ea9fef8a551bf2dafc045b14f44f71dfb3a9a59dee38e2032e945b8"
+        "-DMEDIAPROXY_SVG_FONT=${svg_font_file}"
+        "-DMEDIAPROXY_SVG_FONT_SHA256=c6a5f15dcbce870497c580de7fa578a75eb8846d2b5603a65eb8fb69ab949892"
         "-DMEDIAPROXY_NGHTTP2_INCLUDE_DIR=${nghttp2_include_dir}"
         "-DMEDIAPROXY_NGHTTP2_LIBRARY=${nghttp2_library}"
         "-DMEDIAPROXY_NGHTTP2_COMPILE_COMMANDS=${nghttp2_binary_directory}/compile_commands.json"
@@ -2492,6 +2630,7 @@ if(MEDIAPROXY_ENABLE_SANITIZERS)
                 mediaproxy_apng_fuzzer
                 mediaproxy_ico_fuzzer
                 mediaproxy_jxl_fuzzer
+                mediaproxy_svg_fuzzer
                 mediaproxy_runtime_fuzzer
                 mediaproxy_sanitizer_probe
         INSTALL_COMMAND ""
@@ -2501,6 +2640,7 @@ if(MEDIAPROXY_ENABLE_SANITIZERS)
             "${sanitizer_application_binary_directory}/mediaproxy_apng_fuzzer"
             "${sanitizer_application_binary_directory}/mediaproxy_ico_fuzzer"
             "${sanitizer_application_binary_directory}/mediaproxy_jxl_fuzzer"
+            "${sanitizer_application_binary_directory}/mediaproxy_svg_fuzzer"
             "${sanitizer_application_binary_directory}/mediaproxy_runtime_fuzzer"
             "${sanitizer_application_binary_directory}/mediaproxy_sanitizer_probe")
     add_custom_target(sanitizer-tests DEPENDS sanitizer_application)

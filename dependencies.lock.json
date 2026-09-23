@@ -684,6 +684,1383 @@
             "reason": "Bounded Function URL event parsing and response metadata serialization"
         },
         {
+            "name": "cargo-crate-addr2line-0.25.1",
+            "version": "0.25.1",
+            "revision": "Cargo package checksum 1b5d307320b3181d6d7954e663bd7c774a838b8220fe0593c86d9fb09f498b4b",
+            "url": "https://static.crates.io/crates/addr2line/addr2line-0.25.1.crate",
+            "sha256": "1b5d307320b3181d6d7954e663bd7c774a838b8220fe0593c86d9fb09f498b4b",
+            "license": "Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build"
+        },
+        {
+            "name": "cargo-crate-adler2-2.0.1",
+            "version": "2.0.1",
+            "revision": "Cargo package checksum 320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa",
+            "url": "https://static.crates.io/crates/adler2/adler2-2.0.1.crate",
+            "sha256": "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa",
+            "license": "0BSD OR MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-arrayref-0.3.9",
+            "version": "0.3.9",
+            "revision": "Cargo package checksum 76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb",
+            "url": "https://static.crates.io/crates/arrayref/arrayref-0.3.9.crate",
+            "sha256": "76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb",
+            "license": "BSD-2-Clause",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-arrayvec-0.7.8",
+            "version": "0.7.8",
+            "revision": "Cargo package checksum d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56",
+            "url": "https://static.crates.io/crates/arrayvec/arrayvec-0.7.8.crate",
+            "sha256": "d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-autocfg-1.5.1",
+            "version": "1.5.1",
+            "revision": "Cargo package checksum f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53",
+            "url": "https://static.crates.io/crates/autocfg/autocfg-1.5.1.crate",
+            "sha256": "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53",
+            "license": "Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-base64-0.23.1",
+            "version": "0.23.1",
+            "revision": "Cargo package checksum ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5",
+            "url": "https://static.crates.io/crates/base64/base64-0.23.1.crate",
+            "sha256": "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-bitflags-2.13.2",
+            "version": "2.13.2",
+            "revision": "Cargo package checksum 3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06",
+            "url": "https://static.crates.io/crates/bitflags/bitflags-2.13.2.crate",
+            "sha256": "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-bytemuck-1.25.2",
+            "version": "1.25.2",
+            "revision": "Cargo package checksum 95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797",
+            "url": "https://static.crates.io/crates/bytemuck/bytemuck-1.25.2.crate",
+            "sha256": "95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797",
+            "license": "Zlib OR Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-bytemuck_derive-1.12.1",
+            "version": "1.12.1",
+            "revision": "Cargo package checksum 6a1f896587b6f2c069c73d2f0913e2d590c3990285cd2f0b6aa02b786b4c679c",
+            "url": "https://static.crates.io/crates/bytemuck_derive/bytemuck_derive-1.12.1.crate",
+            "sha256": "6a1f896587b6f2c069c73d2f0913e2d590c3990285cd2f0b6aa02b786b4c679c",
+            "license": "Zlib OR Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-byteorder-lite-0.1.0",
+            "version": "0.1.0",
+            "revision": "Cargo package checksum 8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495",
+            "url": "https://static.crates.io/crates/byteorder-lite/byteorder-lite-0.1.0.crate",
+            "sha256": "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495",
+            "license": "Unlicense OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-cc-1.2.0",
+            "version": "1.2.0",
+            "revision": "Cargo package checksum 1aeb932158bd710538c73702db6945cb68a8fb08c519e6e12706b94263b36db8",
+            "url": "https://static.crates.io/crates/cc/cc-1.2.0.crate",
+            "sha256": "1aeb932158bd710538c73702db6945cb68a8fb08c519e6e12706b94263b36db8",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-cfg-if-1.0.4",
+            "version": "1.0.4",
+            "revision": "Cargo package checksum 9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801",
+            "url": "https://static.crates.io/crates/cfg-if/cfg-if-1.0.4.crate",
+            "sha256": "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build"
+        },
+        {
+            "name": "cargo-crate-cfg-if-1.0.5",
+            "version": "1.0.5",
+            "revision": "Cargo package checksum 4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600",
+            "url": "https://static.crates.io/crates/cfg-if/cfg-if-1.0.5.crate",
+            "sha256": "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-color_quant-1.1.0",
+            "version": "1.1.0",
+            "revision": "Cargo package checksum 3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b",
+            "url": "https://static.crates.io/crates/color_quant/color_quant-1.1.0.crate",
+            "sha256": "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-crc32fast-1.5.2",
+            "version": "1.5.2",
+            "revision": "Cargo package checksum 01a7799fd6b852db0e61728dde9a204c423b44d689dbd432522543614b490e78",
+            "url": "https://static.crates.io/crates/crc32fast/crc32fast-1.5.2.crate",
+            "sha256": "01a7799fd6b852db0e61728dde9a204c423b44d689dbd432522543614b490e78",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-data-url-0.3.2",
+            "version": "0.3.2",
+            "revision": "Cargo package checksum be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376",
+            "url": "https://static.crates.io/crates/data-url/data-url-0.3.2.crate",
+            "sha256": "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-dlmalloc-0.2.11",
+            "version": "0.2.11",
+            "revision": "Cargo package checksum 06cdfe340b16dd990c54cce79743613fa09fbb16774f33a77c9fd196f8f3fa30",
+            "url": "https://static.crates.io/crates/dlmalloc/dlmalloc-0.2.11.crate",
+            "sha256": "06cdfe340b16dd990c54cce79743613fa09fbb16774f33a77c9fd196f8f3fa30",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-euclid-0.22.14",
+            "version": "0.22.14",
+            "revision": "Cargo package checksum f1a05365e3b1c6d1650318537c7460c6923f1abdd272ad6842baa2b509957a06",
+            "url": "https://static.crates.io/crates/euclid/euclid-0.22.14.crate",
+            "sha256": "f1a05365e3b1c6d1650318537c7460c6923f1abdd272ad6842baa2b509957a06",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-fdeflate-0.3.7",
+            "version": "0.3.7",
+            "revision": "Cargo package checksum 1e6853b52649d4ac5c0bd02320cddc5ba956bdb407c4b75a2c6b75bf51500f8c",
+            "url": "https://static.crates.io/crates/fdeflate/fdeflate-0.3.7.crate",
+            "sha256": "1e6853b52649d4ac5c0bd02320cddc5ba956bdb407c4b75a2c6b75bf51500f8c",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-flate2-1.1.10",
+            "version": "1.1.10",
+            "revision": "Cargo package checksum 6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb",
+            "url": "https://static.crates.io/crates/flate2/flate2-1.1.10.crate",
+            "sha256": "6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-float-cmp-0.9.0",
+            "version": "0.9.0",
+            "revision": "Cargo package checksum 98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4",
+            "url": "https://static.crates.io/crates/float-cmp/float-cmp-0.9.0.crate",
+            "sha256": "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-foldhash-0.2.0",
+            "version": "0.2.0",
+            "revision": "Cargo package checksum 77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb",
+            "url": "https://static.crates.io/crates/foldhash/foldhash-0.2.0.crate",
+            "sha256": "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb",
+            "license": "Zlib",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-font-types-0.12.5",
+            "version": "0.12.5",
+            "revision": "Cargo package checksum b8eb065f3251655b3c90e22e5e363f310fc5332fb3402e37bbc94752283248f6",
+            "url": "https://static.crates.io/crates/font-types/font-types-0.12.5.crate",
+            "sha256": "b8eb065f3251655b3c90e22e5e363f310fc5332fb3402e37bbc94752283248f6",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-fontdb-0.24.0",
+            "version": "0.24.0",
+            "revision": "Cargo package checksum 2660c5e9157bf76d2db1294e4a9feba604ef610819a3b591088d0d8392a3290f",
+            "url": "https://static.crates.io/crates/fontdb/fontdb-0.24.0.crate",
+            "sha256": "2660c5e9157bf76d2db1294e4a9feba604ef610819a3b591088d0d8392a3290f",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-fortanix-sgx-abi-0.6.1",
+            "version": "0.6.1",
+            "revision": "Cargo package checksum 5efc85edd5b83e8394f4371dd0da6859dff63dd387dab8568fece6af4cde6f84",
+            "url": "https://static.crates.io/crates/fortanix-sgx-abi/fortanix-sgx-abi-0.6.1.crate",
+            "sha256": "5efc85edd5b83e8394f4371dd0da6859dff63dd387dab8568fece6af4cde6f84",
+            "license": "MPL-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-getopts-0.2.24",
+            "version": "0.2.24",
+            "revision": "Cargo package checksum cfe4fbac503b8d1f88e6676011885f34b7174f46e59956bba534ba83abded4df",
+            "url": "https://static.crates.io/crates/getopts/getopts-0.2.24.crate",
+            "sha256": "cfe4fbac503b8d1f88e6676011885f34b7174f46e59956bba534ba83abded4df",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-gif-0.14.2",
+            "version": "0.14.2",
+            "revision": "Cargo package checksum ee8cfcc411d9adbbaba82fb72661cc1bcca13e8bba98b364e62b2dba8f960159",
+            "url": "https://static.crates.io/crates/gif/gif-0.14.2.crate",
+            "sha256": "ee8cfcc411d9adbbaba82fb72661cc1bcca13e8bba98b364e62b2dba8f960159",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-gimli-0.32.3",
+            "version": "0.32.3",
+            "revision": "Cargo package checksum e629b9b98ef3dd8afe6ca2bd0f89306cec16d43d907889945bc5d6687f2f13c7",
+            "url": "https://static.crates.io/crates/gimli/gimli-0.32.3.crate",
+            "sha256": "e629b9b98ef3dd8afe6ca2bd0f89306cec16d43d907889945bc5d6687f2f13c7",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build"
+        },
+        {
+            "name": "cargo-crate-harfrust-0.12.0",
+            "version": "0.12.0",
+            "revision": "Cargo package checksum c03d949a14aa089bbb282f7dd76a498a7f684428e4257202efc119ec010376f9",
+            "url": "https://static.crates.io/crates/harfrust/harfrust-0.12.0.crate",
+            "sha256": "c03d949a14aa089bbb282f7dd76a498a7f684428e4257202efc119ec010376f9",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-hashbrown-0.16.1",
+            "version": "0.16.1",
+            "revision": "Cargo package checksum 841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100",
+            "url": "https://static.crates.io/crates/hashbrown/hashbrown-0.16.1.crate",
+            "sha256": "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build"
+        },
+        {
+            "name": "cargo-crate-hermit-abi-0.5.2",
+            "version": "0.5.2",
+            "revision": "Cargo package checksum fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c",
+            "url": "https://static.crates.io/crates/hermit-abi/hermit-abi-0.5.2.crate",
+            "sha256": "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-image-webp-0.2.4",
+            "version": "0.2.4",
+            "revision": "Cargo package checksum 525e9ff3e1a4be2fbea1fdf0e98686a6d98b4d8f937e1bf7402245af1909e8c3",
+            "url": "https://static.crates.io/crates/image-webp/image-webp-0.2.4.crate",
+            "sha256": "525e9ff3e1a4be2fbea1fdf0e98686a6d98b4d8f937e1bf7402245af1909e8c3",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-imagesize-0.15.0",
+            "version": "0.15.0",
+            "revision": "Cargo package checksum 65b27460c2c92b037f3f94c538ed9a3342f3fdf923606781629ccb35f82d042a",
+            "url": "https://static.crates.io/crates/imagesize/imagesize-0.15.0.crate",
+            "sha256": "65b27460c2c92b037f3f94c538ed9a3342f3fdf923606781629ccb35f82d042a",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-kurbo-0.13.1",
+            "version": "0.13.1",
+            "revision": "Cargo package checksum 4b60dfc32f652b926df6192e55525b16d186c69d47876c3ead4da5cc9f8450e2",
+            "url": "https://static.crates.io/crates/kurbo/kurbo-0.13.1.crate",
+            "sha256": "4b60dfc32f652b926df6192e55525b16d186c69d47876c3ead4da5cc9f8450e2",
+            "license": "Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-libc-0.2.177",
+            "version": "0.2.177",
+            "revision": "Cargo package checksum 2874a2af47a2325c2001a6e6fad9b16a53b802102b528163885171cf92b15976",
+            "url": "https://static.crates.io/crates/libc/libc-0.2.177.crate",
+            "sha256": "2874a2af47a2325c2001a6e6fad9b16a53b802102b528163885171cf92b15976",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build"
+        },
+        {
+            "name": "cargo-crate-log-0.4.34",
+            "version": "0.4.34",
+            "revision": "Cargo package checksum f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6",
+            "url": "https://static.crates.io/crates/log/log-0.4.34.crate",
+            "sha256": "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-memchr-2.7.6",
+            "version": "2.7.6",
+            "revision": "Cargo package checksum f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273",
+            "url": "https://static.crates.io/crates/memchr/memchr-2.7.6.crate",
+            "sha256": "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273",
+            "license": "Unlicense OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build"
+        },
+        {
+            "name": "cargo-crate-memchr-2.8.3",
+            "version": "2.8.3",
+            "revision": "Cargo package checksum cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98",
+            "url": "https://static.crates.io/crates/memchr/memchr-2.8.3.crate",
+            "sha256": "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98",
+            "license": "Unlicense OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-miniz_oxide-0.8.9",
+            "version": "0.8.9",
+            "revision": "Cargo package checksum 1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316",
+            "url": "https://static.crates.io/crates/miniz_oxide/miniz_oxide-0.8.9.crate",
+            "sha256": "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316",
+            "license": "MIT OR Zlib OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-miniz_oxide-0.9.1",
+            "version": "0.9.1",
+            "revision": "Cargo package checksum b63fbc4a50860e98e7b2aa7804ded1db5cbc3aff9193adaff57a6931bf7c4b4c",
+            "url": "https://static.crates.io/crates/miniz_oxide/miniz_oxide-0.9.1.crate",
+            "sha256": "b63fbc4a50860e98e7b2aa7804ded1db5cbc3aff9193adaff57a6931bf7c4b4c",
+            "license": "MIT OR Zlib OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-moto-rt-0.15.2",
+            "version": "0.15.2",
+            "revision": "Cargo package checksum 0bf4bc387d3b3502cb92c09ec980cca909b94978e144c61da8319ecf4bc8d031",
+            "url": "https://static.crates.io/crates/moto-rt/moto-rt-0.15.2.crate",
+            "sha256": "0bf4bc387d3b3502cb92c09ec980cca909b94978e144c61da8319ecf4bc8d031",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-num-traits-0.2.19",
+            "version": "0.2.19",
+            "revision": "Cargo package checksum 071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841",
+            "url": "https://static.crates.io/crates/num-traits/num-traits-0.2.19.crate",
+            "sha256": "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-object-0.37.3",
+            "version": "0.37.3",
+            "revision": "Cargo package checksum ff76201f031d8863c38aa7f905eca4f53abbfa15f609db4277d44cd8938f33fe",
+            "url": "https://static.crates.io/crates/object/object-0.37.3.crate",
+            "sha256": "ff76201f031d8863c38aa7f905eca4f53abbfa15f609db4277d44cd8938f33fe",
+            "license": "Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build"
+        },
+        {
+            "name": "cargo-crate-once_cell-1.21.4",
+            "version": "1.21.4",
+            "revision": "Cargo package checksum 9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50",
+            "url": "https://static.crates.io/crates/once_cell/once_cell-1.21.4.crate",
+            "sha256": "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-pico-args-0.5.0",
+            "version": "0.5.0",
+            "revision": "Cargo package checksum 5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315",
+            "url": "https://static.crates.io/crates/pico-args/pico-args-0.5.0.crate",
+            "sha256": "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-png-0.18.1",
+            "version": "0.18.1",
+            "revision": "Cargo package checksum 60769b8b31b2a9f263dae2776c37b1b28ae246943cf719eb6946a1db05128a61",
+            "url": "https://static.crates.io/crates/png/png-0.18.1.crate",
+            "sha256": "60769b8b31b2a9f263dae2776c37b1b28ae246943cf719eb6946a1db05128a61",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-polycool-0.4.0",
+            "version": "0.4.0",
+            "revision": "Cargo package checksum 50596ddc09eb5ad5f75cacd40209568e66df71baf86e1499a0e99c4cff12a5a6",
+            "url": "https://static.crates.io/crates/polycool/polycool-0.4.0.crate",
+            "sha256": "50596ddc09eb5ad5f75cacd40209568e66df71baf86e1499a0e99c4cff12a5a6",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-proc-macro2-1.0.107",
+            "version": "1.0.107",
+            "revision": "Cargo package checksum 985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9",
+            "url": "https://static.crates.io/crates/proc-macro2/proc-macro2-1.0.107.crate",
+            "sha256": "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-quick-error-2.0.1",
+            "version": "2.0.1",
+            "revision": "Cargo package checksum a993555f31e5a609f617c12db6250dedcac1b0a85076912c436e6fc9b2c8e6a3",
+            "url": "https://static.crates.io/crates/quick-error/quick-error-2.0.1.crate",
+            "sha256": "a993555f31e5a609f617c12db6250dedcac1b0a85076912c436e6fc9b2c8e6a3",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-quote-1.0.47",
+            "version": "1.0.47",
+            "revision": "Cargo package checksum 1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001",
+            "url": "https://static.crates.io/crates/quote/quote-1.0.47.crate",
+            "sha256": "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-r-efi-5.3.0",
+            "version": "5.3.0",
+            "revision": "Cargo package checksum 69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f",
+            "url": "https://static.crates.io/crates/r-efi/r-efi-5.3.0.crate",
+            "sha256": "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f",
+            "license": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-r-efi-alloc-2.1.0",
+            "version": "2.1.0",
+            "revision": "Cargo package checksum dc2f58ef3ca9bb0f9c44d9aa8537601bcd3df94cc9314a40178cadf7d4466354",
+            "url": "https://static.crates.io/crates/r-efi-alloc/r-efi-alloc-2.1.0.crate",
+            "sha256": "dc2f58ef3ca9bb0f9c44d9aa8537601bcd3df94cc9314a40178cadf7d4466354",
+            "license": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-rand-0.9.3",
+            "version": "0.9.3",
+            "revision": "Cargo package checksum 7ec095654a25171c2124e9e3393a930bddbffdc939556c914957a4c3e0a87166",
+            "url": "https://static.crates.io/crates/rand/rand-0.9.3.crate",
+            "sha256": "7ec095654a25171c2124e9e3393a930bddbffdc939556c914957a4c3e0a87166",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the security-patched Rust standard library source closure",
+            "securityNotes": [
+                "0.9.3 fixes RUSTSEC-2026-0097 / GHSA-cq8v-f236-94qc"
+            ],
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-rand_core-0.9.3",
+            "version": "0.9.3",
+            "revision": "Cargo package checksum 99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38",
+            "url": "https://static.crates.io/crates/rand_core/rand_core-0.9.3.crate",
+            "sha256": "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-rand_xorshift-0.4.0",
+            "version": "0.4.0",
+            "revision": "Cargo package checksum 513962919efc330f829edb2535844d1b912b0fbe2ca165d613e4e8788bb05a5a",
+            "url": "https://static.crates.io/crates/rand_xorshift/rand_xorshift-0.4.0.crate",
+            "sha256": "513962919efc330f829edb2535844d1b912b0fbe2ca165d613e4e8788bb05a5a",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-read-fonts-0.41.0",
+            "version": "0.41.0",
+            "revision": "Cargo package checksum 046a7d674daf459825b32f5062056d6882db0d2f5a479fbd76ccfc870ac18709",
+            "url": "https://static.crates.io/crates/read-fonts/read-fonts-0.41.0.crate",
+            "sha256": "046a7d674daf459825b32f5062056d6882db0d2f5a479fbd76ccfc870ac18709",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-rgb-0.8.53",
+            "version": "0.8.53",
+            "revision": "Cargo package checksum 47b34b781b31e5d73e9fbc8689c70551fd1ade9a19e3e28cfec8580a79290cc4",
+            "url": "https://static.crates.io/crates/rgb/rgb-0.8.53.crate",
+            "sha256": "47b34b781b31e5d73e9fbc8689c70551fd1ade9a19e3e28cfec8580a79290cc4",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-roxmltree-0.21.1",
+            "version": "0.21.1",
+            "revision": "Cargo package checksum f1964b10c76125c36f8afe190065a4bf9a87bf324842c05701330bba9f1cacbb",
+            "url": "https://static.crates.io/crates/roxmltree/roxmltree-0.21.1.crate",
+            "sha256": "f1964b10c76125c36f8afe190065a4bf9a87bf324842c05701330bba9f1cacbb",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-rustc-demangle-0.1.26",
+            "version": "0.1.26",
+            "revision": "Cargo package checksum 56f7d92ca342cea22a06f2121d944b4fd82af56988c270852495420f961d4ace",
+            "url": "https://static.crates.io/crates/rustc-demangle/rustc-demangle-0.1.26.crate",
+            "sha256": "56f7d92ca342cea22a06f2121d944b4fd82af56988c270852495420f961d4ace",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build"
+        },
+        {
+            "name": "cargo-crate-rustc-literal-escaper-0.0.5",
+            "version": "0.0.5",
+            "revision": "Cargo package checksum e4ee29da77c5a54f42697493cd4c9b9f31b74df666a6c04dfc4fde77abe0438b",
+            "url": "https://static.crates.io/crates/rustc-literal-escaper/rustc-literal-escaper-0.0.5.crate",
+            "sha256": "e4ee29da77c5a54f42697493cd4c9b9f31b74df666a6c04dfc4fde77abe0438b",
+            "license": "Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build"
+        },
+        {
+            "name": "cargo-crate-shlex-1.3.0",
+            "version": "1.3.0",
+            "revision": "Cargo package checksum 0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64",
+            "url": "https://static.crates.io/crates/shlex/shlex-1.3.0.crate",
+            "sha256": "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-simd-adler32-0.3.10",
+            "version": "0.3.10",
+            "revision": "Cargo package checksum 3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea",
+            "url": "https://static.crates.io/crates/simd-adler32/simd-adler32-0.3.10.crate",
+            "sha256": "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-simplecss-0.2.2",
+            "version": "0.2.2",
+            "revision": "Cargo package checksum 7a9c6883ca9c3c7c90e888de77b7a5c849c779d25d74a1269b0218b14e8b136c",
+            "url": "https://static.crates.io/crates/simplecss/simplecss-0.2.2.crate",
+            "sha256": "7a9c6883ca9c3c7c90e888de77b7a5c849c779d25d74a1269b0218b14e8b136c",
+            "license": "Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-siphasher-1.0.3",
+            "version": "1.0.3",
+            "revision": "Cargo package checksum 8ee5873ec9cce0195efcb7a4e9507a04cd49aec9c83d0389df45b1ef7ba2e649",
+            "url": "https://static.crates.io/crates/siphasher/siphasher-1.0.3.crate",
+            "sha256": "8ee5873ec9cce0195efcb7a4e9507a04cd49aec9c83d0389df45b1ef7ba2e649",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-skrifa-0.44.0",
+            "version": "0.44.0",
+            "revision": "Cargo package checksum 819ab7d62b1d3e72d9d9dea5650bac30424f9111364bb94928dbf5ecad1baa68",
+            "url": "https://static.crates.io/crates/skrifa/skrifa-0.44.0.crate",
+            "sha256": "819ab7d62b1d3e72d9d9dea5650bac30424f9111364bb94928dbf5ecad1baa68",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-slotmap-1.1.1",
+            "version": "1.1.1",
+            "revision": "Cargo package checksum bdd58c3c93c3d278ca835519292445cb4b0d4dc59ccfdf7ceadaab3f8aeb4038",
+            "url": "https://static.crates.io/crates/slotmap/slotmap-1.1.1.crate",
+            "sha256": "bdd58c3c93c3d278ca835519292445cb4b0d4dc59ccfdf7ceadaab3f8aeb4038",
+            "license": "Zlib",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-smallvec-1.16.1",
+            "version": "1.16.1",
+            "revision": "Cargo package checksum ba467056f1b547ed52077911161fc86985becbc60e8e1857c8a144dab0def891",
+            "url": "https://static.crates.io/crates/smallvec/smallvec-1.16.1.crate",
+            "sha256": "ba467056f1b547ed52077911161fc86985becbc60e8e1857c8a144dab0def891",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-strict-num-0.1.1",
+            "version": "0.1.1",
+            "revision": "Cargo package checksum 6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731",
+            "url": "https://static.crates.io/crates/strict-num/strict-num-0.1.1.crate",
+            "sha256": "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-svgtypes-0.16.1",
+            "version": "0.16.1",
+            "revision": "Cargo package checksum 695b5790b3131dafa99b3bbfd25a216edb3d216dad9ca208d4657bfb8f2abc3d",
+            "url": "https://static.crates.io/crates/svgtypes/svgtypes-0.16.1.crate",
+            "sha256": "695b5790b3131dafa99b3bbfd25a216edb3d216dad9ca208d4657bfb8f2abc3d",
+            "license": "Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-syn-3.0.6",
+            "version": "3.0.6",
+            "revision": "Cargo package checksum 8593e8e72159ed2257d083c7a454a85cbf854f37a0966d8d483aff8c8a3ebcee",
+            "url": "https://static.crates.io/crates/syn/syn-3.0.6.crate",
+            "sha256": "8593e8e72159ed2257d083c7a454a85cbf854f37a0966d8d483aff8c8a3ebcee",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-tiny-skia-0.12.0",
+            "version": "0.12.0",
+            "revision": "Cargo package checksum 47ffee5eaaf5527f630fb0e356b90ebdec84d5d18d937c5e440350f88c5a91ea",
+            "url": "https://static.crates.io/crates/tiny-skia/tiny-skia-0.12.0.crate",
+            "sha256": "47ffee5eaaf5527f630fb0e356b90ebdec84d5d18d937c5e440350f88c5a91ea",
+            "license": "BSD-3-Clause",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-tiny-skia-path-0.12.0",
+            "version": "0.12.0",
+            "revision": "Cargo package checksum edca365c3faccca67d06593c5980fa6c57687de727a03131735bb85f01fdeeb9",
+            "url": "https://static.crates.io/crates/tiny-skia-path/tiny-skia-path-0.12.0.crate",
+            "sha256": "edca365c3faccca67d06593c5980fa6c57687de727a03131735bb85f01fdeeb9",
+            "license": "BSD-3-Clause",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-tinyvec-1.13.3",
+            "version": "1.13.3",
+            "revision": "Cargo package checksum fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee",
+            "url": "https://static.crates.io/crates/tinyvec/tinyvec-1.13.3.crate",
+            "sha256": "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee",
+            "license": "Zlib OR Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-unicode-bidi-0.3.18",
+            "version": "0.3.18",
+            "revision": "Cargo package checksum 5c1cb5db39152898a79168971543b1cb5020dff7fe43c8dc468b0885f5e29df5",
+            "url": "https://static.crates.io/crates/unicode-bidi/unicode-bidi-0.3.18.crate",
+            "sha256": "5c1cb5db39152898a79168971543b1cb5020dff7fe43c8dc468b0885f5e29df5",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-unicode-ident-1.0.26",
+            "version": "1.0.26",
+            "revision": "Cargo package checksum d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954",
+            "url": "https://static.crates.io/crates/unicode-ident/unicode-ident-1.0.26.crate",
+            "sha256": "d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954",
+            "license": "(MIT OR Apache-2.0) AND Unicode-3.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-unicode-script-0.5.8",
+            "version": "0.5.8",
+            "revision": "Cargo package checksum 383ad40bb927465ec0ce7720e033cb4ca06912855fc35db31b5755d0de75b1ee",
+            "url": "https://static.crates.io/crates/unicode-script/unicode-script-0.5.8.crate",
+            "sha256": "383ad40bb927465ec0ce7720e033cb4ca06912855fc35db31b5755d0de75b1ee",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-unicode-vo-0.1.0",
+            "version": "0.1.0",
+            "revision": "Cargo package checksum b1d386ff53b415b7fe27b50bb44679e2cc4660272694b7b6f3326d8480823a94",
+            "url": "https://static.crates.io/crates/unicode-vo/unicode-vo-0.1.0.crate",
+            "sha256": "b1d386ff53b415b7fe27b50bb44679e2cc4660272694b7b6f3326d8480823a94",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-unwinding-0.2.8",
+            "version": "0.2.8",
+            "revision": "Cargo package checksum 60612c845ef41699f39dc8c5391f252942c0a88b7d15da672eff0d14101bbd6d",
+            "url": "https://static.crates.io/crates/unwinding/unwinding-0.2.8.crate",
+            "sha256": "60612c845ef41699f39dc8c5391f252942c0a88b7d15da672eff0d14101bbd6d",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-version_check-0.9.5",
+            "version": "0.9.5",
+            "revision": "Cargo package checksum 0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a",
+            "url": "https://static.crates.io/crates/version_check/version_check-0.9.5.crate",
+            "sha256": "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-vex-sdk-0.27.1",
+            "version": "0.27.1",
+            "revision": "Cargo package checksum 79e5fe15afde1305478b35e2cb717fff59f485428534cf49cfdbfa4723379bf6",
+            "url": "https://static.crates.io/crates/vex-sdk/vex-sdk-0.27.1.crate",
+            "sha256": "79e5fe15afde1305478b35e2cb717fff59f485428534cf49cfdbfa4723379bf6",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-wasi-0.11.1+wasi-snapshot-preview1",
+            "version": "0.11.1+wasi-snapshot-preview1",
+            "revision": "Cargo package checksum ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b",
+            "url": "https://static.crates.io/crates/wasi/wasi-0.11.1+wasi-snapshot-preview1.crate",
+            "sha256": "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b",
+            "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-wasi-0.14.4+wasi-0.2.4",
+            "version": "0.14.4+wasi-0.2.4",
+            "revision": "Cargo package checksum 88a5f4a424faf49c3c2c344f166f0662341d470ea185e939657aaff130f0ec4a",
+            "url": "https://static.crates.io/crates/wasi/wasi-0.14.4+wasi-0.2.4.crate",
+            "sha256": "88a5f4a424faf49c3c2c344f166f0662341d470ea185e939657aaff130f0ec4a",
+            "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-weezl-0.1.12",
+            "version": "0.1.12",
+            "revision": "Cargo package checksum a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88",
+            "url": "https://static.crates.io/crates/weezl/weezl-0.1.12.crate",
+            "sha256": "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-windows-link-0.2.1",
+            "version": "0.2.1",
+            "revision": "Cargo package checksum f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5",
+            "url": "https://static.crates.io/crates/windows-link/windows-link-0.2.1.crate",
+            "sha256": "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows-sys-0.60.2",
+            "version": "0.60.2",
+            "revision": "Cargo package checksum f2f500e4d28234f72040990ec9d39e3a6b950f9f22d3dba18416c35882612bcb",
+            "url": "https://static.crates.io/crates/windows-sys/windows-sys-0.60.2.crate",
+            "sha256": "f2f500e4d28234f72040990ec9d39e3a6b950f9f22d3dba18416c35882612bcb",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows-targets-0.53.5",
+            "version": "0.53.5",
+            "revision": "Cargo package checksum 4945f9f551b88e0d65f3db0bc25c33b8acea4d9e41163edf90dcd0b19f9069f3",
+            "url": "https://static.crates.io/crates/windows-targets/windows-targets-0.53.5.crate",
+            "sha256": "4945f9f551b88e0d65f3db0bc25c33b8acea4d9e41163edf90dcd0b19f9069f3",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows_aarch64_gnullvm-0.53.1",
+            "version": "0.53.1",
+            "revision": "Cargo package checksum a9d8416fa8b42f5c947f8482c43e7d89e73a173cead56d044f6a56104a6d1b53",
+            "url": "https://static.crates.io/crates/windows_aarch64_gnullvm/windows_aarch64_gnullvm-0.53.1.crate",
+            "sha256": "a9d8416fa8b42f5c947f8482c43e7d89e73a173cead56d044f6a56104a6d1b53",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows_aarch64_msvc-0.53.1",
+            "version": "0.53.1",
+            "revision": "Cargo package checksum b9d782e804c2f632e395708e99a94275910eb9100b2114651e04744e9b125006",
+            "url": "https://static.crates.io/crates/windows_aarch64_msvc/windows_aarch64_msvc-0.53.1.crate",
+            "sha256": "b9d782e804c2f632e395708e99a94275910eb9100b2114651e04744e9b125006",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows_i686_gnu-0.53.1",
+            "version": "0.53.1",
+            "revision": "Cargo package checksum 960e6da069d81e09becb0ca57a65220ddff016ff2d6af6a223cf372a506593a3",
+            "url": "https://static.crates.io/crates/windows_i686_gnu/windows_i686_gnu-0.53.1.crate",
+            "sha256": "960e6da069d81e09becb0ca57a65220ddff016ff2d6af6a223cf372a506593a3",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows_i686_gnullvm-0.53.1",
+            "version": "0.53.1",
+            "revision": "Cargo package checksum fa7359d10048f68ab8b09fa71c3daccfb0e9b559aed648a8f95469c27057180c",
+            "url": "https://static.crates.io/crates/windows_i686_gnullvm/windows_i686_gnullvm-0.53.1.crate",
+            "sha256": "fa7359d10048f68ab8b09fa71c3daccfb0e9b559aed648a8f95469c27057180c",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows_i686_msvc-0.53.1",
+            "version": "0.53.1",
+            "revision": "Cargo package checksum 1e7ac75179f18232fe9c285163565a57ef8d3c89254a30685b57d83a38d326c2",
+            "url": "https://static.crates.io/crates/windows_i686_msvc/windows_i686_msvc-0.53.1.crate",
+            "sha256": "1e7ac75179f18232fe9c285163565a57ef8d3c89254a30685b57d83a38d326c2",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows_x86_64_gnu-0.53.1",
+            "version": "0.53.1",
+            "revision": "Cargo package checksum 9c3842cdd74a865a8066ab39c8a7a473c0778a3f29370b5fd6b4b9aa7df4a499",
+            "url": "https://static.crates.io/crates/windows_x86_64_gnu/windows_x86_64_gnu-0.53.1.crate",
+            "sha256": "9c3842cdd74a865a8066ab39c8a7a473c0778a3f29370b5fd6b4b9aa7df4a499",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows_x86_64_gnullvm-0.53.1",
+            "version": "0.53.1",
+            "revision": "Cargo package checksum 0ffa179e2d07eee8ad8f57493436566c7cc30ac536a3379fdf008f47f6bb7ae1",
+            "url": "https://static.crates.io/crates/windows_x86_64_gnullvm/windows_x86_64_gnullvm-0.53.1.crate",
+            "sha256": "0ffa179e2d07eee8ad8f57493436566c7cc30ac536a3379fdf008f47f6bb7ae1",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-windows_x86_64_msvc-0.53.1",
+            "version": "0.53.1",
+            "revision": "Cargo package checksum d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650",
+            "url": "https://static.crates.io/crates/windows_x86_64_msvc/windows_x86_64_msvc-0.53.1.crate",
+            "sha256": "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650",
+            "license": "MIT OR Apache-2.0",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-wit-bindgen-0.45.1",
+            "version": "0.45.1",
+            "revision": "Cargo package checksum 5c573471f125075647d03df72e026074b7203790d41351cd6edc96f46bcccd36",
+            "url": "https://static.crates.io/crates/wit-bindgen/wit-bindgen-0.45.1.crate",
+            "sha256": "5c573471f125075647d03df72e026074b7203790d41351cd6edc96f46bcccd36",
+            "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for the pinned Rust standard library build",
+            "scope": "resolution"
+        },
+        {
+            "name": "cargo-crate-xmlwriter-0.1.0",
+            "version": "0.1.0",
+            "revision": "Cargo package checksum ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9",
+            "url": "https://static.crates.io/crates/xmlwriter/xmlwriter-0.1.0.crate",
+            "sha256": "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9",
+            "license": "MIT",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-zlib-rs-0.6.8",
+            "version": "0.6.8",
+            "revision": "Cargo package checksum b268e58e7c693d7c271f93ffc4ba3b380412554231c85bf61ca7af91042a4112",
+            "url": "https://static.crates.io/crates/zlib-rs/zlib-rs-0.6.8.crate",
+            "sha256": "b268e58e7c693d7c271f93ffc4ba3b380412554231c85bf61ca7af91042a4112",
+            "license": "Zlib",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-zune-core-0.5.3",
+            "version": "0.5.3",
+            "revision": "Cargo package checksum d56377fd46368984a170bc5aac5567e52ca5da874caa60bea39fcbca78fb658b",
+            "url": "https://static.crates.io/crates/zune-core/zune-core-0.5.3.crate",
+            "sha256": "d56377fd46368984a170bc5aac5567e52ca5da874caa60bea39fcbca78fb658b",
+            "license": "MIT OR Apache-2.0 OR Zlib",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "cargo-crate-zune-jpeg-0.5.15",
+            "version": "0.5.15",
+            "revision": "Cargo package checksum 27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296",
+            "url": "https://static.crates.io/crates/zune-jpeg/zune-jpeg-0.5.15.crate",
+            "sha256": "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296",
+            "license": "MIT OR Apache-2.0 OR Zlib",
+            "buildOptions": [
+                "exact Cargo.lock version and checksum",
+                "vendored source used with Cargo offline mode"
+            ],
+            "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
+        },
+        {
+            "name": "resvg",
+            "version": "0.48.1",
+            "revision": "68b14c4c3bccdb60344c777406486b54c36ec1a4",
+            "url": "https://github.com/linebender/resvg/archive/refs/tags/v0.48.1.tar.gz",
+            "sha256": "40dafea6b4b9d01e9d28b6d49f1e912daf3e9055676ad9179a5a2db6e7386945",
+            "license": "Apache-2.0 OR MIT",
+            "buildOptions": [
+                "first-party Rust staticlib shim with a narrow C ABI",
+                "default features disabled; raster-images and text enabled",
+                "system-fonts, memmap-fonts, SVGZ, and external string href resolution disabled",
+                "M PLUS 1p regular font loaded only from embedded bytes",
+                "first-party roxmltree preflight rejects more than 100000 XML nodes",
+                "Cargo.lock enforced with --locked",
+                "Rust standard library rebuilt for the musl target",
+                "Rust LTO disabled to avoid repeating cross-language ThinLTO in every final executable",
+                "static archive only"
+            ],
+            "reason": "Sandboxed in-memory SVG parsing and rasterization"
+        },
+        {
+            "name": "m-plus-1p-font",
+            "version": "0.48.1-resvg-bundle",
+            "revision": "resvg 68b14c4c3bccdb60344c777406486b54c36ec1a4",
+            "url": "https://github.com/linebender/resvg/archive/refs/tags/v0.48.1.tar.gz",
+            "sha256": "40dafea6b4b9d01e9d28b6d49f1e912daf3e9055676ad9179a5a2db6e7386945",
+            "license": "OFL-1.1",
+            "buildOptions": [
+                "crates/resvg/tests/fonts/MPLUS1p-Regular.ttf embedded at build time",
+                "font SHA-256 c6a5f15dcbce870497c580de7fa578a75eb8846d2b5603a65eb8fb69ab949892",
+                "no system font discovery"
+            ],
+            "reason": "Deterministic Japanese-capable SVG text rendering"
+        },
+        {
+            "name": "rust-src",
+            "version": "1.93.1",
+            "revision": "01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf",
+            "url": "https://static.rust-lang.org/dist/2026-02-12/rust-src-1.93.1.tar.xz",
+            "sha256": "7ade6b2ef03a3b7a614d54df6637a97d18144690bd49daab63bd4b22e0e6bac0",
+            "license": "Apache-2.0 OR MIT",
+            "buildOptions": [
+                "RUSTC_BOOTSTRAP=1 cargo -Z build-std=std,panic_unwind",
+                "host rustc must be 1.93.1 commit 01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf",
+                "rand 0.9.2 updated to security-fixed 0.9.3 by the listed patch"
+            ],
+            "patches": [
+                {
+                    "path": "cmake/patches/rust-src-1.93.1-rand-0.9.3.patch",
+                    "sha256": "e22fb3de2203c2574e2adc3dc09a3b91b1a4c83cc811e3b27d5bea83f9b94a01",
+                    "reason": "Update the standard-library lock away from RUSTSEC-2026-0097"
+                }
+            ],
+            "securityNotes": [
+                "rand 0.9.3 fixes RUSTSEC-2026-0097 / GHSA-cq8v-f236-94qc"
+            ],
+            "reason": "Pinned Rust standard-library source for static musl resvg builds"
+        },
+        {
             "name": "googletest",
             "version": "1.18.0",
             "revision": "v1.18.0",

@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <memory>
 #include <span>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include <glib.h>
@@ -114,6 +116,25 @@ std::vector<std::byte> MakeWebp(int width, int height)
     return {bytes, bytes + size};
 }
 
+std::vector<std::byte> Svg(std::string_view source)
+{
+    const auto* begin = reinterpret_cast<const std::byte*>(source.data());
+    return {begin, begin + source.size()};
+}
+
+std::string PercentEncode(std::string_view source)
+{
+    constexpr std::string_view hex = "0123456789ABCDEF";
+    std::string result;
+    result.reserve(source.size() * 3);
+    for (const unsigned char byte : source) {
+        result.push_back('%');
+        result.push_back(hex[byte >> 4U]);
+        result.push_back(hex[byte & 0x0fU]);
+    }
+    return result;
+}
+
 std::vector<std::byte> MakePng(int width, int height)
 {
     VipsImage* raw_image = nullptr;
@@ -195,6 +216,19 @@ ImagePtr Load(std::span<const std::byte> body)
 {
     return ImagePtr(vips_image_new_from_buffer(
         body.data(), body.size(), "", nullptr));
+}
+
+void ExpectRedFirstPixel(VipsImage* image)
+{
+    double* raw_pixel = nullptr;
+    int bands = 0;
+    ASSERT_EQ(vips_getpoint(image, &raw_pixel, &bands, 0, 0, nullptr), 0)
+        << vips_error_buffer();
+    BufferPtr pixel(raw_pixel);
+    ASSERT_GE(bands, 3);
+    EXPECT_GT(raw_pixel[0], 180.0);
+    EXPECT_LT(raw_pixel[1], 60.0);
+    EXPECT_LT(raw_pixel[2], 60.0);
 }
 
 class StaticConversionTest : public testing::Test {
@@ -302,6 +336,122 @@ TEST_F(StaticConversionTest, RejectsTruncatedJxl)
     input.resize(52);
     EXPECT_FALSE(convert_static_image(input, MimeType::image_jxl,
         OutputFormat::webp, ImageDimensions{320, 320}));
+}
+
+TEST_F(StaticConversionTest, RendersSvgWithEmbeddedFont)
+{
+    const auto input = Svg(
+        R"(<svg xmlns="http://www.w3.org/2000/svg" width="64" height="32"><rect width="64" height="32" fill="#2478c8"/><text x="3" y="24" font-size="18" fill="white">日本語</text></svg>)");
+    const auto result = convert_static_image(input,
+        MimeType::image_svg_xml, OutputFormat::webp,
+        ImageDimensions{320, 320});
+    ASSERT_TRUE(result) << static_cast<int>(result.error);
+    const ImagePtr decoded = Load(result.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    EXPECT_EQ(vips_image_get_width(decoded.get()), 64);
+    EXPECT_EQ(vips_image_get_height(decoded.get()), 32);
+}
+
+TEST_F(StaticConversionTest, RejectsSvgDoctype)
+{
+    const auto input = Svg(
+        R"(<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>)");
+    EXPECT_FALSE(convert_static_image(input, MimeType::image_svg_xml,
+        OutputFormat::webp, ImageDimensions{320, 320}));
+}
+
+TEST_F(StaticConversionTest, IgnoresSvgExternalImageHref)
+{
+    const std::string source =
+        R"(<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6"><rect width="8" height="6" fill="red"/><image href=")"
+        + std::string(MEDIAPROXY_SOURCE_DIR)
+        + R"(/tests/fixtures/media/apng/palette-static.png" width="8" height="6"/></svg>)";
+    const auto input = Svg(source);
+    const auto result = convert_static_image(input,
+        MimeType::image_svg_xml, OutputFormat::webp,
+        ImageDimensions{320, 320});
+    ASSERT_TRUE(result) << static_cast<int>(result.error);
+    const ImagePtr decoded = Load(result.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    EXPECT_EQ(vips_image_get_width(decoded.get()), 8);
+    EXPECT_EQ(vips_image_get_height(decoded.get()), 6);
+    ExpectRedFirstPixel(decoded.get());
+}
+
+TEST_F(StaticConversionTest, RejectsOversizedSvgCanvas)
+{
+    const auto input = Svg(
+        R"(<svg xmlns="http://www.w3.org/2000/svg" width="7681" height="1"/>)");
+    EXPECT_FALSE(convert_static_image(input, MimeType::image_svg_xml,
+        OutputFormat::webp, ImageDimensions{320, 320}));
+}
+
+TEST_F(StaticConversionTest, RejectsAutoDerivedOversizedSvgCanvas)
+{
+    const auto input = Svg(
+        R"(<svg ls="3.2"><path d="M-7-96 6 0 07 4E7"/></svg>)");
+    EXPECT_FALSE(convert_static_image(input, MimeType::image_svg_xml,
+        OutputFormat::webp, ImageDimensions{320, 320}));
+}
+
+TEST_F(StaticConversionTest, SkipsSvgDataUrlsAfterCountLimit)
+{
+    constexpr std::string_view transparent =
+        "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz4=";
+    constexpr std::string_view blue =
+        "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9ImJsdWUiLz48L3N2Zz4=";
+    std::string source =
+        R"(<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="red"/>)";
+    for (std::size_t index = 0; index < 128; ++index) {
+        source += R"(<image width="1" height="1" href="data:image/svg+xml;base64,)";
+        source += transparent;
+        source += R"("/>)";
+    }
+    source += R"(<image width="1" height="1" href="data:image/svg+xml;base64,)";
+    source += blue;
+    source += R"("/></svg>)";
+
+    const auto result = convert_static_image(Svg(source),
+        MimeType::image_svg_xml, OutputFormat::webp,
+        ImageDimensions{320, 320});
+    ASSERT_TRUE(result) << static_cast<int>(result.error);
+    const ImagePtr decoded = Load(result.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    ExpectRedFirstPixel(decoded.get());
+}
+
+TEST_F(StaticConversionTest, RejectsSvgOverNodeLimit)
+{
+    std::string source =
+        R"(<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1">)";
+    for (std::size_t index = 0; index < 100'001; ++index) {
+        source += "<path/>";
+    }
+    source += "</svg>";
+    EXPECT_FALSE(convert_static_image(Svg(source),
+        MimeType::image_svg_xml, OutputFormat::webp,
+        ImageDimensions{320, 320}));
+}
+
+TEST_F(StaticConversionTest, SkipsNestedSvgOverNodeLimit)
+{
+    std::string nested =
+        R"(<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1">)";
+    for (std::size_t index = 0; index < 100'001; ++index) {
+        nested += "<path/>";
+    }
+    nested += "</svg>";
+    const std::string source =
+        R"(<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="red"/><image width="1" height="1" href="data:image/svg+xml,)"
+        + PercentEncode(nested) + R"("/></svg>)";
+
+    const auto result = convert_static_image(Svg(source),
+        MimeType::image_svg_xml, OutputFormat::webp,
+        ImageDimensions{320, 320});
+    ASSERT_TRUE(result) << static_cast<int>(result.error);
+    const ImagePtr decoded = Load(result.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    ExpectRedFirstPixel(decoded.get());
 }
 
 TEST_F(StaticConversionTest, RejectsEmptyAndMalformedInput)

@@ -1,5 +1,6 @@
 #include <mediaproxy/media/static_conversion.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -11,6 +12,8 @@
 #include <jxl/decode.h>
 #include <libheif/heif.h>
 #include <libheif/heif_sequences.h>
+#include <mediaproxy/media/resvg_shim.h>
+#include <mediaproxy/media/svg_font.hpp>
 #include <mediaproxy/media/vips_runtime.hpp>
 #include <vips/vips.h>
 
@@ -70,6 +73,8 @@ using HeifDecodingOptionsPtr =
     std::unique_ptr<heif_decoding_options, HeifDecodingOptionsFree>;
 using JxlDecoderPtr =
     std::unique_ptr<JxlDecoder, decltype(&JxlDecoderDestroy)>;
+using ResvgTreePtr =
+    std::unique_ptr<MpResvgTree, decltype(&mp_resvg_tree_destroy)>;
 
 constexpr char heif_image_owner_key[] =
     "mediaproxy-avif-sequence-image";
@@ -272,10 +277,72 @@ void release_heif_image(void* image) noexcept
     }
 }
 
+[[nodiscard]] ImagePtr load_svg(std::span<const std::byte> body)
+{
+    const auto font = embedded_svg_font();
+    MpResvgTree* raw_tree = nullptr;
+    MpResvgSize size{};
+    if (mp_resvg_parse(
+            reinterpret_cast<const std::uint8_t*>(body.data()), body.size(),
+            reinterpret_cast<const std::uint8_t*>(font.data()), font.size(),
+            &raw_tree, &size)
+            != 0
+        || raw_tree == nullptr
+        || size.width > static_cast<std::uint32_t>(
+               std::numeric_limits<int>::max())
+        || size.height > static_cast<std::uint32_t>(
+               std::numeric_limits<int>::max())
+        || !validate_dimensions(static_cast<int>(size.width),
+            static_cast<int>(size.height), 1, false)) {
+        if (raw_tree != nullptr) {
+            mp_resvg_tree_destroy(raw_tree);
+        }
+        return {};
+    }
+    ResvgTreePtr tree(raw_tree, &mp_resvg_tree_destroy);
+
+    constexpr std::size_t bands = 4;
+    const std::size_t width = size.width;
+    const std::size_t height = size.height;
+    if (height > std::numeric_limits<std::size_t>::max() / width
+        || width * height
+            > std::numeric_limits<std::size_t>::max() / bands) {
+        return {};
+    }
+    std::vector<std::uint8_t> pixels(width * height * bands);
+    if (mp_resvg_render(tree.get(), size.width, size.height, pixels.data(),
+            pixels.size())
+        != 0) {
+        return {};
+    }
+
+    for (std::size_t offset = 0; offset < pixels.size(); offset += bands) {
+        const std::uint32_t alpha = pixels[offset + 3];
+        if (alpha == 0) {
+            pixels[offset] = 0;
+            pixels[offset + 1] = 0;
+            pixels[offset + 2] = 0;
+            continue;
+        }
+        for (std::size_t channel = 0; channel < 3; ++channel) {
+            const std::uint32_t premultiplied = pixels[offset + channel];
+            pixels[offset + channel] = static_cast<std::uint8_t>(
+                std::min(255U,
+                    (premultiplied * 255U + alpha / 2U) / alpha));
+        }
+    }
+    return ImagePtr(vips_image_new_from_memory_copy(pixels.data(),
+        pixels.size(), static_cast<int>(size.width),
+        static_cast<int>(size.height), bands, VIPS_FORMAT_UCHAR));
+}
+
 [[nodiscard]] ImagePtr load_image(
     std::span<const std::byte> body,
     MimeType mime)
 {
+    if (mime == MimeType::image_svg_xml) {
+        return load_svg(body);
+    }
     if (mime == MimeType::image_jxl) {
         return load_jxl_first_frame(body);
     }
