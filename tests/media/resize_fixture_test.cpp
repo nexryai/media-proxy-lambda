@@ -34,6 +34,7 @@ using mediaproxy::http::PreferredOutput;
 using mediaproxy::http::parse_query;
 using mediaproxy::http::select_media_options;
 using mediaproxy::media::ImageDimensions;
+using mediaproxy::media::EncodingQuality;
 using mediaproxy::media::MimeType;
 using mediaproxy::media::OutputFormat;
 using mediaproxy::media::convert_media;
@@ -47,13 +48,13 @@ struct Target {
 };
 
 constexpr std::array targets{
-    Target{"avatar", "avatar=1", "avif", OutputFormat::avif},
-    Target{"emoji", "emoji=1", "avif", OutputFormat::avif},
-    Target{"preview", "preview=1", "webp", OutputFormat::webp},
-    Target{"badge", "badge=1", "avif", OutputFormat::avif},
-    Target{"thumbnail", "thumbnail=1", "webp", OutputFormat::webp},
-    Target{"ticker", "ticker=1", "avif", OutputFormat::avif},
-    Target{"default", "", "webp", OutputFormat::webp},
+    Target{"avatar", "url=x&avatar=1", "avif", OutputFormat::avif},
+    Target{"emoji", "url=x&emoji=1", "avif", OutputFormat::avif},
+    Target{"preview", "url=x&preview=1", "webp", OutputFormat::webp},
+    Target{"badge", "url=x&badge=1", "avif", OutputFormat::avif},
+    Target{"thumbnail", "url=x&thumbnail=1", "webp", OutputFormat::webp},
+    Target{"ticker", "url=x&ticker=1", "avif", OutputFormat::avif},
+    Target{"default", "url=x", "webp", OutputFormat::webp},
 };
 
 struct Fixture {
@@ -166,7 +167,9 @@ TEST_P(ResizeFixtureTest, WritesSelectorResultAtExpectedDimensions)
 
     const auto result = convert_media(input, fixture.mime,
         options.force_static, requested_output,
-        {options.width_limit, options.height_limit});
+        {options.width_limit, options.height_limit},
+        options.url_only ? EncodingQuality::url_only
+                         : EncodingQuality::standard);
     ASSERT_TRUE(result) << "Conversion failed with error "
                         << static_cast<int>(result.error) << ": "
                         << vips_error_buffer();

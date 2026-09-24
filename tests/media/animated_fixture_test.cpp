@@ -35,6 +35,7 @@ using mediaproxy::http::PreferredOutput;
 using mediaproxy::http::parse_query;
 using mediaproxy::http::select_media_options;
 using mediaproxy::media::ImageDimensions;
+using mediaproxy::media::EncodingQuality;
 using mediaproxy::media::MimeType;
 using mediaproxy::media::OutputFormat;
 using mediaproxy::media::convert_media;
@@ -47,13 +48,13 @@ struct Target {
 };
 
 constexpr std::array targets{
-    Target{"avatar", "avatar=1", OutputFormat::avif},
-    Target{"emoji", "emoji=1", OutputFormat::avif},
-    Target{"preview", "preview=1", OutputFormat::webp},
-    Target{"badge", "badge=1", OutputFormat::avif},
-    Target{"thumbnail", "thumbnail=1", OutputFormat::webp},
-    Target{"ticker", "ticker=1", OutputFormat::avif},
-    Target{"default", "", OutputFormat::webp},
+    Target{"avatar", "url=x&avatar=1", OutputFormat::avif},
+    Target{"emoji", "url=x&emoji=1", OutputFormat::avif},
+    Target{"preview", "url=x&preview=1", OutputFormat::webp},
+    Target{"badge", "url=x&badge=1", OutputFormat::avif},
+    Target{"thumbnail", "url=x&thumbnail=1", OutputFormat::webp},
+    Target{"ticker", "url=x&ticker=1", OutputFormat::avif},
+    Target{"default", "url=x", OutputFormat::webp},
 };
 
 struct Fixture {
@@ -90,13 +91,13 @@ constexpr std::array fixtures{
     Fixture{"800x450_1.avif", MimeType::image_avif, false,
         {{1, 1, 1, 1, 1, 1, 1}}, static_dimensions_800_by_450},
     Fixture{"800x450_1.webp", MimeType::image_webp, true,
-        // At ticker size libwebp coalesces frames that become identical.
-        {{234, 234, 234, 234, 234, 220, 234}},
+        // libwebp coalesces identical encoded frames at selector quality 65.
+        {{234, 233, 229, 234, 234, 220, 234}},
         animated_dimensions_800_by_450},
     Fixture{"800x450_2.avif", MimeType::image_avif, false,
         {{1, 1, 1, 1, 1, 1, 1}}, static_dimensions_800_by_450},
     Fixture{"800x450_2.webp", MimeType::image_webp, true,
-        {{325, 325, 325, 325, 325, 156, 325}},
+        {{325, 325, 325, 325, 325, 111, 325}},
         animated_dimensions_800_by_450},
     Fixture{"animated-webp-supported.webp", MimeType::image_webp, true,
         {{12, 12, 12, 12, 12, 12, 12}},
@@ -220,7 +221,9 @@ TEST_P(AnimatedFixtureTest, WritesSelectorResultWithExpectedFrames)
 
     const auto result = convert_media(input, fixture.mime,
         options.force_static, requested_output,
-        {options.width_limit, options.height_limit});
+        {options.width_limit, options.height_limit},
+        options.url_only ? EncodingQuality::url_only
+                         : EncodingQuality::standard);
     ASSERT_TRUE(result) << "Conversion failed with error "
                         << static_cast<int>(result.error) << ": "
                         << vips_error_buffer();

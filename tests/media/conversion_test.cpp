@@ -4,6 +4,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <glib.h>
@@ -25,21 +26,28 @@ struct ImageUnref {
 
 using ImagePtr = std::unique_ptr<VipsImage, ImageUnref>;
 using mediaproxy::media::ImageDimensions;
+using mediaproxy::media::EncodingQuality;
 using mediaproxy::media::MimeType;
 using mediaproxy::media::OutputFormat;
 using mediaproxy::media::convert_media;
 using mediaproxy::media::initialize_vips;
+using mediaproxy::media::vips_encoding_quality;
 
-std::vector<std::byte> ReadFixture(const char* name)
+std::vector<std::byte> ReadMediaFixture(std::string_view path)
 {
-    const std::string path = std::string{MEDIAPROXY_SOURCE_DIR}
-        + "/tests/fixtures/media/apng/" + name;
-    std::ifstream input(path, std::ios::binary);
-    EXPECT_TRUE(input) << path;
+    const std::string full_path = std::string{MEDIAPROXY_SOURCE_DIR}
+        + "/tests/fixtures/media/" + std::string{path};
+    std::ifstream input(full_path, std::ios::binary);
+    EXPECT_TRUE(input) << full_path;
     const std::vector<char> bytes{
         std::istreambuf_iterator<char>(input), {}};
     const auto* begin = reinterpret_cast<const std::byte*>(bytes.data());
     return {begin, begin + bytes.size()};
+}
+
+std::vector<std::byte> ReadFixture(const char* name)
+{
+    return ReadMediaFixture(std::string{"apng/"} + name);
 }
 
 ImagePtr LoadAll(const std::vector<std::byte>& body)
@@ -55,6 +63,51 @@ protected:
         ASSERT_TRUE(initialize_vips()) << vips_error_buffer();
     }
 };
+
+TEST_F(MediaConversionTest, UsesSharedVipsQualityForStaticWebpAndAvif)
+{
+    EXPECT_EQ(vips_encoding_quality(EncodingQuality::standard), 65);
+    EXPECT_EQ(vips_encoding_quality(EncodingQuality::url_only), 70);
+    const auto input = ReadMediaFixture("resize/1500x843.jpg");
+    ASSERT_FALSE(input.empty());
+    for (const auto output : {OutputFormat::webp, OutputFormat::avif}) {
+        SCOPED_TRACE(static_cast<int>(output));
+        const auto standard = convert_media(input, MimeType::image_jpeg, false,
+            output, ImageDimensions{320, 320}, EncodingQuality::standard);
+        const auto url_only = convert_media(input, MimeType::image_jpeg, false,
+            output, ImageDimensions{320, 320}, EncodingQuality::url_only);
+        ASSERT_TRUE(standard) << static_cast<int>(standard.error);
+        ASSERT_TRUE(url_only) << static_cast<int>(url_only.error);
+        EXPECT_NE(standard.body, url_only.body);
+    }
+}
+
+TEST_F(MediaConversionTest, AppliesQualityToAnimatedVipsButNotApng)
+{
+    const auto animation = ReadMediaFixture(
+        "animated/animated-webp-supported.webp");
+    ASSERT_FALSE(animation.empty());
+    const auto standard = convert_media(animation, MimeType::image_webp,
+        false, OutputFormat::webp, ImageDimensions{320, 320},
+        EncodingQuality::standard);
+    const auto url_only = convert_media(animation, MimeType::image_webp,
+        false, OutputFormat::webp, ImageDimensions{320, 320},
+        EncodingQuality::url_only);
+    ASSERT_TRUE(standard) << static_cast<int>(standard.error);
+    ASSERT_TRUE(url_only) << static_cast<int>(url_only.error);
+    EXPECT_NE(standard.body, url_only.body);
+
+    const auto apng = ReadFixture("palette-alpha.png");
+    const auto apng_standard = convert_media(apng, MimeType::image_png, false,
+        OutputFormat::webp, ImageDimensions{320, 320},
+        EncodingQuality::standard);
+    const auto apng_url_only = convert_media(apng, MimeType::image_png, false,
+        OutputFormat::webp, ImageDimensions{320, 320},
+        EncodingQuality::url_only);
+    ASSERT_TRUE(apng_standard);
+    ASSERT_TRUE(apng_url_only);
+    EXPECT_EQ(apng_standard.body, apng_url_only.body);
+}
 
 TEST_F(MediaConversionTest, NonPaletteApngIgnoresStaticPreferenceAndLimits)
 {

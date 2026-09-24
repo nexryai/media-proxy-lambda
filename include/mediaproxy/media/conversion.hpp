@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <mediaproxy/media/classification.hpp>
+#include <mediaproxy/media/encoding_quality.hpp>
 #include <mediaproxy/media/mime.hpp>
 #include <mediaproxy/media/resize.hpp>
 
@@ -33,6 +34,7 @@ struct MediaConversionResult {
     MimeType mime,
     bool force_static,
     OutputFormat preferred_output,
-    ImageDimensions limits);
+    ImageDimensions limits,
+    EncodingQuality quality = EncodingQuality::standard);
 
 } // namespace mediaproxy::media

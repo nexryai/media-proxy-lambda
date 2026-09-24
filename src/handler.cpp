@@ -16,6 +16,7 @@
 #include <mediaproxy/http/url_policy.hpp>
 #include <mediaproxy/media/classification.hpp>
 #include <mediaproxy/media/conversion.hpp>
+#include <mediaproxy/media/encoding_quality.hpp>
 #include <mediaproxy/media/mime.hpp>
 #include <mediaproxy/media/resize.hpp>
 
@@ -105,7 +106,9 @@ http::HttpResponse handle_function_url_event(
         media::ImageDimensions{
             .width = request.options.width_limit,
             .height = request.options.height_limit,
-        });
+        },
+        request.options.url_only ? media::EncodingQuality::url_only
+                                 : media::EncodingQuality::standard);
     if (diagnostics != nullptr) {
         diagnostics->media_microseconds = elapsed_microseconds(media_start);
         diagnostics->media_error = converted.error;

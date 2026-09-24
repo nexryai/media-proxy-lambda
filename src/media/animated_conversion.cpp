@@ -55,7 +55,8 @@ using BufferPtr = std::unique_ptr<void, GFree>;
 
 AnimatedConversionResult convert_animated_image(
     std::span<const std::byte> body,
-    ImageDimensions limits)
+    ImageDimensions limits,
+    EncodingQuality quality)
 {
     if (!initialize_vips()) {
         return fail(AnimatedConversionError::initialization);
@@ -107,7 +108,8 @@ AnimatedConversionResult convert_animated_image(
     void* encoded_memory = nullptr;
     std::size_t encoded_size = 0;
     const int encode_result = vips_webpsave_buffer(current, &encoded_memory,
-        &encoded_size, "Q", 70, "lossless", false, nullptr);
+        &encoded_size, "Q", vips_encoding_quality(quality), "lossless", false,
+        nullptr);
     BufferPtr encoded(encoded_memory);
     if (encode_result != 0 || !encoded || encoded_size == 0) {
         return fail(AnimatedConversionError::encode);

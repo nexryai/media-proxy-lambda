@@ -4,6 +4,7 @@
 #include <span>
 #include <vector>
 
+#include <mediaproxy/media/encoding_quality.hpp>
 #include <mediaproxy/media/resize.hpp>
 
 namespace mediaproxy::media {
@@ -29,6 +30,7 @@ struct AnimatedConversionResult {
 
 [[nodiscard]] AnimatedConversionResult convert_animated_image(
     std::span<const std::byte> body,
-    ImageDimensions limits);
+    ImageDimensions limits,
+    EncodingQuality quality = EncodingQuality::standard);
 
 } // namespace mediaproxy::media

@@ -10,9 +10,10 @@ the behavior to implement is completely stated here.
 
 The intentional media changes in the C++ release are the APNG
 `BLEND_OP_OVER`, chunk-classification, first-frame, and palette fixes in
-section 8 and the bounded resvg-based SVG input path in section 6. All other
-unrelated legacy behavior, including unusual resize decisions and response
-content-type selection, remains part of this contract.
+section 8, the bounded resvg-based SVG input path in section 6, and the
+request-dependent libvips encoding quality in section 7. All other unrelated
+legacy behavior, including unusual resize decisions and response content-type
+selection, remains part of this contract.
 
 Where this document labels a rule as a security exception, the safer rule is
 normative even if a historical implementation accepted more input.
@@ -85,6 +86,12 @@ Select dimensions and preferred output using the first true row:
 | 7 | none | 3200 | 3200 | WebP |
 
 `static=1` is evaluated independently after selector choice.
+An `url`-only request has exactly one accepted query entry and its decoded key
+is `url`. Duplicate `url` entries and any additional accepted entry, including
+an unknown key or `static=0`, make it a normal request. Empty fields and fields
+discarded by section 2.2 do not count. This request distinction selects only
+the encoding quality in section 7.4; it does not change selector precedence or
+resize limits.
 
 ### 2.4 Successful media response
 
@@ -427,11 +434,22 @@ remain unresized when the width limit is non-zero.
 
 ### 7.4 Encoding
 
-- Static WebP: quality 70, lossy.
-- Animated GIF/WebP conversion: animated WebP quality 70, lossy, preserving
-  the pages/timing behavior produced by the pinned libvips/codec graph.
-- AVIF: quality 65, effort 1, lossy.
+For libvips WebP and AVIF encoders, use quality 70 for an `url`-only request
+under section 2.3 and quality 65 for every other request. The quality values
+are defined in C++ and passed explicitly to libvips. An `url`-only request
+currently selects WebP; the same quality policy applies if AVIF is selected
+through another caller of the media conversion API.
+
+- Static WebP: selector-dependent quality above, lossy.
+- Animated GIF/WebP conversion: animated WebP at the same quality, lossy,
+  preserving the pages/timing behavior produced by the pinned libvips/codec
+  graph. The codec may coalesce frames differently at quality 65 and 70;
+  compare page counts at the quality selected by the request.
+- AVIF: selector-dependent quality above, effort 1, lossy.
 - A static request for an animation encodes only the first decoded page.
+
+The APNG conversion in section 8 uses libwebp directly and retains its
+lossless per-frame configuration; this libvips quality rule does not affect it.
 
 Pin libvips, libjxl, libwebp, libheif, libaom, and every
 decoding/resampling dependency.

@@ -116,6 +116,8 @@ MediaOptions select_media_options(const QueryParameters& parameters) noexcept
         };
     }
     options.force_static = parameters.boolean("static");
+    options.url_only = parameters.entries().size() == 1
+        && parameters.entries().front().key == "url";
     return options;
 }
 

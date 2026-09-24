@@ -520,6 +520,7 @@ set(mediaproxy_media_sources
     src/media/apng_decoder.cpp
     src/media/classification.cpp
     src/media/conversion.cpp
+    src/media/encoding_quality.cpp
     src/media/mime.cpp
     src/media/resize.cpp
     src/media/static_conversion.cpp

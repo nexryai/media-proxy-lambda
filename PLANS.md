@@ -471,6 +471,9 @@ Deliverables:
   fallback, AVIF-sequence first-frame fallback, 7680-by-4320 rejection
   boundaries, and static/animated resize formulas.
 - Implement static/animated WebP and AVIF options exactly.
+- Define libvips WebP/AVIF quality values in C++ and carry the parsed
+  `url`-only request distinction through static and animated encoding: quality
+  70 for that request, 65 otherwise. Keep direct APNG libwebp encoding separate.
 - Bound arithmetic, pages, frame memory, and decoded resources above valid
   fixture maxima.
 - Add GoogleTest unit tests for MIME priority, format selection, dimension

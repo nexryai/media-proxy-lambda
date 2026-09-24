@@ -122,6 +122,16 @@
             ]
         },
         {
+            "id": "query.url-only-quality",
+            "sections": ["2.2", "2.3", "7.4"],
+            "suite": "event-query",
+            "variants": [
+                "one parsed url entry selects quality 70",
+                "duplicate url or any accepted extra key selects quality 65",
+                "empty and discarded invalid fields do not count"
+            ]
+        },
+        {
             "id": "response.success-metadata",
             "sections": ["2.4"],
             "suite": "response-mapping",
@@ -501,9 +511,10 @@
             "sections": ["7.4"],
             "suite": "media-golden",
             "variants": [
-                "static WebP lossy quality 70",
-                "animated WebP lossy quality 70",
-                "AVIF lossy quality 65 effort 1",
+                "static WebP lossy quality 65, or 70 for url-only requests",
+                "animated WebP lossy quality 65, or 70 for url-only requests",
+                "animated WebP frame coalescing follows the selected quality",
+                "AVIF lossy quality 65, or 70 for url-only requests, effort 1",
                 "static request for animation encodes first page only",
                 "metadata orientation profile alpha and timing golden diagnostics"
             ]

@@ -1,3 +1,4 @@
+#include <array>
 #include <cstddef>
 #include <fstream>
 #include <iomanip>
@@ -5,6 +6,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 #include <gtest/gtest.h>
 #include <mediaproxy/http/query.hpp>
@@ -13,6 +15,7 @@
 namespace {
 
 using mediaproxy::http::parse_query;
+using mediaproxy::http::select_media_options;
 
 std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadQueryVectors()
 {
@@ -124,5 +127,28 @@ TEST(Query, MatchesCheckedInParsingLookupAndBooleanVectors)
                     yyjson_get_bool(value));
             }
         }
+    }
+}
+
+TEST(Query, UrlOnlyQualityUsesAcceptedEntries)
+{
+    struct Case {
+        std::string_view query;
+        bool url_only;
+    };
+    constexpr std::array cases{
+        Case{"url=https%3A%2F%2Fexample.com%2Fx", true},
+        Case{"url=x&&", true},
+        Case{"url=x&broken=%GG", true},
+        Case{"url=x&url=y", false},
+        Case{"url=x&unused=1", false},
+        Case{"url=x&static=0", false},
+        Case{"url=x&avatar=1", false},
+        Case{"avatar=1", false},
+    };
+    for (const auto& test_case : cases) {
+        SCOPED_TRACE(test_case.query);
+        EXPECT_EQ(select_media_options(parse_query(test_case.query)).url_only,
+            test_case.url_only);
     }
 }

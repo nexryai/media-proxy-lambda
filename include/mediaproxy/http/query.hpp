@@ -47,6 +47,7 @@ struct MediaOptions {
     std::uint32_t height_limit = 3200;
     PreferredOutput preferred_output = PreferredOutput::webp;
     bool force_static = false;
+    bool url_only = false;
 };
 
 [[nodiscard]] MediaOptions select_media_options(

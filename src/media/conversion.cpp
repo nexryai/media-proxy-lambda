@@ -82,7 +82,8 @@ MediaConversionResult convert_media(
     MimeType mime,
     bool force_static,
     OutputFormat preferred_output,
-    ImageDimensions limits)
+    ImageDimensions limits,
+    EncodingQuality quality)
 {
     if (!initialize_vips()) {
         return fail(MediaConversionError::decode);
@@ -102,7 +103,7 @@ MediaConversionResult convert_media(
         return fail(MediaConversionError::unsupported);
     }
     if (plan->animated) {
-        auto converted = convert_animated_image(body, limits);
+        auto converted = convert_animated_image(body, limits, quality);
         if (!converted) {
             return fail(MediaConversionError::convert);
         }
@@ -113,7 +114,8 @@ MediaConversionResult convert_media(
         };
     }
 
-    auto converted = convert_static_image(body, mime, plan->output, limits);
+    auto converted = convert_static_image(body, mime, plan->output, limits,
+        quality);
     if (!converted) {
         return fail(MediaConversionError::convert);
     }

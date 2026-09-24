@@ -229,6 +229,27 @@ TEST_F(HandlerTest, ConvertsDownloadedMediaIntoPreferredResponse)
     EXPECT_EQ(vips_cache_get_size(), 0);
 }
 
+TEST_F(HandlerTest, UrlOnlyRequestUsesHigherWebpQuality)
+{
+    FakeOrigin origin;
+    origin.body = ReadFile(std::string{MEDIAPROXY_SOURCE_DIR}
+        + "/tests/fixtures/media/resize/1500x843.jpg");
+    ASSERT_FALSE(origin.body.empty());
+    const std::string url_query =
+        "url=https%3A%2F%2F93.184.216.34%2Fimage";
+    const auto url_only = MediaEvent(url_query);
+    const auto with_extra = MediaEvent(url_query + "&unused=1");
+    const auto high_quality = handle_function_url_event(
+        std::as_bytes(std::span{url_only}), Timeout(), {}, Transport(origin));
+    const auto standard_quality = handle_function_url_event(
+        std::as_bytes(std::span{with_extra}), Timeout(), {}, Transport(origin));
+    ASSERT_EQ(high_quality.status, 200);
+    ASSERT_EQ(standard_quality.status, 200);
+    EXPECT_EQ(HeaderValue(high_quality, "Content-Type"), "image/webp");
+    EXPECT_EQ(HeaderValue(standard_quality, "Content-Type"), "image/webp");
+    EXPECT_NE(high_quality.body, standard_quality.body);
+}
+
 TEST_F(HandlerTest, LogsBoundedDiagnosticsWithoutRequestData)
 {
     std::FILE* const stream = std::tmpfile();

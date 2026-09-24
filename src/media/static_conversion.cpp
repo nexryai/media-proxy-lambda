@@ -446,7 +446,8 @@ StaticConversionResult convert_static_image(
     std::span<const std::byte> body,
     MimeType mime,
     OutputFormat output,
-    ImageDimensions limits)
+    ImageDimensions limits,
+    EncodingQuality quality)
 {
     if (!initialize_vips()) {
         return fail(StaticConversionError::initialization);
@@ -510,15 +511,16 @@ StaticConversionResult convert_static_image(
 
     void* encoded_memory = nullptr;
     std::size_t encoded_size = 0;
+    const int vips_quality = vips_encoding_quality(quality);
     const int encode_result = output == OutputFormat::avif
         ? vips_heifsave_buffer(current, &encoded_memory, &encoded_size,
-              "Q", 65,
+              "Q", vips_quality,
               "effort", 1,
               "lossless", false,
               "compression", VIPS_FOREIGN_HEIF_COMPRESSION_AV1,
               nullptr)
         : vips_webpsave_buffer(current, &encoded_memory, &encoded_size,
-              "Q", 70,
+              "Q", vips_quality,
               "lossless", false,
               nullptr);
     BufferPtr encoded(encoded_memory);
