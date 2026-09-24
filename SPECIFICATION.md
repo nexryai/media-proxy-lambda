@@ -544,9 +544,13 @@ timestamp as:
 timestamp_ms = trunc_toward_zero(float32(n + 1) * delay_seconds * 1000)
 ```
 
-This is not a cumulative sum and is intentionally retained. Add frames with a
-null/default per-frame `WebPConfig`, do not add a synthetic terminal frame, and
-assemble with `WebPAnimEncoderAssemble`.
+This is not a cumulative sum and is intentionally retained. Initialize a
+per-frame `WebPConfig` with libwebp defaults, then set `lossless=1` and
+`method=0` before adding frames. The former null config implicitly selected
+`lossless=1` with default `method=4`. The faster method retains lossless frame
+pixels but changes encoded WebP bytes and can increase output size. Keep all
+other config fields at their defaults. Do not add a synthetic terminal frame,
+and assemble with `WebPAnimEncoderAssemble`.
 
 ### 8.5 Required APNG tests
 

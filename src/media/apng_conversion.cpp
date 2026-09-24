@@ -118,6 +118,12 @@ ApngConversionResult convert_apng_to_webp(
     if (!encoder) {
         return fail(ApngConversionError::encoder);
     }
+    WebPConfig config{};
+    if (WebPConfigInit(&config) == 0) {
+        return fail(ApngConversionError::encoder);
+    }
+    config.lossless = 1;
+    config.method = 0;
 
     for (std::size_t index = 0; index < decoded.frames.size(); ++index) {
         const auto& frame = decoded.frames[index];
@@ -149,7 +155,7 @@ ApngConversionResult convert_apng_to_webp(
             frame.control.delay_numerator,
             frame.control.delay_denominator);
         if (WebPAnimEncoderAdd(
-                encoder.get(), &picture.value, timestamp, nullptr)
+                encoder.get(), &picture.value, timestamp, &config)
             == 0) {
             return fail(ApngConversionError::encoder);
         }

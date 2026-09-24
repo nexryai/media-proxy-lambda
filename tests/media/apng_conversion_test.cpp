@@ -1,16 +1,23 @@
+#include <array>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <fstream>
 #include <iterator>
 #include <memory>
+#include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <glib.h>
 #include <gtest/gtest.h>
 #include <mediaproxy/media/apng_conversion.hpp>
+#include <mediaproxy/media/apng_compositor.hpp>
+#include <mediaproxy/media/apng_decoder.hpp>
 #include <mediaproxy/media/conversion.hpp>
 #include <mediaproxy/media/vips_runtime.hpp>
+#include <openssl/sha.h>
 #include <vips/vips.h>
 #include <webp/demux.h>
 
@@ -28,6 +35,22 @@ struct ImageUnref {
 using ImagePtr = std::unique_ptr<VipsImage, ImageUnref>;
 using mediaproxy::media::convert_apng_to_webp;
 using mediaproxy::media::initialize_vips;
+
+std::string Sha256(std::span<const std::byte> input)
+{
+    std::array<std::uint8_t, SHA256_DIGEST_LENGTH> digest{};
+    EXPECT_EQ(::SHA256(reinterpret_cast<const std::uint8_t*>(input.data()),
+                  input.size(), digest.data()),
+        digest.data());
+    constexpr char hex[] = "0123456789abcdef";
+    std::string output;
+    output.reserve(digest.size() * 2);
+    for (const auto byte : digest) {
+        output.push_back(hex[byte >> 4U]);
+        output.push_back(hex[byte & 0x0fU]);
+    }
+    return output;
+}
 
 std::vector<std::byte> ReadFixture(const char* name)
 {
@@ -100,6 +123,55 @@ TEST_F(ApngConversionTest, PreservesIssueOneFirstFrame)
     EXPECT_LT(pixels[1], 50);
     EXPECT_GT(pixels[2], 200);
     EXPECT_EQ(pixels[3], 255);
+}
+
+TEST_F(ApngConversionTest, EncodesIssueOneLayoutWithPinnedLosslessBytes)
+{
+    const auto input = ReadFixture("issue-1-first-frame.png");
+    const auto result = convert_apng_to_webp(input, 4, 4);
+    ASSERT_TRUE(result) << static_cast<int>(result.error);
+    EXPECT_EQ(Sha256(result.body),
+        "15e40e5559f080b23ad8eca11776d2880113ec575d9b84f9ea1b9e9595f6c205");
+    const auto enlarged = convert_apng_to_webp(input, 128, 128);
+    ASSERT_TRUE(enlarged) << static_cast<int>(enlarged.error);
+    EXPECT_EQ(Sha256(enlarged.body),
+        "f1c409cc5ff44237c5bb6ca866ef962a74898896b3a041381620a8bd1ba6f538");
+
+    const auto decoded = mediaproxy::media::decode_apng_frames(input);
+    ASSERT_TRUE(decoded);
+    std::vector<std::byte> canvas(4U * 4U * 4U, std::byte{0});
+    const WebPData webp{
+        .bytes = reinterpret_cast<const std::uint8_t*>(result.body.data()),
+        .size = result.body.size(),
+    };
+    using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
+        decltype(&WebPAnimDecoderDelete)>;
+    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
+        &WebPAnimDecoderDelete);
+    ASSERT_NE(decoder, nullptr);
+    constexpr std::array<std::string_view, 5> expected_frame_hashes{
+        "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+        "fa1ca851640512fad275e1d08e823dbf72b1d5924c01e3b29155399e597d8d08",
+        "dc6a2cf3d0366ece81f2965ec2be7b43ba018c9c6000209d1249740c474e1805",
+        "40b11dff2789d9107033c9663d24e2c416dff835085499c53f441db00358d705",
+        "ed0aa09b3ee1c8d1e0171a26a6b1eb852b24a562db11c6b295d38a0594a31516"};
+    ASSERT_EQ(decoded.frames.size(), expected_frame_hashes.size());
+    for (std::size_t frame_index = 0; frame_index < decoded.frames.size();
+         ++frame_index) {
+        const auto& frame = decoded.frames[frame_index];
+        const auto composed = mediaproxy::media::compose_apng_frame(canvas,
+            decoded.canvas_width, decoded.canvas_height, frame.control,
+            frame.rgba);
+        ASSERT_TRUE(composed);
+        std::uint8_t* pixels = nullptr;
+        int timestamp = 0;
+        ASSERT_EQ(WebPAnimDecoderGetNext(decoder.get(), &pixels, &timestamp), 1);
+        ASSERT_NE(pixels, nullptr);
+        EXPECT_EQ(Sha256(std::as_bytes(std::span{pixels,
+                      composed.displayed_rgba.size()})),
+            expected_frame_hashes[frame_index]);
+    }
+    EXPECT_EQ(WebPAnimDecoderHasMoreFrames(decoder.get()), 0);
 }
 
 TEST_F(ApngConversionTest, PaletteAlphaSurvivesWebpEncoding)

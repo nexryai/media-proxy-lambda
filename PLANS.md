@@ -116,6 +116,13 @@ The separate first-frame correction emits callback zero at timestamp zero and
 applies its disposal, fixing the missing first frame in the Issue #1 APNG.
 The palette correction sends indexed-color APNG through the same animated WebP
 path, including palette alpha and fallback-only default images.
+The approved encoder-speed correction keeps lossless WebP but lowers its
+per-frame method from the null-config default of 4 to 0. Local profiling of
+the Issue #1 input on x86_64 measured about 0.67 s and 51 MiB peak RSS at
+method 4 versus about 0.14 s and 28 MiB at method 0. Encoded bytes and size
+change, as explicitly approved for this performance fix. A test using the
+generated Issue #1 layout fixture pins the new output hash, while frame-pixel
+tests continue to cover composition semantics.
 Preserve these remaining APNG behaviors:
 
 - chunk-boundary APNG and palette detection, including ancillary chunks before
