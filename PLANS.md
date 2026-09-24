@@ -3,7 +3,7 @@
 ## Document status
 
 - Status: revised for a self-contained arm64 runtime artifact, corrected APNG
-  blending, and musl static-PIE dynamic metadata
+  blending and first-frame output, and musl static-PIE dynamic metadata
 - Normative behavior: `SPECIFICATION.md`
 - Target: arm64 AWS Lambda custom runtime with Function URL `RESPONSE_STREAM`
 - Artifact: one statically linked musl C++ `bootstrap` binary
@@ -19,11 +19,12 @@ under `tests/`.
 Deliver a C++ Lambda MediaProxy that implements the complete local
 compatibility specification, including exact HTTP errors, query precedence,
 URL/SSRF rules, MIME detection, resize/encode behavior, and retained edge
-cases. Correct APNG `BLEND_OP_OVER` composition using a full-canvas state
-machine while leaving unrelated compatibility behavior unchanged. The final
-repository deliverable is a working arm64 `bootstrap` that continuously polls
-the Runtime API and completes Function URL invocations. Deployment automation,
-AWS resource ownership, and cost management are handled outside this project.
+cases. Correct APNG `BLEND_OP_OVER` composition and first-frame output using a
+full-canvas state machine while leaving unrelated compatibility behavior
+unchanged. The final repository deliverable is a working arm64 `bootstrap` that
+continuously polls the Runtime API and completes Function URL invocations.
+Deployment automation, AWS resource ownership, and cost management are handled
+outside this project.
 
 The release is complete only when the artifact has no dynamic runtime
 dependency and all offline compatibility, security, media, APNG, and Runtime
@@ -35,7 +36,8 @@ API tests pass.
   lifecycle manager.
 - Depending on any temporary source directory or downloaded legacy project.
 - Adding new routes, query options, formats, content negotiation, or signing.
-- Fixing retained compatibility quirks other than the approved APNG blend bug.
+- Fixing retained compatibility quirks other than the approved APNG blend and
+  first-frame bugs.
 - Using Lambda Web Adapter, a sidecar server, managed runtime, or buffered
   Lambda response.
 - Depending on shared objects from a Lambda base image or layer.
@@ -109,13 +111,14 @@ clears only the current frame rectangle, and previous restores the pre-frame
 snapshot. The external file is design provenance only; the local specification
 contains every required operation.
 
-Do not change these unrelated APNG behaviors while fixing blend:
+The separate first-frame correction emits callback zero at timestamp zero and
+applies its disposal, fixing the missing first frame in the Issue #1 APNG.
+Preserve these remaining APNG behaviors:
 
 - chunk-boundary APNG and palette detection, including ancillary chunks before
   `acTL`;
 - static fallback for a palette APNG;
 - non-palette APNG ignoring `static=1` and route resize limits;
-- first callback used as the base and omitted from output;
 - target dimensions taken from the all-pages image load;
 - non-cumulative `(callback + 1) * currentDelay` timestamp rule;
 - default libwebp animation options and loop behavior;
@@ -324,7 +327,8 @@ Deliverables:
   only redistributable fixtures, hashes, metadata, and provenance—not the
   historical source or a runtime harness for it.
 - Add APNG fixtures covering alpha `OVER`, offsets, all blend/dispose crosses,
-  first-frame omission, timing, palette fallback, and content-type mismatch.
+  first-frame emission and disposal, timing, palette fallback, and content-type
+  mismatch.
 - Define a dependency/version/build-option lock before accepting encoded-byte
   hashes as stable.
 
@@ -482,8 +486,9 @@ Deliverables:
 - Implement offset `SOURCE` and alpha-correct `OVER` composition before resize.
 - Apply disposal after frame capture: keep, clear only frame rectangle, or
   restore the exact snapshot.
-- Preserve first callback omission, target dimension source, timestamp formula,
-  default WebP animation options, no loop propagation, and response-type quirk.
+- Emit the first callback at timestamp zero, apply its disposal, and preserve
+  target dimension source, the later callback timestamp formula, default WebP
+  animation options, no loop propagation, and response-type quirk.
 - Add named regression fixtures for each section-8.5 case, including
   `BLEND_OP_OVER` with partial alpha and non-zero offsets.
 - Implement GoogleTest fixtures for full-canvas `SOURCE`/`OVER` composition

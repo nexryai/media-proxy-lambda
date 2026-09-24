@@ -121,8 +121,9 @@ reconstruct these rules from a framework's defaults:
 - separate static and animated resize formulas, including their odd branches;
 - response content type being selected independently from actual animation
   bytes;
-- fixed-offset APNG and palette checks;
-- first APNG callback omission and non-cumulative timestamp calculation.
+- chunk-boundary APNG and palette checks;
+- first APNG callback emission at timestamp zero and non-cumulative timestamp
+  calculation for later callbacks.
 
 ### APNG `BLEND_OP_OVER` correction
 
@@ -141,7 +142,7 @@ must maintain a full RGBA canvas and, for every emitted frame:
 The prior-canvas copy plus offset source-over approach is informed by
 `watercolor/blob/main/anim.go`, but section 8 of `SPECIFICATION.md` is the
 complete normative algorithm. Do not depend on that external file being
-available. Do not accidentally change the retained first-frame, palette,
+available. Do not accidentally change the first-frame emission, palette,
 static-flag, target-dimension, timing, loop, or content-type behavior while
 fixing blend composition.
 

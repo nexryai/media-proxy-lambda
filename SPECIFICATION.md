@@ -9,10 +9,10 @@ reference implementation. Historical projects may be cited as provenance, but
 the behavior to implement is completely stated here.
 
 The intentional media changes in the C++ release are the APNG
-`BLEND_OP_OVER` and chunk-classification fixes in section 8 and the bounded
-resvg-based SVG input path in section 6. All other unrelated legacy behavior,
-including unusual resize decisions, APNG first-frame handling, and response
-content-type selection, remains part of this contract.
+`BLEND_OP_OVER`, chunk-classification, and first-frame fixes in section 8 and
+the bounded resvg-based SVG input path in section 6. All other unrelated legacy
+behavior, including unusual resize decisions and response content-type
+selection, remains part of this contract.
 
 Where this document labels a rule as a security exception, the safer rule is
 normative even if a historical implementation accepted more input.
@@ -485,15 +485,19 @@ Reject a frame rectangle outside the IHDR canvas and reject unknown operation
 values. Preserve the legacy delay callback behavior; a zero denominator is a
 conversion failure rather than silently normalizing it.
 
-The callback numbered zero initializes the base canvas and is not emitted to
-the animated WebP. Its pixels form the starting canvas exactly as decoded; its
-dispose operation is not applied. This first-frame omission is intentionally
-retained.
+Initialize the canvas to transparent. The callback numbered zero is the first
+animation frame when its `fcTL` precedes `IDAT`, as in the
+[Issue #1 image](https://github.com/nexryai/media-proxy-lambda/issues/1#issuecomment-5794205760)
+(SHA-256 `0f77b74566bd039a480ba25f0be0000f16c955b544ffef8e6a98041a585d4d19`).
+Emit it at timestamp zero and apply its disposal before the next frame. The
+prior first-callback omission dropped a real animation frame. This correction
+does not change subsequent callback timestamps or the other APNG compatibility
+behaviors.
 
 ### 8.3 Correct composition state machine
 
 Maintain one full-size, straight-alpha RGBA canvas and a saved pre-frame copy.
-For every callback `n >= 1`, perform these steps in order:
+For every callback `n >= 0`, perform these steps in order:
 
 1. Copy the current canvas to `previousCanvas` before drawing.
 2. For `BLEND_OP_SOURCE`, clear only the frame rectangle to transparent, then
@@ -526,7 +530,8 @@ Initialize `WebPAnimEncoderOptions` with libwebp defaults and create the encoder
 at the APNG target dimensions. Do not copy the APNG loop count; retain the
 libwebp default animation options.
 
-For callback number `n >= 1`, compute its timestamp as:
+Emit callback zero at timestamp zero. For callback number `n >= 1`, compute its
+timestamp as:
 
 ```text
 timestamp_ms = trunc_toward_zero(float32(n + 1) * delay_seconds * 1000)
@@ -547,7 +552,8 @@ The fixture matrix must include:
 - background disposal proving only the frame rectangle is cleared;
 - previous disposal proving exact pre-frame restoration;
 - frame rectangles touching each canvas edge and invalid out-of-bounds frames;
-- the retained first-callback omission and non-cumulative timestamp rule;
+- first-callback emission and disposal, including the Issue #1 frame layout,
+  and the retained non-cumulative timestamp rule for later callbacks;
 - palette APNG static fallback;
 - APNG classification with ancillary chunks before `acTL`;
 - `static=1` on non-palette APNG still producing animated WebP;

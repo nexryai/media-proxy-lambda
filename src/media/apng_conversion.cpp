@@ -103,11 +103,10 @@ ApngConversionResult convert_apng_to_webp(
     }
     std::size_t expected_canvas_size = 0;
     if (!canvas_size(
-            decoded.canvas_width, decoded.canvas_height, expected_canvas_size)
-        || decoded.frames.front().rgba.size() != expected_canvas_size) {
+            decoded.canvas_width, decoded.canvas_height, expected_canvas_size)) {
         return fail(ApngConversionError::base_frame);
     }
-    std::vector<std::byte> canvas = std::move(decoded.frames.front().rgba);
+    std::vector<std::byte> canvas(expected_canvas_size, std::byte{0});
 
     WebPAnimEncoderOptions options{};
     if (WebPAnimEncoderOptionsInit(&options) == 0) {
@@ -120,7 +119,7 @@ ApngConversionResult convert_apng_to_webp(
         return fail(ApngConversionError::encoder);
     }
 
-    for (std::size_t index = 1; index < decoded.frames.size(); ++index) {
+    for (std::size_t index = 0; index < decoded.frames.size(); ++index) {
         const auto& frame = decoded.frames[index];
         auto composed = compose_apng_frame(canvas, decoded.canvas_width,
             decoded.canvas_height, frame.control, frame.rgba);
@@ -145,7 +144,7 @@ ApngConversionResult convert_apng_to_webp(
                 == 0) {
             return fail(ApngConversionError::picture);
         }
-        const auto timestamp = apng_frame_timestamp_ms(
+        const auto timestamp = index == 0 ? 0 : apng_frame_timestamp_ms(
             static_cast<std::uint32_t>(index),
             frame.control.delay_numerator,
             frame.control.delay_denominator);

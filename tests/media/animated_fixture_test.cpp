@@ -106,9 +106,9 @@ constexpr std::array fixtures{
         {{34, 34, 34, 34, 34, 34, 34}},
         {{{320, 267}, {480, 400}, {200, 167}, {96, 80}, {480, 400},
             {64, 53}, {480, 400}}}},
-    // The APNG compatibility path omits frame callback zero and ignores limits.
+    // The APNG compatibility path emits frame callback zero and ignores limits.
     Fixture{"elephant.png", MimeType::image_png, true,
-        {{33, 33, 33, 33, 33, 33, 33}},
+        {{34, 34, 34, 34, 34, 34, 34}},
         {{{480, 400}, {480, 400}, {480, 400}, {480, 400}, {480, 400},
             {480, 400}, {480, 400}}}},
 };

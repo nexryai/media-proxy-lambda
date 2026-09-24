@@ -555,7 +555,7 @@
             "id": "apng.first-callback",
             "sections": ["8.2", "8.5"],
             "suite": "apng-golden",
-            "variants": ["callback zero initializes canvas", "callback zero is not emitted", "callback zero disposal is ignored"]
+            "variants": ["callback zero is emitted at timestamp zero", "callback zero disposal affects the next frame", "Issue #1 frame layout retains all five frames"]
         },
         {
             "id": "apng.composition-matrix",

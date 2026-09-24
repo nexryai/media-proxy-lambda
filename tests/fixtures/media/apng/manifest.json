@@ -6,7 +6,7 @@
         {
             "id": "apng.composition-matrix.over-none",
             "file": "over-none.png",
-            "inputSha256": "f6666ccf7115ea6e0502420dff0134b77cd6c81a39608175b93f9f384a325ab9",
+            "inputSha256": "dd5c13e1de12c49167d46f81eefdd12f608bd3ed51f86220cbfb007791f290a9",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -16,6 +16,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -33,7 +39,7 @@
         {
             "id": "apng.composition-matrix.source-none",
             "file": "source-none.png",
-            "inputSha256": "9d792a7c0a0c98bb998bc902223b1089b2c8a4fdaa800b9010b78ac7510d3c8f",
+            "inputSha256": "b09ac2de4dca8e914c1dc343b6fa1384128c2a2902b687390afd0b5cf9b19deb",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -43,6 +49,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -60,7 +72,7 @@
         {
             "id": "apng.composition-matrix.over-background",
             "file": "over-background.png",
-            "inputSha256": "37b50d2c7dcf7dd822d2102de31d3e9cebad48a708419622e83fde99261ad620",
+            "inputSha256": "0d04be6560853582abd5a53fcc0e95a4ab1add422680765ed45591583dc0a534",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -70,6 +82,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -87,7 +105,7 @@
         {
             "id": "apng.composition-matrix.source-background",
             "file": "source-background.png",
-            "inputSha256": "5c06c86ca8c3d062402732b2cea41d525cc90e930e52dff4c47c4603f40c662b",
+            "inputSha256": "4d94976bdc96e287f05285b239849cb3d04a55b9a73a1090078901791b52684e",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -97,6 +115,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -114,7 +138,7 @@
         {
             "id": "apng.composition-matrix.over-previous",
             "file": "over-previous.png",
-            "inputSha256": "0ffbb7a6f92a82e977fc73196f42ff30332145904a779ce7c180ff6bde273aea",
+            "inputSha256": "781ce9fc56f0fa645442dfc6adffa148a7c9b89ebc8ada03fdf0d8ab59820961",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -124,6 +148,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -141,7 +171,7 @@
         {
             "id": "apng.composition-matrix.source-previous",
             "file": "source-previous.png",
-            "inputSha256": "d91c6f102a03f1f94e1e973cdf6c80ab0f955a419495b1f52d82b8174804a7df",
+            "inputSha256": "d0aac4069f5a8b4266cf8c9beca8e74d80efacf931ea300331c0ae0bc2e4b644",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -151,6 +181,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -168,7 +204,7 @@
         {
             "id": "apng.composition-matrix.transparent-history",
             "file": "transparent-history.png",
-            "inputSha256": "7441661e77eaf3b4a88790728e968003d0de49a321fe03d64a092b58888d1dd3",
+            "inputSha256": "d3a641ed4d2cdeca9aced672b1cfd3d101ac63179bbd944dde026be21f201fb6",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -178,6 +214,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -195,7 +237,7 @@
         {
             "id": "apng.composition-matrix.source-after-over",
             "file": "source-after-over.png",
-            "inputSha256": "8f7c741e452b133adb2c20ba9d0603cb835fd9d44efa4f2a9857fc6fdfa881c1",
+            "inputSha256": "73b1febb9d4cac369048580904daae22c599843b70d34906c3c5e35ffb597a99",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -205,6 +247,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -222,7 +270,7 @@
         {
             "id": "apng.composition-matrix.over-after-source",
             "file": "over-after-source.png",
-            "inputSha256": "cf70abd0c795c9d128be16fb049b254350c6e15feee11caf40983f79b643c70b",
+            "inputSha256": "990fb770d58ce6505b43dcf83b2b9606d84825e507b4680f39972ecfe14427e1",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -232,6 +280,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -249,7 +303,7 @@
         {
             "id": "apng.canvas-transitions.canvas-edges",
             "file": "canvas-edges.png",
-            "inputSha256": "d2465d9a317b9919763dd1728ab8c369ee17174cb0959c58a4f408c49ae4702c",
+            "inputSha256": "fbfdbcee1dca1d5fa8c2abbeb1ba465d6dbcd52edc2640c785c6e8b8f31cf8c8",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -259,6 +313,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -288,7 +348,7 @@
         {
             "id": "apng.animation-options-and-timing.varying-delays",
             "file": "varying-delays-loop.png",
-            "inputSha256": "aa2b155056d2ed82cc55c0094160b64b5f1c9b8c95e4cf811e1017a667598ea7",
+            "inputSha256": "9f533ac658ebd46a9dd5ce78c462cebfc8cf017215b2d8eb5a26fa49904067c3",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -298,6 +358,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 7,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -319,8 +385,8 @@
             ]
         },
         {
-            "id": "apng.first-callback.omitted-and-disposal-ignored",
-            "file": "first-callback-omitted.png",
+            "id": "apng.first-callback.emitted-and-disposed",
+            "file": "first-callback-disposed.png",
             "inputSha256": "4861a5bc15ada2bb192f13eae3afe94ad986a48e71e993a7a42ac41515544707",
             "canvas": {
                 "width": 4,
@@ -332,17 +398,23 @@
             "inputLoopCount": 0,
             "emittedFrames": [
                 {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b"
+                },
+                {
                     "callbackNumber": 1,
                     "timestampMs": 200,
-                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
-                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                    "displayedRgbaSha256": "f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b",
+                    "nextCanvasRgbaSha256": "f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b"
                 }
             ]
         },
         {
-            "id": "apng.composition-matrix.opaque-over",
-            "file": "opaque-over.png",
-            "inputSha256": "d8c53a9a95a113261e1d5608e480b71bc4f1b7fc29514ed925ded99b1fd3f17f",
+            "id": "apng.issue-1.first-frame-present",
+            "file": "issue-1-first-frame.png",
+            "inputSha256": "cb854bd23b21c5bfd0c9600e4cbcda413efd9758c68907963d10177470152db8",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -352,6 +424,57 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
+                {
+                    "callbackNumber": 1,
+                    "timestampMs": 10000,
+                    "displayedRgbaSha256": "fec0f57de0b19bc7dacb5b0fc3de7b56fc68dfdbeeebc8f9f4c506bf6e821c77",
+                    "nextCanvasRgbaSha256": "fec0f57de0b19bc7dacb5b0fc3de7b56fc68dfdbeeebc8f9f4c506bf6e821c77"
+                },
+                {
+                    "callbackNumber": 2,
+                    "timestampMs": 15000,
+                    "displayedRgbaSha256": "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e",
+                    "nextCanvasRgbaSha256": "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"
+                },
+                {
+                    "callbackNumber": 3,
+                    "timestampMs": 20000,
+                    "displayedRgbaSha256": "f4e50f9c68e78511ed9c026c4c3a109c74171bc8faa0ee38a1bdd4da526b18dc",
+                    "nextCanvasRgbaSha256": "f4e50f9c68e78511ed9c026c4c3a109c74171bc8faa0ee38a1bdd4da526b18dc"
+                },
+                {
+                    "callbackNumber": 4,
+                    "timestampMs": 25000,
+                    "displayedRgbaSha256": "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052",
+                    "nextCanvasRgbaSha256": "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052"
+                }
+            ]
+        },
+        {
+            "id": "apng.composition-matrix.opaque-over",
+            "file": "opaque-over.png",
+            "inputSha256": "86736e8bfe38d1d8a163b4b34a18a5bb36146f2a990dfb8d56b3e4e4d3713420",
+            "canvas": {
+                "width": 4,
+                "height": 4
+            },
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
+            "expectedClassification": "apng-nonpalette",
+            "inputLoopCount": 0,
+            "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -363,7 +486,7 @@
         {
             "id": "apng.chunk-scan-detection.ancillary-before-actl",
             "file": "animation-control-other-offset.png",
-            "inputSha256": "62d002bf1ecb6163339ac630626f1e7d53d3f01c09ffe98f7e5c77001c9acb63",
+            "inputSha256": "0cab86f2c7ac0d11e06abfe3d4d40bb77dc34d54029257513f89fe9e7a8a4987",
             "canvas": {
                 "width": 4,
                 "height": 4
@@ -373,6 +496,12 @@
             "expectedClassification": "apng-nonpalette",
             "inputLoopCount": 0,
             "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
                 {
                     "callbackNumber": 1,
                     "timestampMs": 200,
@@ -384,7 +513,7 @@
         {
             "id": "apng.branching.palette-static",
             "file": "palette-static.png",
-            "inputSha256": "c583a6f6a800254a5654856bf835f3207731d91a85ebb897520a068b0bb4e6ca",
+            "inputSha256": "ae047ec7503e622b9e2e1883379b8d6f5f011513e53a8ad607b45bc80be215c3",
             "canvas": {
                 "width": 2,
                 "height": 2
@@ -398,43 +527,43 @@
         {
             "id": "apng.chunk-validation.out-of-bounds-right",
             "file": "invalid-out-of-bounds-right.png",
-            "inputSha256": "af373dccac48d271ba71c752df5f9f8ca339e8b3aac8a432eb900a914fc73b30",
+            "inputSha256": "b1110647bd6146d8d2596a7879b576d28883cb267e1177c546b0c1e8966d33e1",
             "expectedError": "frame-rectangle"
         },
         {
             "id": "apng.chunk-validation.out-of-bounds-bottom",
             "file": "invalid-out-of-bounds-bottom.png",
-            "inputSha256": "4373b9b41db0b82bceb7b575225b7c12bb5eeecaad446a1bcf848cf1362531ee",
+            "inputSha256": "641a9ef21895a4742c7ca3ca84d510c82b08856fe58bfaf549870095e53eccac",
             "expectedError": "frame-rectangle"
         },
         {
             "id": "apng.chunk-validation.zero-denominator",
             "file": "invalid-zero-denominator.png",
-            "inputSha256": "7b7d7e1e789e67e12bb1bf9ca3a69b59e0376a6cacb0f4577b307d58c503eda2",
+            "inputSha256": "a2a78c514f1cf1c2bf838c316f09640277ddb7eb5d7b5f80cbe8624e027a7503",
             "expectedError": "delay-denominator"
         },
         {
             "id": "apng.chunk-validation.unknown-blend",
             "file": "invalid-unknown-blend.png",
-            "inputSha256": "779d7a5506a4adb57ed9ae089a4e2164a194c8687d003ccc98d742eaeec8f1c7",
+            "inputSha256": "898fedd1b00a097a88a7f8cffaabf363e41595d0c218fa76c7ad33143ed19ae2",
             "expectedError": "blend-operation"
         },
         {
             "id": "apng.chunk-validation.unknown-dispose",
             "file": "invalid-unknown-dispose.png",
-            "inputSha256": "e4f92f7682e4c1b73fa1fe1cdb916c014b36ca571bfb8937b635adb5834c34a3",
+            "inputSha256": "98c95e6fbb07ba8df05387fd543b14fc39e32b47b9dc2fc3d62a401b3e7068b5",
             "expectedError": "dispose-operation"
         },
         {
             "id": "apng.chunk-validation.crc-mismatch",
             "file": "invalid-crc.png",
-            "inputSha256": "6e763b05844f37485dc9030e108fd04ba2e72b69a532c03b636f0f54bc3e02ca",
+            "inputSha256": "834d3deab0c35c3ad6409e749b44515f62c05e90a48143c93f5df16429c66d8a",
             "expectedError": "crc"
         },
         {
             "id": "apng.chunk-validation.truncated",
             "file": "invalid-truncated.png",
-            "inputSha256": "0b0defacdf4f7e05afb0b7f1a1bd19c552594b8006a43694f0ed637dc4976fe6",
+            "inputSha256": "ce06c373c1e2201a96654056f617e7ae5970ccaef2c9fd0bc3cc33742a2da96b",
             "expectedError": "truncated-chunk"
         },
         {

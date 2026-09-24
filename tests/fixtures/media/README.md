@@ -3,6 +3,9 @@
 The APNG inputs under `apng/` are generated entirely from the pixel matrices in
 `generate-apng-fixtures.mjs`. They are project-authored MIT-licensed fixtures;
 no external image or historical implementation is required.
+`apng/issue-1-first-frame.png` recreates the relevant chunk and frame layout
+of the reported image with project-authored pixels. The reported input is
+identified by SHA-256 in `SPECIFICATION.md`; it is not a test dependency.
 
 The checked-in `apng/manifest.json` records each input SHA-256, chunk-scan
 classification, input loop count, and full-canvas RGBA SHA-256 before and after

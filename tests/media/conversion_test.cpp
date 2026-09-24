@@ -66,10 +66,10 @@ TEST_F(MediaConversionTest, NonPaletteApngIgnoresStaticPreferenceAndLimits)
     const ImagePtr decoded = LoadAll(result.body);
     ASSERT_NE(decoded, nullptr) << vips_error_buffer();
     EXPECT_EQ(vips_image_get_width(decoded.get()), 4);
-    EXPECT_EQ(vips_image_get_height(decoded.get()), 8);
+    EXPECT_EQ(vips_image_get_height(decoded.get()), 12);
     int pages = 0;
     ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_N_PAGES, &pages), 0);
-    EXPECT_EQ(pages, 2);
+    EXPECT_EQ(pages, 3);
 }
 
 TEST_F(MediaConversionTest, PaletteApngUsesStaticPreferredOutput)
@@ -98,7 +98,7 @@ TEST_F(MediaConversionTest, ApngWithAncillaryChunksRemainsAnimated)
     const ImagePtr decoded = LoadAll(result.body);
     ASSERT_NE(decoded, nullptr) << vips_error_buffer();
     EXPECT_EQ(vips_image_get_width(decoded.get()), 4);
-    EXPECT_EQ(vips_image_get_height(decoded.get()), 4);
+    EXPECT_EQ(vips_image_get_height(decoded.get()), 8);
 }
 
 TEST_F(MediaConversionTest, RejectsUnsupportedMime)

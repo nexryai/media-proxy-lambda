@@ -40,11 +40,11 @@ function chunk(type, data = Buffer.alloc(0)) {
     return Buffer.concat([u32(data.length), typeBytes, data, u32(crc32(Buffer.concat([typeBytes, data])))]);
 }
 
-function ihdr(width, height, colorType) {
+function ihdr(width, height, colorType, bitDepth = 8) {
     return chunk("IHDR", Buffer.concat([
         u32(width),
         u32(height),
-        Buffer.from([8, colorType, 0, 0, 0])
+        Buffer.from([bitDepth, colorType, 0, 0, 0])
     ]));
 }
 
@@ -61,18 +61,21 @@ function fctl(sequence, frame) {
     ]));
 }
 
-function compressedRows(frame, bytesPerPixel) {
+function compressedRows(frame, bytesPerPixel, bitDepth) {
     const rowBytes = frame.width * bytesPerPixel;
     const raw = Buffer.alloc(frame.height * (rowBytes + 1));
+    const source = bitDepth === 16
+        ? Buffer.from(Array.from(frame.pixels).flatMap((value) => [value, value]))
+        : frame.pixels;
     for (let y = 0; y < frame.height; ++y) {
-        frame.pixels.copy(raw, y * (rowBytes + 1) + 1, y * rowBytes, (y + 1) * rowBytes);
+        source.copy(raw, y * (rowBytes + 1) + 1, y * rowBytes, (y + 1) * rowBytes);
     }
     return deflateSync(raw, {level: 9});
 }
 
-function buildApng({width, height, frames, plays = 0, palette = null, beforeAnimationControl = []}) {
+function buildApng({width, height, frames, plays = 0, palette = null, bitDepth = 8, beforeAnimationControl = []}) {
     const colorType = palette === null ? 6 : 3;
-    const chunks = [signature, ihdr(width, height, colorType), ...beforeAnimationControl];
+    const chunks = [signature, ihdr(width, height, colorType, bitDepth), ...beforeAnimationControl];
     chunks.push(chunk("acTL", Buffer.concat([u32(frames.length), u32(plays)])));
     if (palette !== null) {
         chunks.push(chunk("PLTE", Buffer.from(palette.colors.flat())));
@@ -85,7 +88,8 @@ function buildApng({width, height, frames, plays = 0, palette = null, beforeAnim
     for (let index = 0; index < frames.length; ++index) {
         const frame = frames[index];
         chunks.push(fctl(sequence++, frame));
-        const compressed = compressedRows(frame, colorType === 6 ? 4 : 1);
+        const compressed = compressedRows(frame,
+            (colorType === 6 ? 4 : 1) * (bitDepth === 16 ? 2 : 1), bitDepth);
         if (index === 0) {
             chunks.push(chunk("IDAT", compressed));
         } else {
@@ -238,9 +242,9 @@ function expectedFrames(fixture) {
     if (fixture.palette !== null && fixture.palette !== undefined) {
         return [];
     }
-    const canvas = Buffer.from(fixture.frames[0].pixels);
+    const canvas = Buffer.alloc(fixture.width * fixture.height * 4);
     const result = [];
-    for (let callbackNumber = 1; callbackNumber < fixture.frames.length; ++callbackNumber) {
+    for (let callbackNumber = 0; callbackNumber < fixture.frames.length; ++callbackNumber) {
         const frame = fixture.frames[callbackNumber];
         const previous = Buffer.from(canvas);
         if (frame.blend === 0) {
@@ -262,7 +266,7 @@ function expectedFrames(fixture) {
         }
         result.push({
             callbackNumber,
-            timestampMs: timestamp(frame, callbackNumber),
+            timestampMs: callbackNumber === 0 ? 0 : timestamp(frame, callbackNumber),
             displayedRgbaSha256: displayedHash,
             nextCanvasRgbaSha256: sha256(canvas)
         });
@@ -285,7 +289,7 @@ function baseFrame(width = 4, height = 4) {
         y: 0,
         delayNumerator: 1,
         delayDenominator: 10,
-        dispose: 2,
+        dispose: 0,
         blend: 0,
         pixels: solid(width, height, blue)
     };
@@ -401,12 +405,24 @@ fixtures.push({
 });
 
 fixtures.push({
-    id: "apng.first-callback.omitted-and-disposal-ignored",
-    file: "first-callback-omitted.png",
+    id: "apng.first-callback.emitted-and-disposed",
+    file: "first-callback-disposed.png",
     width: 4,
     height: 4,
     palette: null,
-    frames: [baseFrame(), frame(4, 4, 0, 0, transparent, 0, 1)]
+    frames: [{...baseFrame(), dispose: 2}, frame(4, 4, 0, 0, transparent, 0, 1)]
+});
+
+fixtures.push({
+    id: "apng.issue-1.first-frame-present",
+    file: "issue-1-first-frame.png",
+    width: 4,
+    height: 4,
+    palette: null,
+    bitDepth: 16,
+    beforeAnimationControl: [chunk("pHYs", Buffer.alloc(9))],
+    frames: [blue, red, green, halfRed, halfGreen].map((color) =>
+        frame(4, 4, 0, 0, color, 0, 0, 5, 1))
 });
 
 fixtures.push({

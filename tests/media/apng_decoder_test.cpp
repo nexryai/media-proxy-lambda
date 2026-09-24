@@ -109,7 +109,11 @@ TEST(ApngDecoder, MatchesCheckedInFullCanvasFrameHashes)
     auto decoded = decode_apng_frames(ReadFixture("over-none.png"));
     ASSERT_TRUE(decoded) << static_cast<int>(decoded.error);
     ASSERT_EQ(decoded.frames.size(), 3U);
-    auto canvas = decoded.frames.front().rgba;
+    std::vector<std::byte> canvas(4U * 4U * 4U, std::byte{0});
+    const auto base = compose_apng_frame(canvas, decoded.canvas_width,
+        decoded.canvas_height, decoded.frames[0].control,
+        decoded.frames[0].rgba);
+    ASSERT_TRUE(base);
 
     const auto first = compose_apng_frame(canvas, decoded.canvas_width,
         decoded.canvas_height, decoded.frames[1].control,
@@ -159,10 +163,13 @@ TEST(ApngDecoder, MatchesAllNonPaletteGoldenFrameTransitions)
         auto decoded = decode_apng_frames(ReadFixture(file));
         ASSERT_TRUE(decoded) << static_cast<int>(decoded.error);
         ASSERT_FALSE(decoded.frames.empty());
-        auto canvas = decoded.frames.front().rgba;
+        std::vector<std::byte> canvas(
+            static_cast<std::size_t>(decoded.canvas_width)
+                * decoded.canvas_height * 4U,
+            std::byte{0});
         yyjson_val* emitted = yyjson_obj_get(fixture, "emittedFrames");
         ASSERT_TRUE(yyjson_is_arr(emitted));
-        EXPECT_EQ(yyjson_arr_size(emitted), decoded.frames.size() - 1);
+        EXPECT_EQ(yyjson_arr_size(emitted), decoded.frames.size());
 
         std::size_t frame_index = 0;
         std::size_t frame_count = 0;
@@ -186,7 +193,7 @@ TEST(ApngDecoder, MatchesAllNonPaletteGoldenFrameTransitions)
             ASSERT_NE(next_hash, nullptr);
             EXPECT_EQ(Sha256(composed.displayed_rgba), displayed_hash);
             EXPECT_EQ(Sha256(canvas), next_hash);
-            EXPECT_EQ(apng_frame_timestamp_ms(
+            EXPECT_EQ(callback == 0 ? 0 : apng_frame_timestamp_ms(
                           static_cast<std::uint32_t>(callback),
                           frame.control.delay_numerator,
                           frame.control.delay_denominator),
