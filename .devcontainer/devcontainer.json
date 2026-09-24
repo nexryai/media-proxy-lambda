@@ -5,6 +5,8 @@
     },
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
     "workspaceFolder": "/workspace",
+    "postCreateCommand": "cmake --preset x86_64-release && cmake --build --preset x86_64-release --target application --parallel 2",
+    "waitFor": "postCreateCommand",
     "remoteUser": "ubuntu",
     "overrideCommand": true,
     "customizations": {
@@ -14,6 +16,7 @@
                 "editor.linkedEditing": true,
                 "editor.formatOnPaste": true,
                 "editor.formatOnSave": false,
+                "cmake.configureOnOpen": false,
                 "html.format.wrapLineLength": 0,
                 "editor.quickSuggestions": {
                     "strings": "on"
