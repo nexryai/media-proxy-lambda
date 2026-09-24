@@ -142,7 +142,8 @@ ApngDecodedAnimation decode_apng_frames(
     std::vector<std::byte> shared_chunks;
     std::vector<std::vector<std::byte>> compressed(description.frames.size());
     std::array<std::byte, 13> ihdr{};
-    bool before_first_frame = true;
+    bool before_default_image_data = true;
+    bool saw_frame_control = false;
     std::size_t frame_index = 0;
     std::size_t offset = png_signature.size();
     while (offset < body.size()) {
@@ -154,17 +155,21 @@ ApngDecodedAnimation decode_apng_frames(
         if (tag_at(body, type_offset, "IHDR")) {
             std::copy(data.begin(), data.end(), ihdr.begin());
         } else if (tag_at(body, type_offset, "fcTL")) {
-            before_first_frame = false;
-            if (frame_index < description.frames.size()
-                && !compressed[frame_index].empty()) {
+            if (saw_frame_control) {
                 ++frame_index;
             }
+            saw_frame_control = true;
         } else if (tag_at(body, type_offset, "IDAT")) {
-            if (frame_index >= compressed.size()) {
+            before_default_image_data = false;
+            // The fallback-only default image must not enter animation state.
+            if (description.default_image_is_frame
+                && frame_index >= compressed.size()) {
                 return fail(ApngDecodeError::frame_stream);
             }
-            compressed[frame_index].insert(
-                compressed[frame_index].end(), data.begin(), data.end());
+            if (description.default_image_is_frame) {
+                compressed[frame_index].insert(
+                    compressed[frame_index].end(), data.begin(), data.end());
+            }
         } else if (tag_at(body, type_offset, "fdAT")) {
             if (frame_index >= compressed.size() || data.size() < 4) {
                 return fail(ApngDecodeError::frame_stream);
@@ -172,8 +177,9 @@ ApngDecodedAnimation decode_apng_frames(
             const auto payload = data.subspan(4);
             compressed[frame_index].insert(compressed[frame_index].end(),
                 payload.begin(), payload.end());
-        } else if (before_first_frame
+        } else if (before_default_image_data
             && !tag_at(body, type_offset, "acTL")) {
+            // Shared palette/alpha chunks may follow the first frame control.
             shared_chunks.insert(shared_chunks.end(), body.begin() + offset,
                 body.begin() + static_cast<std::ptrdiff_t>(chunk_end));
         }

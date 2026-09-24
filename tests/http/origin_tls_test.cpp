@@ -473,7 +473,7 @@ TEST_F(OriginTlsTest, DownloadsFromPinnedHostWithPeerVerification)
     ASSERT_TRUE(identity);
     const std::vector<std::byte> body = ReadFile(
         std::string{MEDIAPROXY_SOURCE_DIR}
-        + "/tests/fixtures/media/apng/palette-static.png");
+        + "/tests/fixtures/media/apng/palette-alpha.png");
     ASSERT_FALSE(body.empty());
     TlsOriginServer server{identity, body};
     ASSERT_TRUE(server);
@@ -558,7 +558,7 @@ TEST_F(OriginTlsTest, TransparentlyDecodesGzipBeforeReturningBody)
     ASSERT_TRUE(identity);
     const std::vector<std::byte> body = ReadFile(
         std::string{MEDIAPROXY_SOURCE_DIR}
-        + "/tests/fixtures/media/apng/palette-static.png");
+        + "/tests/fixtures/media/apng/palette-alpha.png");
     const std::vector<std::byte> compressed = Gzip(body);
     ASSERT_FALSE(compressed.empty());
     TlsOriginServer server{

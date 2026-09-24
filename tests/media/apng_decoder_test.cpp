@@ -134,7 +134,7 @@ TEST(ApngDecoder, MatchesCheckedInFullCanvasFrameHashes)
         "ce14f64dd6a5a5314eed05c4399d98853c0b3208422894ea56f6ef163426c060");
 }
 
-TEST(ApngDecoder, MatchesAllNonPaletteGoldenFrameTransitions)
+TEST(ApngDecoder, MatchesAllGoldenFrameTransitions)
 {
     const auto manifest = LoadManifest();
     ASSERT_NE(manifest, nullptr);
@@ -151,7 +151,8 @@ TEST(ApngDecoder, MatchesAllNonPaletteGoldenFrameTransitions)
         const char* classification = yyjson_get_str(
             yyjson_obj_get(fixture, "expectedClassification"));
         if (classification == nullptr
-            || std::string_view{classification} != "apng-nonpalette") {
+            || (std::string_view{classification} != "apng-nonpalette"
+                && std::string_view{classification} != "apng-palette")) {
             continue;
         }
         const char* id = yyjson_get_str(yyjson_obj_get(fixture, "id"));

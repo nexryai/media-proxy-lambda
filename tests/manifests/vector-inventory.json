@@ -136,7 +136,7 @@
             "id": "response.animated-content-type-mismatch",
             "sections": ["2.4", "6", "8.5"],
             "suite": "media-golden",
-            "variants": ["animated GIF under AVIF selector", "animated WebP under AVIF selector", "non-palette APNG under AVIF selector"]
+            "variants": ["animated GIF under AVIF selector", "animated WebP under AVIF selector", "palette and non-palette APNG under AVIF selector"]
         },
         {
             "id": "response.error-mapping",
@@ -462,7 +462,7 @@
                 "non-integral page height rejected",
                 "width through 7680 accepted and larger rejected",
                 "per-frame height through 4320 accepted and larger rejected",
-                "non-palette APNG bypasses general dimension rejection"
+                "APNG bypasses general dimension rejection"
             ]
         },
         {
@@ -516,8 +516,8 @@
                 "PNG signature plus bounded chunk scan finding acTL before IEND",
                 "length exactly 41 is not APNG",
                 "ancillary chunks before acTL are accepted",
-                "PLTE before IDAT selects palette fallback",
-                "PLTE after IDAT does not select palette fallback",
+                "PLTE before IDAT identifies palette APNG",
+                "PLTE after IDAT does not identify palette APNG",
                 "truncated or over-limit chunks are not APNG"
             ]
         },
@@ -526,11 +526,12 @@
             "sections": ["8.1"],
             "suite": "apng-golden",
             "variants": [
-                "palette APNG uses static path",
-                "palette APNG honors static and AVIF preference",
-                "non-palette APNG ignores static",
-                "non-palette APNG ignores route limits",
-                "non-palette APNG forces WebP",
+                "palette APNG emits every animated frame as WebP",
+                "palette APNG ignores static, route limits, and AVIF preference",
+                "PLTE and tRNS are shared across all palette frames",
+                "palette alpha survives WebP encoding",
+                "fallback-only IDAT is excluded from animation",
+                "non-palette APNG retains its animated WebP path",
                 "target dimensions come from all-pages load",
                 "IHDR dimensions define composition canvas",
                 "zero target or canvas dimension rejected"

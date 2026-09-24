@@ -203,7 +203,7 @@ TEST_F(HandlerTest, ConvertsDownloadedMediaIntoPreferredResponse)
 {
     FakeOrigin origin;
     origin.body = ReadFile(std::string{MEDIAPROXY_SOURCE_DIR}
-        + "/tests/fixtures/media/apng/palette-static.png");
+        + "/tests/fixtures/media/apng/palette-alpha.png");
     const std::string event =
         MediaEvent("url=https%3A%2F%2F93.184.216.34%2Fimage");
     HandlerDiagnostics diagnostics;

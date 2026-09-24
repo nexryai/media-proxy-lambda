@@ -102,6 +102,29 @@ TEST_F(ApngConversionTest, PreservesIssueOneFirstFrame)
     EXPECT_EQ(pixels[3], 255);
 }
 
+TEST_F(ApngConversionTest, PaletteAlphaSurvivesWebpEncoding)
+{
+    const auto result = convert_apng_to_webp(
+        ReadFixture("palette-alpha.png"), 2, 2);
+    ASSERT_TRUE(result) << static_cast<int>(result.error);
+    const WebPData webp{
+        .bytes = reinterpret_cast<const std::uint8_t*>(result.body.data()),
+        .size = result.body.size(),
+    };
+    using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
+        decltype(&WebPAnimDecoderDelete)>;
+    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
+        &WebPAnimDecoderDelete);
+    ASSERT_NE(decoder, nullptr);
+    std::uint8_t* pixels = nullptr;
+    int timestamp = 0;
+    ASSERT_EQ(WebPAnimDecoderGetNext(decoder.get(), &pixels, &timestamp), 1);
+    ASSERT_EQ(WebPAnimDecoderGetNext(decoder.get(), &pixels, &timestamp), 1);
+    ASSERT_NE(pixels, nullptr);
+    // The second input frame has a half-transparent green palette entry.
+    EXPECT_NEAR(pixels[7], 128, 2);
+}
+
 TEST_F(ApngConversionTest, ConvertsReportedImageWhenAvailable)
 {
     const char* path = std::getenv("MEDIAPROXY_ISSUE_ONE_INPUT");

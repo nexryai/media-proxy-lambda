@@ -73,24 +73,43 @@ function compressedRows(frame, bytesPerPixel, bitDepth) {
     return deflateSync(raw, {level: 9});
 }
 
-function buildApng({width, height, frames, plays = 0, palette = null, bitDepth = 8, beforeAnimationControl = []}) {
+function buildApng({width, height, frames, plays = 0, palette = null,
+    bitDepth = 8, beforeAnimationControl = [], paletteAfterFirstControl = false,
+    fallbackPixels = null}) {
     const colorType = palette === null ? 6 : 3;
     const chunks = [signature, ihdr(width, height, colorType, bitDepth), ...beforeAnimationControl];
     chunks.push(chunk("acTL", Buffer.concat([u32(frames.length), u32(plays)])));
-    if (palette !== null) {
-        chunks.push(chunk("PLTE", Buffer.from(palette.colors.flat())));
-        if (palette.alpha !== undefined) {
-            chunks.push(chunk("tRNS", Buffer.from(palette.alpha)));
+    const appendPalette = () => {
+        if (palette !== null) {
+            chunks.push(chunk("PLTE", Buffer.from(palette.colors.flat())));
+            if (palette.alpha !== undefined) {
+                chunks.push(chunk("tRNS", Buffer.from(palette.alpha)));
+            }
         }
+    };
+    if (!paletteAfterFirstControl) {
+        appendPalette();
+    }
+    if (fallbackPixels !== null) {
+        if (paletteAfterFirstControl) {
+            throw new Error("palette must precede fallback IDAT");
+        }
+        chunks.push(chunk("IDAT", compressedRows({width, height,
+            pixels: fallbackPixels},
+            (colorType === 6 ? 4 : 1) * (bitDepth === 16 ? 2 : 1),
+            bitDepth)));
     }
 
     let sequence = 0;
     for (let index = 0; index < frames.length; ++index) {
         const frame = frames[index];
         chunks.push(fctl(sequence++, frame));
+        if (index === 0 && paletteAfterFirstControl) {
+            appendPalette();
+        }
         const compressed = compressedRows(frame,
             (colorType === 6 ? 4 : 1) * (bitDepth === 16 ? 2 : 1), bitDepth);
-        if (index === 0) {
+        if (index === 0 && fallbackPixels === null) {
             chunks.push(chunk("IDAT", compressed));
         } else {
             chunks.push(chunk("fdAT", Buffer.concat([u32(sequence++), compressed])));
@@ -239,19 +258,25 @@ function classifyApngChunks(data) {
 }
 
 function expectedFrames(fixture) {
-    if (fixture.palette !== null && fixture.palette !== undefined) {
-        return [];
-    }
     const canvas = Buffer.alloc(fixture.width * fixture.height * 4);
     const result = [];
     for (let callbackNumber = 0; callbackNumber < fixture.frames.length; ++callbackNumber) {
         const frame = fixture.frames[callbackNumber];
+        const rgbaFrame = fixture.palette === null || fixture.palette === undefined
+            ? frame
+            : {...frame, pixels: Buffer.from(Array.from(frame.pixels).flatMap((index) => {
+                const color = fixture.palette.colors[index];
+                if (color === undefined) {
+                    throw new Error(`palette index ${index} is undefined`);
+                }
+                return [...color, fixture.palette.alpha?.[index] ?? 255];
+            }))};
         const previous = Buffer.from(canvas);
         if (frame.blend === 0) {
             clearRectangle(canvas, fixture.width, frame);
-            sourceCopy(canvas, fixture.width, frame);
+            sourceCopy(canvas, fixture.width, rgbaFrame);
         } else if (frame.blend === 1) {
-            sourceOver(canvas, fixture.width, frame);
+            sourceOver(canvas, fixture.width, rgbaFrame);
         } else {
             return [];
         }
@@ -445,8 +470,8 @@ fixtures.push({
 });
 
 fixtures.push({
-    id: "apng.branching.palette-static",
-    file: "palette-static.png",
+    id: "apng.palette.alpha",
+    file: "palette-alpha.png",
     width: 2,
     height: 2,
     palette: {
@@ -456,6 +481,51 @@ fixtures.push({
     frames: [
         {...baseFrame(2, 2), pixels: Buffer.from([0, 0, 0, 0])},
         {...frame(2, 2, 0, 0, red, 0, 0), pixels: Buffer.from([1, 2, 2, 1])}
+    ]
+});
+
+fixtures.push({
+    id: "apng.palette.after-first-control",
+    file: "palette-after-first-control.png",
+    width: 4,
+    height: 4,
+    palette: {
+        colors: [[0, 0, 255], [255, 0, 0], [0, 255, 0]],
+        alpha: [255, 255, 128]
+    },
+    paletteAfterFirstControl: true,
+    frames: [
+        {...baseFrame(), pixels: Buffer.alloc(16)},
+        {...frame(2, 2, 1, 1, halfGreen, 2, 1), pixels: Buffer.alloc(4, 2)},
+        {...frame(1, 1, 0, 0, red, 0, 0), pixels: Buffer.from([1])}
+    ]
+});
+
+fixtures.push({
+    id: "apng.palette.fallback-only-default-image",
+    file: "palette-fallback.png",
+    width: 2,
+    height: 2,
+    palette: {
+        colors: [[0, 0, 255], [255, 0, 0], [0, 255, 0]],
+        alpha: [255, 255, 128]
+    },
+    fallbackPixels: Buffer.alloc(4),
+    frames: [
+        {...baseFrame(2, 2), pixels: Buffer.alloc(4, 1)},
+        {...frame(1, 1, 1, 1, halfGreen, 0, 1), pixels: Buffer.from([2])}
+    ]
+});
+
+fixtures.push({
+    id: "apng.palette.opaque",
+    file: "palette-opaque.png",
+    width: 2,
+    height: 2,
+    palette: {colors: [[0, 0, 255], [255, 0, 0]]},
+    frames: [
+        {...baseFrame(2, 2), pixels: Buffer.alloc(4)},
+        {...frame(1, 1, 1, 1, red, 0, 0), pixels: Buffer.from([1])}
     ]
 });
 
@@ -542,7 +612,7 @@ for (const fixture of fixtures) {
         hasPaletteChunk,
         expectedClassification: !hasAnimationControl ? "not-apng" : hasPaletteChunk ? "apng-palette" : "apng-nonpalette",
         inputLoopCount: fixture.plays ?? 0,
-        emittedFrames: hasAnimationControl && !hasPaletteChunk ? expectedFrames(fixture) : []
+        emittedFrames: hasAnimationControl ? expectedFrames(fixture) : []
     });
 }
 

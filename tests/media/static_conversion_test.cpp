@@ -365,7 +365,7 @@ TEST_F(StaticConversionTest, IgnoresSvgExternalImageHref)
     const std::string source =
         R"(<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6"><rect width="8" height="6" fill="red"/><image href=")"
         + std::string(MEDIAPROXY_SOURCE_DIR)
-        + R"(/tests/fixtures/media/apng/palette-static.png" width="8" height="6"/></svg>)";
+        + R"(/tests/fixtures/media/apng/palette-alpha.png" width="8" height="6"/></svg>)";
     const auto input = Svg(source);
     const auto result = convert_static_image(input,
         MimeType::image_svg_xml, OutputFormat::webp,

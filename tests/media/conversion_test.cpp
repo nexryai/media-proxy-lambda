@@ -1,3 +1,4 @@
+#include <array>
 #include <cstddef>
 #include <fstream>
 #include <iterator>
@@ -72,18 +73,64 @@ TEST_F(MediaConversionTest, NonPaletteApngIgnoresStaticPreferenceAndLimits)
     EXPECT_EQ(pages, 3);
 }
 
-TEST_F(MediaConversionTest, PaletteApngUsesStaticPreferredOutput)
+TEST_F(MediaConversionTest, PaletteApngRetainsAnimationDespiteStaticPreference)
 {
-    const auto result = convert_media(ReadFixture("palette-static.png"),
-        MimeType::image_png, false, OutputFormat::avif,
-        ImageDimensions{320, 320});
+    const auto result = convert_media(ReadFixture("palette-alpha.png"),
+        MimeType::image_png, true, OutputFormat::avif,
+        ImageDimensions{1, 1});
     ASSERT_TRUE(result) << static_cast<int>(result.error) << ": "
                         << vips_error_buffer();
-    EXPECT_EQ(result.encoded_format, OutputFormat::avif);
+    EXPECT_EQ(result.encoded_format, OutputFormat::webp);
     const ImagePtr decoded = LoadAll(result.body);
     ASSERT_NE(decoded, nullptr) << vips_error_buffer();
     EXPECT_EQ(vips_image_get_width(decoded.get()), 2);
-    EXPECT_EQ(vips_image_get_height(decoded.get()), 2);
+    EXPECT_EQ(vips_image_get_height(decoded.get()), 4);
+    int pages = 0;
+    ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_N_PAGES, &pages), 0);
+    EXPECT_EQ(pages, 2);
+}
+
+TEST_F(MediaConversionTest, PaletteFallbackImageIsNotAnAnimationFrame)
+{
+    const auto result = convert_media(ReadFixture("palette-fallback.png"),
+        MimeType::image_png, false, OutputFormat::webp,
+        ImageDimensions{3200, 3200});
+    ASSERT_TRUE(result) << static_cast<int>(result.error) << ": "
+                        << vips_error_buffer();
+    EXPECT_EQ(result.encoded_format, OutputFormat::webp);
+    const ImagePtr decoded = LoadAll(result.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    int pages = 0;
+    ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_N_PAGES, &pages), 0);
+    EXPECT_EQ(pages, 2);
+}
+
+TEST_F(MediaConversionTest, PaletteChunksAfterFrameControlAndOpaqueEntriesConvert)
+{
+    struct Case {
+        const char* file;
+        int pages;
+    };
+    constexpr std::array cases{
+        Case{"palette-after-first-control.png", 3},
+        Case{"palette-opaque.png", 2},
+    };
+    for (const auto& test_case : cases) {
+        SCOPED_TRACE(test_case.file);
+        const auto result = convert_media(ReadFixture(test_case.file),
+            MimeType::image_png, false, OutputFormat::avif,
+            ImageDimensions{3200, 3200});
+        ASSERT_TRUE(result) << static_cast<int>(result.error) << ": "
+                            << vips_error_buffer();
+        EXPECT_EQ(result.encoded_format, OutputFormat::webp);
+        const ImagePtr decoded = LoadAll(result.body);
+        ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+        int pages = 0;
+        ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_N_PAGES,
+                      &pages),
+            0);
+        EXPECT_EQ(pages, test_case.pages);
+    }
 }
 
 TEST_F(MediaConversionTest, ApngWithAncillaryChunksRemainsAnimated)

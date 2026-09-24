@@ -128,6 +128,7 @@ ApngDescription parse_apng(std::span<const std::byte> body)
     bool have_ihdr = false;
     bool have_actl = false;
     bool frame_has_data = false;
+    bool saw_idat = false;
     std::uint32_t expected_sequence = 0;
     std::size_t offset = png_signature.size();
     while (offset < body.size()) {
@@ -168,7 +169,7 @@ ApngDescription parse_apng(std::span<const std::byte> body)
             }
             have_ihdr = true;
         } else if (tag_at(body, type_offset, "acTL")) {
-            if (!have_ihdr || have_actl || length != 8) {
+            if (!have_ihdr || have_actl || saw_idat || length != 8) {
                 return fail(ApngParseError::animation_control);
             }
             result.declared_frames = read_u32(body, data_offset);
@@ -183,6 +184,9 @@ ApngDescription parse_apng(std::span<const std::byte> body)
             }
             if (!result.frames.empty() && !frame_has_data) {
                 return fail(ApngParseError::frame_data);
+            }
+            if (result.frames.empty()) {
+                result.default_image_is_frame = !saw_idat;
             }
             ApngFrameControl frame{
                 .sequence = read_u32(body, data_offset),
@@ -217,12 +221,20 @@ ApngDescription parse_apng(std::span<const std::byte> body)
             result.frames.push_back(frame);
             frame_has_data = false;
         } else if (tag_at(body, type_offset, "IDAT")) {
-            if (result.frames.empty()) {
+            // Without an earlier fcTL, IDAT belongs to the static fallback.
+            if (!have_actl || (!result.frames.empty()
+                    && (!result.default_image_is_frame
+                        || result.frames.size() != 1))) {
                 return fail(ApngParseError::frame_data);
             }
-            frame_has_data = true;
+            saw_idat = true;
+            if (result.default_image_is_frame) {
+                frame_has_data = true;
+            }
         } else if (tag_at(body, type_offset, "fdAT")) {
-            if (result.frames.empty() || length < 4) {
+            if (!saw_idat || result.frames.empty() || length < 4
+                || (result.default_image_is_frame
+                    && result.frames.size() == 1)) {
                 return fail(ApngParseError::frame_data);
             }
             if (read_u32(body, data_offset) != expected_sequence++) {

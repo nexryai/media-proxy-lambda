@@ -3,7 +3,8 @@
 ## Document status
 
 - Status: revised for a self-contained arm64 runtime artifact, corrected APNG
-  blending and first-frame output, and musl static-PIE dynamic metadata
+  blending, first-frame output, palette animation, and musl static-PIE dynamic
+  metadata
 - Normative behavior: `SPECIFICATION.md`
 - Target: arm64 AWS Lambda custom runtime with Function URL `RESPONSE_STREAM`
 - Artifact: one statically linked musl C++ `bootstrap` binary
@@ -19,8 +20,8 @@ under `tests/`.
 Deliver a C++ Lambda MediaProxy that implements the complete local
 compatibility specification, including exact HTTP errors, query precedence,
 URL/SSRF rules, MIME detection, resize/encode behavior, and retained edge
-cases. Correct APNG `BLEND_OP_OVER` composition and first-frame output using a
-full-canvas state machine while leaving unrelated compatibility behavior
+cases. Correct APNG `BLEND_OP_OVER` composition, first-frame output, and palette
+animation using a full-canvas state machine while leaving unrelated behavior
 unchanged. The final repository deliverable is a working arm64 `bootstrap` that
 continuously polls the Runtime API and completes Function URL invocations.
 Deployment automation, AWS resource ownership, and cost management are handled
@@ -36,8 +37,8 @@ API tests pass.
   lifecycle manager.
 - Depending on any temporary source directory or downloaded legacy project.
 - Adding new routes, query options, formats, content negotiation, or signing.
-- Fixing retained compatibility quirks other than the approved APNG blend and
-  first-frame bugs.
+- Fixing retained compatibility quirks other than the approved APNG blend,
+  first-frame, and palette bugs.
 - Using Lambda Web Adapter, a sidecar server, managed runtime, or buffered
   Lambda response.
 - Depending on shared objects from a Lambda base image or layer.
@@ -113,12 +114,13 @@ contains every required operation.
 
 The separate first-frame correction emits callback zero at timestamp zero and
 applies its disposal, fixing the missing first frame in the Issue #1 APNG.
+The palette correction sends indexed-color APNG through the same animated WebP
+path, including palette alpha and fallback-only default images.
 Preserve these remaining APNG behaviors:
 
 - chunk-boundary APNG and palette detection, including ancillary chunks before
   `acTL`;
-- static fallback for a palette APNG;
-- non-palette APNG ignoring `static=1` and route resize limits;
+- APNG ignoring `static=1` and route resize limits;
 - target dimensions taken from the all-pages image load;
 - non-cumulative `(callback + 1) * currentDelay` timestamp rule;
 - default libwebp animation options and loop behavior;
@@ -327,8 +329,8 @@ Deliverables:
   only redistributable fixtures, hashes, metadata, and provenance—not the
   historical source or a runtime harness for it.
 - Add APNG fixtures covering alpha `OVER`, offsets, all blend/dispose crosses,
-  first-frame emission and disposal, timing, palette fallback, and content-type
-  mismatch.
+  first-frame emission and disposal, timing, indexed palettes and palette alpha,
+  fallback-only default images, and content-type mismatch.
 - Define a dependency/version/build-option lock before accepting encoded-byte
   hashes as stable.
 
@@ -481,7 +483,8 @@ Deliverables:
 - Parse PNG/APNG chunks, CRCs, frame rectangles, delay fields, blend, and
   disposal operations into bounded first-party structures.
 - Scan bounded PNG chunks for `acTL` and pre-`IDAT` `PLTE`, including ancillary
-  chunks before `acTL`, while preserving the palette static fallback.
+  chunks before `acTL`. Reconstruct palette and transparency chunks for every
+  frame, and exclude a fallback-only default image from the animation.
 - Maintain full RGBA `canvas` and `previousCanvas` buffers at IHDR dimensions.
 - Implement offset `SOURCE` and alpha-correct `OVER` composition before resize.
 - Apply disposal after frame capture: keep, clear only frame rectangle, or

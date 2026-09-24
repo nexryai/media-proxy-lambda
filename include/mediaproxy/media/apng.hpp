@@ -48,6 +48,7 @@ struct ApngDescription {
     std::uint32_t canvas_height = 0;
     std::uint32_t declared_frames = 0;
     std::uint32_t loop_count = 0;
+    bool default_image_is_frame = false;
     std::vector<ApngFrameControl> frames;
 
     [[nodiscard]] explicit operator bool() const noexcept

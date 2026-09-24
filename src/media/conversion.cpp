@@ -46,7 +46,7 @@ public:
     return {.error = error, .encoded_format = OutputFormat::webp, .body = {}};
 }
 
-[[nodiscard]] MediaConversionResult convert_nonpalette_apng(
+[[nodiscard]] MediaConversionResult convert_apng(
     std::span<const std::byte> body)
 {
     if (!initialize_vips()) {
@@ -91,10 +91,9 @@ MediaConversionResult convert_media(
 
     if (mime == MimeType::image_png) {
         const auto apng = classify_apng(body);
-        if (apng == ApngClassification::animated) {
-            return convert_nonpalette_apng(body);
+        if (apng != ApngClassification::not_apng) {
+            return convert_apng(body);
         }
-        // Palette APNG intentionally continues through the static path.
     }
 
     const auto plan = classify_media(

@@ -9,10 +9,10 @@ reference implementation. Historical projects may be cited as provenance, but
 the behavior to implement is completely stated here.
 
 The intentional media changes in the C++ release are the APNG
-`BLEND_OP_OVER`, chunk-classification, and first-frame fixes in section 8 and
-the bounded resvg-based SVG input path in section 6. All other unrelated legacy
-behavior, including unusual resize decisions and response content-type
-selection, remains part of this contract.
+`BLEND_OP_OVER`, chunk-classification, first-frame, and palette fixes in
+section 8 and the bounded resvg-based SVG input path in section 6. All other
+unrelated legacy behavior, including unusual resize decisions and response
+content-type selection, remains part of this contract.
 
 Where this document labels a rule as a security exception, the safer rule is
 normative even if a historical implementation accepted more input.
@@ -387,8 +387,8 @@ For a static image, width and height are libvips image dimensions. For an
 animated image, width is the loaded width and per-frame height is loaded height
 divided by page count. Zero pages or non-integral/invalid dimensions fail.
 
-Except for the non-palette APNG early-return path in section 8, accept width up
-to 7680 and per-frame height up to 4320 so a landscape 16:9 8K UHD image is
+Except for the APNG early-return path in section 8, accept width up to 7680 and
+per-frame height up to 4320 so a landscape 16:9 8K UHD image is
 convertible. Reject a larger width or per-frame height. No explicit
 decoded-pixel limit may alter valid golden cases; security limits must be set
 above the maximum valid corpus and documented.
@@ -458,12 +458,13 @@ frame, and rectangle validation remains the responsibility of the APNG parser.
 
 Palette use is detected when the same scan finds a `PLTE` chunk before the
 first `IDAT` chunk. Ancillary chunks such as `pHYs`, `iCCP`, and `tEXt` may
-occur between `IHDR` and `acTL` without changing APNG classification.
-
-A palette APNG is converted as a static image through section 7, so
-`static=1` and AVIF preference take effect normally. A non-palette APNG always
-uses the APNG-to-animated-WebP path, even with `static=1`, ignores route resize
-limits, forces WebP encoding, and returns before the general dimension check.
+occur between `IHDR` and `acTL` without changing APNG classification. Retain
+the palette classification for diagnostics, but route both palette and
+non-palette APNG through the APNG-to-WebP conversion path. This corrects the
+prior palette static fallback. All APNG inputs ignore `static=1` and route
+resize limits, force WebP encoding even when the selector prefers AVIF, and
+return before the general dimension check. A PNG without `acTL` remains on the
+static path, including an ordinary indexed-color PNG.
 
 The APNG target width and height are the width and height reported by the
 all-pages libvips load at the point the APNG branch is entered. The APNG IHDR
@@ -471,8 +472,13 @@ width and height are the composition-canvas dimensions. A zero dimension fails.
 
 ### 8.2 Frame input
 
-Parse `acTL`, `fcTL`, `IDAT`, and `fdAT` with CRC and bounds validation. For
-each decoded callback obtain:
+Parse `acTL`, `fcTL`, `IDAT`, and `fdAT` with CRC and bounds validation. Require
+`acTL` before the first `IDAT`. Copy `PLTE`, `tRNS`, and other shared pre-`IDAT`
+PNG chunks into each reconstructed frame PNG, including when they occur after
+the first `fcTL`. Decode indexed pixels and their palette alpha into straight
+RGBA before composition. An `IDAT` image with no preceding `fcTL` is a
+fallback-only default image. Omit its pixels from the animation and begin with
+the first `fdAT` frame. For each decoded callback obtain:
 
 - zero-based callback number;
 - RGBA frame pixels and frame width/height;
@@ -486,7 +492,8 @@ values. Preserve the legacy delay callback behavior; a zero denominator is a
 conversion failure rather than silently normalizing it.
 
 Initialize the canvas to transparent. The callback numbered zero is the first
-animation frame when its `fcTL` precedes `IDAT`, as in the
+animation frame. When its `fcTL` precedes `IDAT`, that default image is the
+first frame, as in the
 [Issue #1 image](https://github.com/nexryai/media-proxy-lambda/issues/1#issuecomment-5794205760)
 (SHA-256 `0f77b74566bd039a480ba25f0be0000f16c955b544ffef8e6a98041a585d4d19`).
 Emit it at timestamp zero and apply its disposal before the next frame. The
@@ -554,9 +561,10 @@ The fixture matrix must include:
 - frame rectangles touching each canvas edge and invalid out-of-bounds frames;
 - first-callback emission and disposal, including the Issue #1 frame layout,
   and the retained non-cumulative timestamp rule for later callbacks;
-- palette APNG static fallback;
+- palette APNG with and without `tRNS`, including `PLTE`/`tRNS` after the
+  first `fcTL`, a fallback-only default image, and alpha retained in WebP;
 - APNG classification with ancillary chunks before `acTL`;
-- `static=1` on non-palette APNG still producing animated WebP;
+- `static=1` on palette and non-palette APNG still producing WebP animation;
 - an AVIF-preferring selector producing WebP bytes with the compatibility
   response content type;
 - varying delays, zero denominator failure, loop-count non-propagation, and

@@ -511,8 +511,8 @@
             ]
         },
         {
-            "id": "apng.branching.palette-static",
-            "file": "palette-static.png",
+            "id": "apng.palette.alpha",
+            "file": "palette-alpha.png",
             "inputSha256": "ae047ec7503e622b9e2e1883379b8d6f5f011513e53a8ad607b45bc80be215c3",
             "canvas": {
                 "width": 2,
@@ -522,7 +522,107 @@
             "hasPaletteChunk": true,
             "expectedClassification": "apng-palette",
             "inputLoopCount": 0,
-            "emittedFrames": []
+            "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "d37a4c2900bb85dfd24592c0b52e8dcd72e0ea45c47fa2db0cf1c4c132c80c66",
+                    "nextCanvasRgbaSha256": "d37a4c2900bb85dfd24592c0b52e8dcd72e0ea45c47fa2db0cf1c4c132c80c66"
+                },
+                {
+                    "callbackNumber": 1,
+                    "timestampMs": 200,
+                    "displayedRgbaSha256": "3c5c15c40d89b95e46c9d04f3921d7883405dcd2df33fdebc177f2963d2bfea8",
+                    "nextCanvasRgbaSha256": "3c5c15c40d89b95e46c9d04f3921d7883405dcd2df33fdebc177f2963d2bfea8"
+                }
+            ]
+        },
+        {
+            "id": "apng.palette.after-first-control",
+            "file": "palette-after-first-control.png",
+            "inputSha256": "69c85923d742b64b9fab0a64a11c783cb3249b7ff824fe0fd0fc74c8ef044931",
+            "canvas": {
+                "width": 4,
+                "height": 4
+            },
+            "hasAnimationControl": true,
+            "hasPaletteChunk": true,
+            "expectedClassification": "apng-palette",
+            "inputLoopCount": 0,
+            "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
+                {
+                    "callbackNumber": 1,
+                    "timestampMs": 200,
+                    "displayedRgbaSha256": "1051f4a0d75cd2ee8079f58c163ff927194c036dbc8ca013fe2cc3ac307a4476",
+                    "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
+                },
+                {
+                    "callbackNumber": 2,
+                    "timestampMs": 300,
+                    "displayedRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7",
+                    "nextCanvasRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7"
+                }
+            ]
+        },
+        {
+            "id": "apng.palette.fallback-only-default-image",
+            "file": "palette-fallback.png",
+            "inputSha256": "719ca75bfd525d4f44c250a33f3d84b242a4b44952581c5c082e22d6cd0cc3fd",
+            "canvas": {
+                "width": 2,
+                "height": 2
+            },
+            "hasAnimationControl": true,
+            "hasPaletteChunk": true,
+            "expectedClassification": "apng-palette",
+            "inputLoopCount": 0,
+            "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "fb3a6a641bbce9b762a240d320a72e963ebbfd6d38cf17e86f37f165574bdbe0",
+                    "nextCanvasRgbaSha256": "fb3a6a641bbce9b762a240d320a72e963ebbfd6d38cf17e86f37f165574bdbe0"
+                },
+                {
+                    "callbackNumber": 1,
+                    "timestampMs": 200,
+                    "displayedRgbaSha256": "11dfaf5b1c046ada025baa4f0f5b75c86baa72d8f148181313e230a85c737e58",
+                    "nextCanvasRgbaSha256": "11dfaf5b1c046ada025baa4f0f5b75c86baa72d8f148181313e230a85c737e58"
+                }
+            ]
+        },
+        {
+            "id": "apng.palette.opaque",
+            "file": "palette-opaque.png",
+            "inputSha256": "0235d6971dc5763137cd0d59476cdee3cf3743d8ce3c442e351ecec7ba0b3d86",
+            "canvas": {
+                "width": 2,
+                "height": 2
+            },
+            "hasAnimationControl": true,
+            "hasPaletteChunk": true,
+            "expectedClassification": "apng-palette",
+            "inputLoopCount": 0,
+            "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "d37a4c2900bb85dfd24592c0b52e8dcd72e0ea45c47fa2db0cf1c4c132c80c66",
+                    "nextCanvasRgbaSha256": "d37a4c2900bb85dfd24592c0b52e8dcd72e0ea45c47fa2db0cf1c4c132c80c66"
+                },
+                {
+                    "callbackNumber": 1,
+                    "timestampMs": 200,
+                    "displayedRgbaSha256": "dc3aa3858c47600bf627ef0b299c15d1d0a88e6e50a07a5f91a186defe757f03",
+                    "nextCanvasRgbaSha256": "dc3aa3858c47600bf627ef0b299c15d1d0a88e6e50a07a5f91a186defe757f03"
+                }
+            ]
         },
         {
             "id": "apng.chunk-validation.out-of-bounds-right",

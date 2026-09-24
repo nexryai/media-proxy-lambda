@@ -30,7 +30,9 @@ TEST(ApngClassification, ScansChunkBoundaries)
 {
     EXPECT_EQ(classify_apng(ReadFixture("over-none.png")),
         ApngClassification::animated);
-    EXPECT_EQ(classify_apng(ReadFixture("palette-static.png")),
+    EXPECT_EQ(classify_apng(ReadFixture("palette-alpha.png")),
+        ApngClassification::palette);
+    EXPECT_EQ(classify_apng(ReadFixture("palette-fallback.png")),
         ApngClassification::palette);
     EXPECT_EQ(classify_apng(ReadFixture("detection-length-41.png")),
         ApngClassification::not_apng);
@@ -46,11 +48,22 @@ TEST(ApngParser, ReadsCanvasAnimationAndFrameControls)
     EXPECT_EQ(parsed.canvas_width, 4U);
     EXPECT_EQ(parsed.canvas_height, 4U);
     EXPECT_EQ(parsed.declared_frames, 3U);
+    EXPECT_TRUE(parsed.default_image_is_frame);
     ASSERT_EQ(parsed.frames.size(), 3U);
     EXPECT_EQ(parsed.frames[1].blend, 1U);
     EXPECT_EQ(parsed.frames[1].dispose, 0U);
     EXPECT_EQ(parsed.frames[1].delay_numerator, 1U);
     EXPECT_EQ(parsed.frames[1].delay_denominator, 10U);
+}
+
+TEST(ApngParser, ExcludesPaletteDefaultImageWhenItIsOnlyFallback)
+{
+    const auto parsed = parse_apng(ReadFixture("palette-fallback.png"));
+    ASSERT_TRUE(parsed) << static_cast<int>(parsed.error);
+    EXPECT_FALSE(parsed.default_image_is_frame);
+    EXPECT_EQ(parsed.declared_frames, 2U);
+    ASSERT_EQ(parsed.frames.size(), 2U);
+    EXPECT_EQ(parsed.frames[0].sequence, 0U);
 }
 
 struct InvalidCase {
