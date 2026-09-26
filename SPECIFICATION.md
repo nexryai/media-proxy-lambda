@@ -9,11 +9,11 @@ reference implementation. Historical projects may be cited as provenance, but
 the behavior to implement is completely stated here.
 
 The intentional media changes in the C++ release are the APNG
-`BLEND_OP_OVER`, chunk-classification, first-frame, and palette fixes in
-section 8, the bounded resvg-based SVG input path in section 6, and the
-request-dependent libvips encoding quality in section 7. All other unrelated
-legacy behavior, including unusual resize decisions and response content-type
-selection, remains part of this contract.
+`BLEND_OP_OVER`, chunk-classification, first-frame, palette, color-fidelity,
+and frame-timing fixes in section 8, the bounded resvg-based SVG input path in
+section 6, and the request-dependent libvips encoding quality in section 7.
+All other unrelated legacy behavior, including unusual resize decisions and
+response content-type selection, remains part of this contract.
 
 Where this document labels a rule as a security exception, the safer rule is
 normative even if a historical implementation accepted more input.
@@ -506,8 +506,8 @@ the first `fdAT` frame. For each decoded callback obtain:
 - `dispose_op` (`NONE=0`, `BACKGROUND=1`, `PREVIOUS=2`).
 
 Reject a frame rectangle outside the IHDR canvas and reject unknown operation
-values. Preserve the legacy delay callback behavior; a zero denominator is a
-conversion failure rather than silently normalizing it.
+values. A zero delay denominator is a conversion failure rather than silently
+normalizing it.
 
 Initialize the canvas to transparent. The callback numbered zero is the first
 animation frame. When its `fcTL` precedes `IDAT`, that default image is the
@@ -515,9 +515,8 @@ first frame, as in the
 [Issue #1 image](https://github.com/nexryai/media-proxy-lambda/issues/1#issuecomment-5794205760)
 (SHA-256 `0f77b74566bd039a480ba25f0be0000f16c955b544ffef8e6a98041a585d4d19`).
 Emit it at timestamp zero and apply its disposal before the next frame. The
-prior first-callback omission dropped a real animation frame. This correction
-does not change subsequent callback timestamps or the other APNG compatibility
-behaviors.
+prior first-callback omission dropped a real animation frame. Issue #2 also
+corrects subsequent callback timestamps as described in section 8.4.
 
 ### 8.3 Correct composition state machine
 
@@ -555,20 +554,25 @@ Initialize `WebPAnimEncoderOptions` with libwebp defaults and create the encoder
 at the APNG target dimensions. Do not copy the APNG loop count; retain the
 libwebp default animation options.
 
-Emit callback zero at timestamp zero. For callback number `n >= 1`, compute its
-timestamp as:
+Emit callback zero at timestamp zero. Before callback `n >= 1`, add the
+preceding callback's delay to the timestamp. Convert each preceding delay to
+integer milliseconds by truncating `delay_numerator * 1000 /
+delay_denominator` toward zero, then accumulate with checked 32-bit signed
+arithmetic. A timestamp overflow is a conversion failure. For example, five
+frames with `5/1` second delays are added at 0, 5000, 10000, 15000, and
+20000 ms. This corrects Issue #2: the former `(n + 1) * currentDelay` rule
+displayed the first frame for 10 seconds in that image and mishandled varying
+delays.
 
-```text
-timestamp_ms = trunc_toward_zero(float32(n + 1) * delay_seconds * 1000)
-```
-
-This is not a cumulative sum and is intentionally retained. Initialize a
-per-frame `WebPConfig` with libwebp defaults, then set `lossless=1` and
-`method=0` before adding frames. The former null config implicitly selected
-`lossless=1` with default `method=4`. The faster method retains lossless frame
-pixels but changes encoded WebP bytes and can increase output size. Keep all
-other config fields at their defaults. Do not add a synthetic terminal frame,
-and assemble with `WebPAnimEncoderAssemble`.
+Initialize a per-frame `WebPConfig` with libwebp defaults, then set
+`lossless=1` and `method=0` before adding frames. The former null config
+implicitly selected `lossless=1` with default `method=4`. The faster method
+retains lossless frame pixels but changes encoded WebP bytes and can increase
+output size. Keep all other config fields at their defaults. Set
+`WebPPicture.use_argb=1` before importing each displayed RGBA canvas and before
+its single resize. The default YUVA import subsamples and changes colors even
+with `lossless=1`. ARGB import preserves the decoded source colors. Do not add
+a synthetic terminal frame, and assemble with `WebPAnimEncoderAssemble`.
 
 ### 8.5 Required APNG tests
 
@@ -582,7 +586,9 @@ The fixture matrix must include:
 - previous disposal proving exact pre-frame restoration;
 - frame rectangles touching each canvas edge and invalid out-of-bounds frames;
 - first-callback emission and disposal, including the Issue #1 frame layout,
-  and the retained non-cumulative timestamp rule for later callbacks;
+  and cumulative timestamps derived from preceding frame delays;
+- lossless WebP frame pixels matching composed RGBA canvases, including the
+  Issue #2 image layout with distinct adjacent colors;
 - palette APNG with and without `tRNS`, including `PLTE`/`tRNS` after the
   first `fcTL`, a fallback-only default image, and alpha retained in WebP;
 - APNG classification with ancillary chunks before `acTL`;

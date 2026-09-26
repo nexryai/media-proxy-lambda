@@ -18,7 +18,7 @@
 namespace {
 
 using mediaproxy::media::decode_apng_frames;
-using mediaproxy::media::apng_frame_timestamp_ms;
+using mediaproxy::media::apng_frame_duration_ms;
 using mediaproxy::media::compose_apng_frame;
 
 std::string Sha256(std::span<const std::byte> input)
@@ -172,6 +172,7 @@ TEST(ApngDecoder, MatchesAllGoldenFrameTransitions)
         ASSERT_TRUE(yyjson_is_arr(emitted));
         EXPECT_EQ(yyjson_arr_size(emitted), decoded.frames.size());
 
+        std::int32_t timestamp_ms = 0;
         std::size_t frame_index = 0;
         std::size_t frame_count = 0;
         yyjson_val* expected = nullptr;
@@ -194,10 +195,12 @@ TEST(ApngDecoder, MatchesAllGoldenFrameTransitions)
             ASSERT_NE(next_hash, nullptr);
             EXPECT_EQ(Sha256(composed.displayed_rgba), displayed_hash);
             EXPECT_EQ(Sha256(canvas), next_hash);
-            EXPECT_EQ(callback == 0 ? 0 : apng_frame_timestamp_ms(
-                          static_cast<std::uint32_t>(callback),
-                          frame.control.delay_numerator,
-                          frame.control.delay_denominator),
+            if (callback != 0) {
+                const auto& previous = decoded.frames[callback - 1].control;
+                timestamp_ms += apng_frame_duration_ms(
+                    previous.delay_numerator, previous.delay_denominator);
+            }
+            EXPECT_EQ(timestamp_ms,
                 yyjson_get_sint(
                     yyjson_obj_get(expected, "timestampMs")));
         }

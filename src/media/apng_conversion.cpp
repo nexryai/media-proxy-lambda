@@ -125,7 +125,18 @@ ApngConversionResult convert_apng_to_webp(
     config.lossless = 1;
     config.method = 0;
 
+    std::int32_t timestamp = 0;
     for (std::size_t index = 0; index < decoded.frames.size(); ++index) {
+        if (index != 0) {
+            const auto& previous = decoded.frames[index - 1].control;
+            const auto duration = apng_frame_duration_ms(
+                previous.delay_numerator, previous.delay_denominator);
+            if (duration > std::numeric_limits<std::int32_t>::max()
+                    - timestamp) {
+                return fail(ApngConversionError::encoder);
+            }
+            timestamp += duration;
+        }
         const auto& frame = decoded.frames[index];
         auto composed = compose_apng_frame(canvas, decoded.canvas_width,
             decoded.canvas_height, frame.control, frame.rgba);
@@ -139,6 +150,8 @@ ApngConversionResult convert_apng_to_webp(
         }
         picture.value.width = static_cast<int>(decoded.canvas_width);
         picture.value.height = static_cast<int>(decoded.canvas_height);
+        // Import into ARGB so the lossless encoder never receives YUV-rounded pixels.
+        picture.value.use_argb = 1;
         if (WebPPictureImportRGBA(&picture.value,
                 reinterpret_cast<const std::uint8_t*>(
                     composed.displayed_rgba.data()),
@@ -150,10 +163,6 @@ ApngConversionResult convert_apng_to_webp(
                 == 0) {
             return fail(ApngConversionError::picture);
         }
-        const auto timestamp = index == 0 ? 0 : apng_frame_timestamp_ms(
-            static_cast<std::uint32_t>(index),
-            frame.control.delay_numerator,
-            frame.control.delay_denominator);
         if (WebPAnimEncoderAdd(
                 encoder.get(), &picture.value, timestamp, &config)
             == 0) {

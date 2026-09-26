@@ -24,13 +24,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "675630baa97886ee49197744fb82c38fdfaf6bb99c275c3a9117f747bdbcf928",
                     "nextCanvasRgbaSha256": "675630baa97886ee49197744fb82c38fdfaf6bb99c275c3a9117f747bdbcf928"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "ce14f64dd6a5a5314eed05c4399d98853c0b3208422894ea56f6ef163426c060",
                     "nextCanvasRgbaSha256": "ce14f64dd6a5a5314eed05c4399d98853c0b3208422894ea56f6ef163426c060"
                 }
@@ -57,13 +57,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "2986e8b59d2072e7849b2ceeaf3ad375f70cd073fa979270fa216ad6af1190f6",
                     "nextCanvasRgbaSha256": "2986e8b59d2072e7849b2ceeaf3ad375f70cd073fa979270fa216ad6af1190f6"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "4f8553a11255df6002e4486e234749fdce7a4f0787da34b6fcde2af7512651db",
                     "nextCanvasRgbaSha256": "4f8553a11255df6002e4486e234749fdce7a4f0787da34b6fcde2af7512651db"
                 }
@@ -90,13 +90,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "675630baa97886ee49197744fb82c38fdfaf6bb99c275c3a9117f747bdbcf928",
                     "nextCanvasRgbaSha256": "38f349eb211026331544884654b625e0cca006e835c855e278ed2c053e1ee49a"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "7ae3f49afa18b6aaa445a5e1e806d181be02c6c58445599cebd09e73ea578a2f",
                     "nextCanvasRgbaSha256": "7ae3f49afa18b6aaa445a5e1e806d181be02c6c58445599cebd09e73ea578a2f"
                 }
@@ -123,13 +123,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "2986e8b59d2072e7849b2ceeaf3ad375f70cd073fa979270fa216ad6af1190f6",
                     "nextCanvasRgbaSha256": "38f349eb211026331544884654b625e0cca006e835c855e278ed2c053e1ee49a"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "7ae3f49afa18b6aaa445a5e1e806d181be02c6c58445599cebd09e73ea578a2f",
                     "nextCanvasRgbaSha256": "7ae3f49afa18b6aaa445a5e1e806d181be02c6c58445599cebd09e73ea578a2f"
                 }
@@ -156,13 +156,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "675630baa97886ee49197744fb82c38fdfaf6bb99c275c3a9117f747bdbcf928",
                     "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "c2fa84e3c905740e4e2d24400b1c92e8ee1e6d8e112ff82a340cb876332f25f0",
                     "nextCanvasRgbaSha256": "c2fa84e3c905740e4e2d24400b1c92e8ee1e6d8e112ff82a340cb876332f25f0"
                 }
@@ -189,13 +189,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "2986e8b59d2072e7849b2ceeaf3ad375f70cd073fa979270fa216ad6af1190f6",
                     "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "c2fa84e3c905740e4e2d24400b1c92e8ee1e6d8e112ff82a340cb876332f25f0",
                     "nextCanvasRgbaSha256": "c2fa84e3c905740e4e2d24400b1c92e8ee1e6d8e112ff82a340cb876332f25f0"
                 }
@@ -222,13 +222,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "c85b5b04d89ba6b3a51cad4970cb76e625710276fca450397e14af11efd5fb90",
                     "nextCanvasRgbaSha256": "c85b5b04d89ba6b3a51cad4970cb76e625710276fca450397e14af11efd5fb90"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "290037322bc1fa1748a2347ea0614b2492d1db56f390f730d38bdb07cd31202c",
                     "nextCanvasRgbaSha256": "290037322bc1fa1748a2347ea0614b2492d1db56f390f730d38bdb07cd31202c"
                 }
@@ -255,13 +255,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "675630baa97886ee49197744fb82c38fdfaf6bb99c275c3a9117f747bdbcf928",
                     "nextCanvasRgbaSha256": "675630baa97886ee49197744fb82c38fdfaf6bb99c275c3a9117f747bdbcf928"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "d7651fb3ed9fbb6277f80a444b5b249a279619bfcdba7e10b85956c82fc4133a",
                     "nextCanvasRgbaSha256": "d7651fb3ed9fbb6277f80a444b5b249a279619bfcdba7e10b85956c82fc4133a"
                 }
@@ -288,13 +288,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "2ab63d1e3bf3480cb889f4f317c03d97544fc5822ae4815c1a3dcffe027500ec",
                     "nextCanvasRgbaSha256": "2ab63d1e3bf3480cb889f4f317c03d97544fc5822ae4815c1a3dcffe027500ec"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "2d3c17a22a0e3c9a7b59a60c18504064418acb2175164966d1dcecf31ec5daa7",
                     "nextCanvasRgbaSha256": "2d3c17a22a0e3c9a7b59a60c18504064418acb2175164966d1dcecf31ec5daa7"
                 }
@@ -321,25 +321,25 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "7756c99b5b6572398684a3b6d2491db8609cd213d1493d4ac7abb0b93a3dd1c2",
                     "nextCanvasRgbaSha256": "7756c99b5b6572398684a3b6d2491db8609cd213d1493d4ac7abb0b93a3dd1c2"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "d8191f63ed4a7ae0093dc3abb0be665df0eba0495dd83c86184db2601ee7942c",
                     "nextCanvasRgbaSha256": "d8191f63ed4a7ae0093dc3abb0be665df0eba0495dd83c86184db2601ee7942c"
                 },
                 {
                     "callbackNumber": 3,
-                    "timestampMs": 400,
+                    "timestampMs": 300,
                     "displayedRgbaSha256": "3f26a6799ba5dd60a43ef0fdd47980bbe8597acd5139c10cabb7438b4ac0e646",
                     "nextCanvasRgbaSha256": "3f26a6799ba5dd60a43ef0fdd47980bbe8597acd5139c10cabb7438b4ac0e646"
                 },
                 {
                     "callbackNumber": 4,
-                    "timestampMs": 500,
+                    "timestampMs": 400,
                     "displayedRgbaSha256": "bab361b093f15bbbf98d71bf874b95f45ac0bdc0fd484607753795bb84f3dea7",
                     "nextCanvasRgbaSha256": "bab361b093f15bbbf98d71bf874b95f45ac0bdc0fd484607753795bb84f3dea7"
                 }
@@ -366,19 +366,19 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7",
                     "nextCanvasRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 750,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "ac2dd886f2c5215f797c027c0a4ce3a5cbb577e30765224c56341f59b7064e87",
                     "nextCanvasRgbaSha256": "ac2dd886f2c5215f797c027c0a4ce3a5cbb577e30765224c56341f59b7064e87"
                 },
                 {
                     "callbackNumber": 3,
-                    "timestampMs": 1200,
+                    "timestampMs": 450,
                     "displayedRgbaSha256": "9811c450a4170e5f6f5d29f7d58f141add30d66ba8779a7672e288ebf560e54d",
                     "nextCanvasRgbaSha256": "9811c450a4170e5f6f5d29f7d58f141add30d66ba8779a7672e288ebf560e54d"
                 }
@@ -405,7 +405,7 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b",
                     "nextCanvasRgbaSha256": "f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b"
                 }
@@ -432,27 +432,60 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 10000,
+                    "timestampMs": 5000,
                     "displayedRgbaSha256": "fec0f57de0b19bc7dacb5b0fc3de7b56fc68dfdbeeebc8f9f4c506bf6e821c77",
                     "nextCanvasRgbaSha256": "fec0f57de0b19bc7dacb5b0fc3de7b56fc68dfdbeeebc8f9f4c506bf6e821c77"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 15000,
+                    "timestampMs": 10000,
                     "displayedRgbaSha256": "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e",
                     "nextCanvasRgbaSha256": "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"
                 },
                 {
                     "callbackNumber": 3,
-                    "timestampMs": 20000,
+                    "timestampMs": 15000,
                     "displayedRgbaSha256": "f4e50f9c68e78511ed9c026c4c3a109c74171bc8faa0ee38a1bdd4da526b18dc",
                     "nextCanvasRgbaSha256": "f4e50f9c68e78511ed9c026c4c3a109c74171bc8faa0ee38a1bdd4da526b18dc"
                 },
                 {
                     "callbackNumber": 4,
-                    "timestampMs": 25000,
+                    "timestampMs": 20000,
                     "displayedRgbaSha256": "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052",
                     "nextCanvasRgbaSha256": "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052"
+                }
+            ]
+        },
+        {
+            "id": "apng.issue-2.opaque-colors-and-timing",
+            "file": "issue-2-color-timing.png",
+            "inputSha256": "c8de038f9e9a3affa5088fc33209bf6c10792af025e4e2b46cd53ee54d8633a7",
+            "canvas": {
+                "width": 4,
+                "height": 4
+            },
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
+            "expectedClassification": "apng-nonpalette",
+            "inputLoopCount": 0,
+            "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "5b7080fbbbcf73befa36932de9bcfec0023ce2ac59635fde3f804023a430243f",
+                    "nextCanvasRgbaSha256": "5b7080fbbbcf73befa36932de9bcfec0023ce2ac59635fde3f804023a430243f"
+                },
+                {
+                    "callbackNumber": 1,
+                    "timestampMs": 5000,
+                    "displayedRgbaSha256": "5c0517effd8e1c3aa0c656bff757c02abb9269158a84ceb215605c8bf223b83d",
+                    "nextCanvasRgbaSha256": "5c0517effd8e1c3aa0c656bff757c02abb9269158a84ceb215605c8bf223b83d"
+                },
+                {
+                    "callbackNumber": 2,
+                    "timestampMs": 6000,
+                    "displayedRgbaSha256": "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e",
+                    "nextCanvasRgbaSha256": "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"
                 }
             ]
         },
@@ -477,7 +510,7 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "c85b5b04d89ba6b3a51cad4970cb76e625710276fca450397e14af11efd5fb90",
                     "nextCanvasRgbaSha256": "c85b5b04d89ba6b3a51cad4970cb76e625710276fca450397e14af11efd5fb90"
                 }
@@ -504,7 +537,7 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7",
                     "nextCanvasRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7"
                 }
@@ -531,7 +564,7 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "3c5c15c40d89b95e46c9d04f3921d7883405dcd2df33fdebc177f2963d2bfea8",
                     "nextCanvasRgbaSha256": "3c5c15c40d89b95e46c9d04f3921d7883405dcd2df33fdebc177f2963d2bfea8"
                 }
@@ -558,13 +591,13 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "1051f4a0d75cd2ee8079f58c163ff927194c036dbc8ca013fe2cc3ac307a4476",
                     "nextCanvasRgbaSha256": "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6"
                 },
                 {
                     "callbackNumber": 2,
-                    "timestampMs": 300,
+                    "timestampMs": 200,
                     "displayedRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7",
                     "nextCanvasRgbaSha256": "cd12acce13ee38e6dee19da4153c034df5c465f963d4271f2adab255433ff1b7"
                 }
@@ -591,7 +624,7 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "11dfaf5b1c046ada025baa4f0f5b75c86baa72d8f148181313e230a85c737e58",
                     "nextCanvasRgbaSha256": "11dfaf5b1c046ada025baa4f0f5b75c86baa72d8f148181313e230a85c737e58"
                 }
@@ -618,7 +651,7 @@
                 },
                 {
                     "callbackNumber": 1,
-                    "timestampMs": 200,
+                    "timestampMs": 100,
                     "displayedRgbaSha256": "dc3aa3858c47600bf627ef0b299c15d1d0a88e6e50a07a5f91a186defe757f03",
                     "nextCanvasRgbaSha256": "dc3aa3858c47600bf627ef0b299c15d1d0a88e6e50a07a5f91a186defe757f03"
                 }

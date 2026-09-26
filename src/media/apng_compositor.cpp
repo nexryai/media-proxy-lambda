@@ -1,7 +1,6 @@
 #include <mediaproxy/media/apng_compositor.hpp>
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -181,25 +180,16 @@ ApngComposedFrame compose_apng_frame(
     return result;
 }
 
-std::int32_t apng_frame_timestamp_ms(
-    std::uint32_t callback_number,
+std::int32_t apng_frame_duration_ms(
     std::uint16_t delay_numerator,
     std::uint16_t delay_denominator) noexcept
 {
     if (delay_denominator == 0) {
         return 0;
     }
-    const float seconds = static_cast<float>(delay_numerator)
-        / static_cast<float>(delay_denominator);
-    const float callback_seconds =
-        (static_cast<float>(callback_number) + 1.0F) * seconds;
-    const float milliseconds = callback_seconds * 1000.0F;
-    if (!std::isfinite(milliseconds)
-        || milliseconds > static_cast<float>(
-            std::numeric_limits<std::int32_t>::max())) {
-        return std::numeric_limits<std::int32_t>::max();
-    }
-    return static_cast<std::int32_t>(milliseconds);
+    return static_cast<std::int32_t>(
+        static_cast<std::uint32_t>(delay_numerator) * 1000U
+        / delay_denominator);
 }
 
 } // namespace mediaproxy::media

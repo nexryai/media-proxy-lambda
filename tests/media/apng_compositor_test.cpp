@@ -9,7 +9,7 @@ namespace {
 
 using mediaproxy::media::ApngCompositionError;
 using mediaproxy::media::ApngFrameControl;
-using mediaproxy::media::apng_frame_timestamp_ms;
+using mediaproxy::media::apng_frame_duration_ms;
 using mediaproxy::media::compose_apng_frame;
 
 std::vector<std::byte> Pixels(
@@ -100,11 +100,11 @@ TEST(ApngCompositor, RejectsInvalidInputBeforeChangingCanvas)
     EXPECT_EQ(canvas, original);
 }
 
-TEST(ApngCompositor, PreservesNonCumulativeFloat32Timestamp)
+TEST(ApngCompositor, TruncatesFrameDelayToMilliseconds)
 {
-    EXPECT_EQ(apng_frame_timestamp_ms(1, 1, 10), 200);
-    EXPECT_EQ(apng_frame_timestamp_ms(2, 1, 10), 300);
-    EXPECT_EQ(apng_frame_timestamp_ms(2, 1, 3), 1000);
+    EXPECT_EQ(apng_frame_duration_ms(1, 10), 100);
+    EXPECT_EQ(apng_frame_duration_ms(1, 3), 333);
+    EXPECT_EQ(apng_frame_duration_ms(5, 1), 5000);
 }
 
 } // namespace

@@ -116,6 +116,12 @@ The separate first-frame correction emits callback zero at timestamp zero and
 applies its disposal, fixing the missing first frame in the Issue #1 APNG.
 The palette correction sends indexed-color APNG through the same animated WebP
 path, including palette alpha and fallback-only default images.
+The Issue #2 correction imports composed frames into WebP as ARGB before the
+single resize, avoiding YUV chroma loss in the reported opaque image. It also
+accumulates each preceding frame's integer-millisecond delay so the first
+five-second frame no longer displays for ten seconds. Full-frame pixel
+comparisons and timestamp checks cover both changes without requiring the
+reported URL during tests.
 The approved encoder-speed correction keeps lossless WebP but lowers its
 per-frame method from the null-config default of 4 to 0. Local profiling of
 the Issue #1 input on x86_64 measured about 0.67 s and 51 MiB peak RSS at
@@ -129,7 +135,7 @@ Preserve these remaining APNG behaviors:
   `acTL`;
 - APNG ignoring `static=1` and route resize limits;
 - target dimensions taken from the all-pages image load;
-- non-cumulative `(callback + 1) * currentDelay` timestamp rule;
+- cumulative timestamps from each preceding frame delay;
 - default libwebp animation options and loop behavior;
 - WebP bytes potentially carrying the selector-derived AVIF response type.
 
@@ -500,8 +506,10 @@ Deliverables:
 - Apply disposal after frame capture: keep, clear only frame rectangle, or
   restore the exact snapshot.
 - Emit the first callback at timestamp zero, apply its disposal, and preserve
-  target dimension source, the later callback timestamp formula, default WebP
+  target dimension source, corrected cumulative timestamps, default WebP
   animation options, no loop propagation, and response-type quirk.
+- Import composed RGBA canvases into WebP as ARGB before the single resize so
+  lossless output retains exact opaque frame colors.
 - Add named regression fixtures for each section-8.5 case, including
   `BLEND_OP_OVER` with partial alpha and non-zero offsets.
 - Implement GoogleTest fixtures for full-canvas `SOURCE`/`OVER` composition

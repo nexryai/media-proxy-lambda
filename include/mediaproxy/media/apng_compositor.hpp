@@ -35,8 +35,7 @@ struct ApngComposedFrame {
     const ApngFrameControl& control,
     std::span<const std::byte> frame_rgba);
 
-[[nodiscard]] std::int32_t apng_frame_timestamp_ms(
-    std::uint32_t callback_number,
+[[nodiscard]] std::int32_t apng_frame_duration_ms(
     std::uint16_t delay_numerator,
     std::uint16_t delay_denominator) noexcept;
 

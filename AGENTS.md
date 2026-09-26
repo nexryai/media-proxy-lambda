@@ -123,8 +123,8 @@ reconstruct these rules from a framework's defaults:
   bytes;
 - chunk-boundary APNG and palette checks, with both palette and non-palette
   APNG using animated WebP conversion;
-- first APNG callback emission at timestamp zero and non-cumulative timestamp
-  calculation for later callbacks.
+- first APNG callback emission at timestamp zero and cumulative timestamps
+  from each preceding frame's integer-millisecond delay.
 
 ### APNG `BLEND_OP_OVER` correction
 

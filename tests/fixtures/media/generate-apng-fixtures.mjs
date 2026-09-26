@@ -184,13 +184,8 @@ function sourceOver(canvas, canvasWidth, frame) {
     }
 }
 
-function timestamp(frame, callbackNumber) {
-    if (callbackNumber === 0 || frame.delayDenominator === 0) {
-        return null;
-    }
-    const seconds = Math.fround(frame.delayNumerator / frame.delayDenominator);
-    const callbackSeconds = Math.fround(Math.fround(callbackNumber + 1) * seconds);
-    return Math.trunc(Math.fround(callbackSeconds * 1000));
+function duration(frame) {
+    return Math.trunc(frame.delayNumerator * 1000 / frame.delayDenominator);
 }
 
 function validateChunkStream(data) {
@@ -260,7 +255,11 @@ function classifyApngChunks(data) {
 function expectedFrames(fixture) {
     const canvas = Buffer.alloc(fixture.width * fixture.height * 4);
     const result = [];
+    let timestampMs = 0;
     for (let callbackNumber = 0; callbackNumber < fixture.frames.length; ++callbackNumber) {
+        if (callbackNumber > 0) {
+            timestampMs += duration(fixture.frames[callbackNumber - 1]);
+        }
         const frame = fixture.frames[callbackNumber];
         const rgbaFrame = fixture.palette === null || fixture.palette === undefined
             ? frame
@@ -291,7 +290,7 @@ function expectedFrames(fixture) {
         }
         result.push({
             callbackNumber,
-            timestampMs: callbackNumber === 0 ? 0 : timestamp(frame, callbackNumber),
+            timestampMs,
             displayedRgbaSha256: displayedHash,
             nextCanvasRgbaSha256: sha256(canvas)
         });
@@ -448,6 +447,29 @@ fixtures.push({
     beforeAnimationControl: [chunk("pHYs", Buffer.alloc(9))],
     frames: [blue, red, green, halfRed, halfGreen].map((color) =>
         frame(4, 4, 0, 0, color, 0, 0, 5, 1))
+});
+
+const issueTwoColors = [
+    [222, 226, 236, 255],
+    [255, 245, 240, 255],
+    [61, 168, 169, 255],
+    [12, 28, 79, 255]
+];
+fixtures.push({
+    id: "apng.issue-2.opaque-colors-and-timing",
+    file: "issue-2-color-timing.png",
+    width: 4,
+    height: 4,
+    palette: null,
+    frames: [
+        {...frame(4, 4, 0, 0, blue, 0, 0, 5, 1),
+            pixels: pixels(4, 4, Array.from({length: 16}, (_, index) =>
+                issueTwoColors[index % issueTwoColors.length]))},
+        {...frame(4, 4, 0, 0, red, 0, 0, 1, 1),
+            pixels: pixels(4, 4, Array.from({length: 16}, (_, index) =>
+                issueTwoColors[(index + 1) % issueTwoColors.length]))},
+        frame(4, 4, 0, 0, green, 0, 0, 2, 1)
+    ]
 });
 
 fixtures.push({
