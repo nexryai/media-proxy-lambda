@@ -11,7 +11,7 @@ the behavior to implement is completely stated here.
 The intentional media changes in the C++ release are the APNG
 `BLEND_OP_OVER`, chunk-classification, first-frame, palette, color-fidelity,
 and frame-timing fixes in section 8, the bounded resvg-based SVG input path in
-section 6, and the request-dependent libvips encoding quality in section 7.
+section 6, and the request-dependent encoding quality in section 7.
 All other unrelated legacy behavior, including unusual resize decisions and
 response content-type selection, remains part of this contract.
 
@@ -434,11 +434,11 @@ remain unresized when the width limit is non-zero.
 
 ### 7.4 Encoding
 
-For libvips WebP and AVIF encoders, use quality 70 for an `url`-only request
-under section 2.3 and quality 65 for every other request. The quality values
-are defined in C++ and passed explicitly to libvips. An `url`-only request
-currently selects WebP; the same quality policy applies if AVIF is selected
-through another caller of the media conversion API.
+Use quality 70 for an `url`-only request under section 2.3 and quality 65 for
+every other request. The values come from one C++ quality selector and are
+passed explicitly to libvips or the direct APNG libwebp encoder. An `url`-only
+request currently selects WebP; the same quality policy applies if AVIF is
+selected through another caller of the media conversion API.
 
 - Static WebP: selector-dependent quality above, lossy.
 - Animated GIF/WebP conversion: animated WebP at the same quality, lossy,
@@ -446,10 +446,11 @@ through another caller of the media conversion API.
   graph. The codec may coalesce frames differently at quality 65 and 70;
   compare page counts at the quality selected by the request.
 - AVIF: selector-dependent quality above, effort 1, lossy.
+- APNG: selector-dependent quality above in the direct libwebp `WebPConfig`;
+  retain lossless encoding and `method=0`. The pinned libwebp encoder may emit
+  identical bytes at quality 65 and 70 in this mode; the configured quality
+  value remains normative.
 - A static request for an animation encodes only the first decoded page.
-
-The APNG conversion in section 8 uses libwebp directly and retains its
-lossless per-frame configuration; this libvips quality rule does not affect it.
 
 Pin libvips, libjxl, libwebp, libheif, libaom, and every
 decoding/resampling dependency.
@@ -564,11 +565,13 @@ frames with `5/1` second delays are added at 0, 5000, 10000, 15000, and
 displayed the first frame for 10 seconds in that image and mishandled varying
 delays.
 
-Initialize a per-frame `WebPConfig` with libwebp defaults, then set
-`lossless=1` and `method=0` before adding frames. The former null config
-implicitly selected `lossless=1` with default `method=4`. The faster method
-retains lossless frame pixels but changes encoded WebP bytes and can increase
-output size. Keep all other config fields at their defaults. Set
+Initialize a `WebPConfig` with libwebp defaults, then set
+`lossless=1`, `method=0`, and `quality` to the value selected in section 7.4
+before adding frames; use that config for every frame. This applies to both
+direct `convert_apng_to_webp` calls and the media conversion entry point. The
+former null config implicitly selected `lossless=1` with default `method=4`.
+The faster method retains lossless frame pixels but changes encoded WebP bytes
+and can increase output size. Keep all other config fields at their defaults. Set
 `WebPPicture.use_argb=1` before importing each displayed RGBA canvas and before
 its single resize. The default YUVA import subsamples and changes colors even
 with `lossless=1`. ARGB import preserves the decoded source colors. Do not add
@@ -588,7 +591,10 @@ The fixture matrix must include:
 - first-callback emission and disposal, including the Issue #1 frame layout,
   and cumulative timestamps derived from preceding frame delays;
 - lossless WebP frame pixels matching composed RGBA canvases, including the
-  Issue #2 image layout with distinct adjacent colors;
+  Issue #2 image layout with distinct adjacent colors, at both quality values;
+- direct APNG and media-entry conversions using quality 65 by default and 70
+  for `url`-only requests, inspecting the direct libwebp configuration and
+  pinning encoded hashes at each value;
 - palette APNG with and without `tRNS`, including `PLTE`/`tRNS` after the
   first `fcTL`, a fallback-only default image, and alpha retained in WebP;
 - APNG classification with ancillary chunks before `acTL`;

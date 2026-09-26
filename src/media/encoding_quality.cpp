@@ -8,7 +8,7 @@ constexpr int original_size_quality = 70;
 
 } // namespace
 
-int vips_encoding_quality(EncodingQuality quality) noexcept
+int encoding_quality_value(EncodingQuality quality) noexcept
 {
     return quality == EncodingQuality::url_only
         ? original_size_quality

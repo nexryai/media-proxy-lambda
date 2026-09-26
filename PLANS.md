@@ -122,6 +122,13 @@ accumulates each preceding frame's integer-millisecond delay so the first
 five-second frame no longer displays for ten seconds. Full-frame pixel
 comparisons and timestamp checks cover both changes without requiring the
 reported URL during tests.
+The shared quality selector now also supplies 65 or 70 to direct APNG libwebp
+`WebPConfig`, while APNG remains lossless at method 0. Static, animated
+GIF/WebP, and APNG conversions use the same request classification; focused
+tests pin APNG encoded output at both requested qualities and compare decoded
+frame pixels.
+The pinned lossless method-0 encoder can emit identical bytes for these two
+qualities; tests also inspect the configured libwebp value directly.
 The approved encoder-speed correction keeps lossless WebP but lowers its
 per-frame method from the null-config default of 4 to 0. Local profiling of
 the Issue #1 input on x86_64 measured about 0.67 s and 51 MiB peak RSS at
@@ -477,9 +484,9 @@ Deliverables:
   fallback, AVIF-sequence first-frame fallback, 7680-by-4320 rejection
   boundaries, and static/animated resize formulas.
 - Implement static/animated WebP and AVIF options exactly.
-- Define libvips WebP/AVIF quality values in C++ and carry the parsed
-  `url`-only request distinction through static and animated encoding: quality
-  70 for that request, 65 otherwise. Keep direct APNG libwebp encoding separate.
+- Define shared WebP/AVIF quality values in C++ and carry the parsed `url`-only
+  request distinction through static, animated, and direct APNG encoding:
+  quality 70 for that request, 65 otherwise. Keep APNG lossless and method 0.
 - Bound arithmetic, pages, frame memory, and decoded resources above valid
   fixture maxima.
 - Add GoogleTest unit tests for MIME priority, format selection, dimension
@@ -510,6 +517,8 @@ Deliverables:
   animation options, no loop propagation, and response-type quirk.
 - Import composed RGBA canvases into WebP as ARGB before the single resize so
   lossless output retains exact opaque frame colors.
+- Set the APNG libwebp config quality from the shared 65/70 selector and
+  verify both direct and media-entry conversion paths.
 - Add named regression fixtures for each section-8.5 case, including
   `BLEND_OP_OVER` with partial alpha and non-zero offsets.
 - Implement GoogleTest fixtures for full-canvas `SOURCE`/`OVER` composition

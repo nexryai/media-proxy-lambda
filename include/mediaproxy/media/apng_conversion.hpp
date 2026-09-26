@@ -5,6 +5,9 @@
 #include <span>
 #include <vector>
 
+#include <mediaproxy/media/encoding_quality.hpp>
+#include <webp/encode.h>
+
 namespace mediaproxy::media {
 
 enum class ApngConversionError {
@@ -27,9 +30,14 @@ struct ApngConversionResult {
     }
 };
 
+[[nodiscard]] bool initialize_apng_webp_config(
+    WebPConfig& config,
+    EncodingQuality quality) noexcept;
+
 [[nodiscard]] ApngConversionResult convert_apng_to_webp(
     std::span<const std::byte> body,
     std::uint32_t target_width,
-    std::uint32_t target_height);
+    std::uint32_t target_height,
+    EncodingQuality quality = EncodingQuality::standard);
 
 } // namespace mediaproxy::media

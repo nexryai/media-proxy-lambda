@@ -47,7 +47,8 @@ public:
 }
 
 [[nodiscard]] MediaConversionResult convert_apng(
-    std::span<const std::byte> body)
+    std::span<const std::byte> body,
+    EncodingQuality quality)
 {
     if (!initialize_vips()) {
         return fail(MediaConversionError::decode);
@@ -64,7 +65,7 @@ public:
     }
     auto converted = convert_apng_to_webp(body,
         static_cast<std::uint32_t>(width),
-        static_cast<std::uint32_t>(height));
+        static_cast<std::uint32_t>(height), quality);
     if (!converted) {
         return fail(MediaConversionError::convert);
     }
@@ -93,7 +94,7 @@ MediaConversionResult convert_media(
     if (mime == MimeType::image_png) {
         const auto apng = classify_apng(body);
         if (apng != ApngClassification::not_apng) {
-            return convert_apng(body);
+            return convert_apng(body, quality);
         }
     }
 

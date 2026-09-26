@@ -8,6 +8,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <glib.h>
@@ -33,7 +34,9 @@ struct ImageUnref {
 };
 
 using ImagePtr = std::unique_ptr<VipsImage, ImageUnref>;
+using mediaproxy::media::EncodingQuality;
 using mediaproxy::media::convert_apng_to_webp;
+using mediaproxy::media::initialize_apng_webp_config;
 using mediaproxy::media::initialize_vips;
 
 std::string Sha256(std::span<const std::byte> input)
@@ -71,6 +74,19 @@ protected:
         ASSERT_TRUE(initialize_vips()) << vips_error_buffer();
     }
 };
+
+TEST_F(ApngConversionTest, UsesSharedQualityInLosslessWebpConfig)
+{
+    for (const auto [quality, expected] : {
+             std::pair{EncodingQuality::standard, 65.0F},
+             std::pair{EncodingQuality::url_only, 70.0F}}) {
+        WebPConfig config{};
+        ASSERT_TRUE(initialize_apng_webp_config(config, quality));
+        EXPECT_EQ(config.quality, expected);
+        EXPECT_EQ(config.lossless, 1);
+        EXPECT_EQ(config.method, 0);
+    }
+}
 
 TEST_F(ApngConversionTest, EmitsEveryCallbackAndUsesTargetDimensions)
 {
@@ -132,6 +148,11 @@ TEST_F(ApngConversionTest, EncodesIssueOneLayoutWithPinnedLosslessBytes)
     ASSERT_TRUE(result) << static_cast<int>(result.error);
     EXPECT_EQ(Sha256(result.body),
         "2a86dd357ccc20bffd1bad2488a2c39b9d155a5678af047836e82e8025c0b475");
+    const auto url_only = convert_apng_to_webp(
+        input, 4, 4, EncodingQuality::url_only);
+    ASSERT_TRUE(url_only) << static_cast<int>(url_only.error);
+    EXPECT_EQ(Sha256(url_only.body),
+        "2a86dd357ccc20bffd1bad2488a2c39b9d155a5678af047836e82e8025c0b475");
     const auto enlarged = convert_apng_to_webp(input, 128, 128);
     ASSERT_TRUE(enlarged) << static_cast<int>(enlarged.error);
     EXPECT_EQ(Sha256(enlarged.body),
@@ -182,43 +203,48 @@ TEST_F(ApngConversionTest, PreservesIssueTwoColorsAndTiming)
     const auto source = mediaproxy::media::decode_apng_frames(input);
     ASSERT_TRUE(source);
     ASSERT_EQ(source.frames.size(), 3U);
-    const auto result = convert_apng_to_webp(input, 4, 4);
-    ASSERT_TRUE(result) << static_cast<int>(result.error);
-    const WebPData webp{
-        .bytes = reinterpret_cast<const std::uint8_t*>(result.body.data()),
-        .size = result.body.size(),
-    };
-    using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
-        decltype(&WebPAnimDecoderDelete)>;
-    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
-        &WebPAnimDecoderDelete);
-    ASSERT_NE(decoder, nullptr);
-
     constexpr std::array<std::string_view, 3> expected_frame_hashes{
         "5b7080fbbbcf73befa36932de9bcfec0023ce2ac59635fde3f804023a430243f",
         "5c0517effd8e1c3aa0c656bff757c02abb9269158a84ceb215605c8bf223b83d",
         "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"};
-    std::vector<std::byte> canvas(4U * 4U * 4U, std::byte{0});
-    for (std::size_t index = 0; index < source.frames.size(); ++index) {
-        const auto& frame = source.frames[index];
-        const auto composed = mediaproxy::media::compose_apng_frame(canvas,
-            source.canvas_width, source.canvas_height, frame.control,
-            frame.rgba);
-        ASSERT_TRUE(composed);
-        EXPECT_EQ(Sha256(composed.displayed_rgba),
-            expected_frame_hashes[index]);
-        std::uint8_t* pixels = nullptr;
-        int timestamp = 0;
-        ASSERT_EQ(WebPAnimDecoderGetNext(decoder.get(), &pixels, &timestamp), 1);
-        ASSERT_NE(pixels, nullptr);
-        EXPECT_EQ(Sha256(std::as_bytes(std::span{pixels,
-                      composed.displayed_rgba.size()})),
-            expected_frame_hashes[index]);
-        if (index < 2U) {
-            EXPECT_EQ(timestamp, index == 0U ? 5000 : 6000);
+    for (const auto quality : {
+             EncodingQuality::standard, EncodingQuality::url_only}) {
+        SCOPED_TRACE(static_cast<int>(quality));
+        const auto result = convert_apng_to_webp(input, 4, 4, quality);
+        ASSERT_TRUE(result) << static_cast<int>(result.error);
+        const WebPData webp{
+            .bytes = reinterpret_cast<const std::uint8_t*>(result.body.data()),
+            .size = result.body.size(),
+        };
+        using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
+            decltype(&WebPAnimDecoderDelete)>;
+        DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
+            &WebPAnimDecoderDelete);
+        ASSERT_NE(decoder, nullptr);
+        std::vector<std::byte> canvas(4U * 4U * 4U, std::byte{0});
+        for (std::size_t index = 0; index < source.frames.size(); ++index) {
+            const auto& frame = source.frames[index];
+            const auto composed = mediaproxy::media::compose_apng_frame(canvas,
+                source.canvas_width, source.canvas_height, frame.control,
+                frame.rgba);
+            ASSERT_TRUE(composed);
+            EXPECT_EQ(Sha256(composed.displayed_rgba),
+                expected_frame_hashes[index]);
+            std::uint8_t* pixels = nullptr;
+            int timestamp = 0;
+            ASSERT_EQ(WebPAnimDecoderGetNext(
+                          decoder.get(), &pixels, &timestamp),
+                1);
+            ASSERT_NE(pixels, nullptr);
+            EXPECT_EQ(Sha256(std::as_bytes(std::span{pixels,
+                          composed.displayed_rgba.size()})),
+                expected_frame_hashes[index]);
+            if (index < 2U) {
+                EXPECT_EQ(timestamp, index == 0U ? 5000 : 6000);
+            }
         }
+        EXPECT_EQ(WebPAnimDecoderHasMoreFrames(decoder.get()), 0);
     }
-    EXPECT_EQ(WebPAnimDecoderHasMoreFrames(decoder.get()), 0);
 }
 
 TEST_F(ApngConversionTest, PaletteAlphaSurvivesWebpEncoding)

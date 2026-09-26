@@ -7,6 +7,6 @@ enum class EncodingQuality {
     url_only,
 };
 
-[[nodiscard]] int vips_encoding_quality(EncodingQuality quality) noexcept;
+[[nodiscard]] int encoding_quality_value(EncodingQuality quality) noexcept;
 
 } // namespace mediaproxy::media

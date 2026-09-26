@@ -78,10 +78,24 @@ using EncoderPtr = std::unique_ptr<WebPAnimEncoder, EncoderDelete>;
 
 } // namespace
 
+bool initialize_apng_webp_config(
+    WebPConfig& config,
+    EncodingQuality quality) noexcept
+{
+    if (WebPConfigInit(&config) == 0) {
+        return false;
+    }
+    config.lossless = 1;
+    config.method = 0;
+    config.quality = static_cast<float>(encoding_quality_value(quality));
+    return WebPValidateConfig(&config) != 0;
+}
+
 ApngConversionResult convert_apng_to_webp(
     std::span<const std::byte> body,
     std::uint32_t target_width,
-    std::uint32_t target_height)
+    std::uint32_t target_height,
+    EncodingQuality quality)
 {
     if (target_width == 0 || target_height == 0
         || target_width > static_cast<std::uint32_t>(
@@ -119,11 +133,9 @@ ApngConversionResult convert_apng_to_webp(
         return fail(ApngConversionError::encoder);
     }
     WebPConfig config{};
-    if (WebPConfigInit(&config) == 0) {
+    if (!initialize_apng_webp_config(config, quality)) {
         return fail(ApngConversionError::encoder);
     }
-    config.lossless = 1;
-    config.method = 0;
 
     std::int32_t timestamp = 0;
     for (std::size_t index = 0; index < decoded.frames.size(); ++index) {

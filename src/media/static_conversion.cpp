@@ -511,7 +511,7 @@ StaticConversionResult convert_static_image(
 
     void* encoded_memory = nullptr;
     std::size_t encoded_size = 0;
-    const int vips_quality = vips_encoding_quality(quality);
+    const int vips_quality = encoding_quality_value(quality);
     const int encode_result = output == OutputFormat::avif
         ? vips_heifsave_buffer(current, &encoded_memory, &encoded_size,
               "Q", vips_quality,

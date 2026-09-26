@@ -5,10 +5,12 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <glib.h>
 #include <gtest/gtest.h>
+#include <mediaproxy/media/apng_conversion.hpp>
 #include <mediaproxy/media/conversion.hpp>
 #include <mediaproxy/media/vips_runtime.hpp>
 #include <vips/vips.h>
@@ -31,7 +33,7 @@ using mediaproxy::media::MimeType;
 using mediaproxy::media::OutputFormat;
 using mediaproxy::media::convert_media;
 using mediaproxy::media::initialize_vips;
-using mediaproxy::media::vips_encoding_quality;
+using mediaproxy::media::encoding_quality_value;
 
 std::vector<std::byte> ReadMediaFixture(std::string_view path)
 {
@@ -66,8 +68,8 @@ protected:
 
 TEST_F(MediaConversionTest, UsesSharedVipsQualityForStaticWebpAndAvif)
 {
-    EXPECT_EQ(vips_encoding_quality(EncodingQuality::standard), 65);
-    EXPECT_EQ(vips_encoding_quality(EncodingQuality::url_only), 70);
+    EXPECT_EQ(encoding_quality_value(EncodingQuality::standard), 65);
+    EXPECT_EQ(encoding_quality_value(EncodingQuality::url_only), 70);
     const auto input = ReadMediaFixture("resize/1500x843.jpg");
     ASSERT_FALSE(input.empty());
     for (const auto output : {OutputFormat::webp, OutputFormat::avif}) {
@@ -82,22 +84,27 @@ TEST_F(MediaConversionTest, UsesSharedVipsQualityForStaticWebpAndAvif)
     }
 }
 
-TEST_F(MediaConversionTest, AppliesQualityToAnimatedVipsButNotApng)
+TEST_F(MediaConversionTest, AppliesSharedQualityToAnimatedAndApng)
 {
-    const auto animation = ReadMediaFixture(
-        "animated/animated-webp-supported.webp");
-    ASSERT_FALSE(animation.empty());
-    const auto standard = convert_media(animation, MimeType::image_webp,
-        false, OutputFormat::webp, ImageDimensions{320, 320},
-        EncodingQuality::standard);
-    const auto url_only = convert_media(animation, MimeType::image_webp,
-        false, OutputFormat::webp, ImageDimensions{320, 320},
-        EncodingQuality::url_only);
-    ASSERT_TRUE(standard) << static_cast<int>(standard.error);
-    ASSERT_TRUE(url_only) << static_cast<int>(url_only.error);
-    EXPECT_NE(standard.body, url_only.body);
+    for (const auto& [path, mime] : {
+             std::pair{"animated/animated-webp-supported.webp",
+                 MimeType::image_webp},
+             std::pair{"animated/elephant.gif", MimeType::image_gif}}) {
+        SCOPED_TRACE(path);
+        const auto animation = ReadMediaFixture(path);
+        ASSERT_FALSE(animation.empty());
+        const auto standard = convert_media(animation, mime,
+            false, OutputFormat::webp, ImageDimensions{320, 320},
+            EncodingQuality::standard);
+        const auto url_only = convert_media(animation, mime,
+            false, OutputFormat::webp, ImageDimensions{320, 320},
+            EncodingQuality::url_only);
+        ASSERT_TRUE(standard) << static_cast<int>(standard.error);
+        ASSERT_TRUE(url_only) << static_cast<int>(url_only.error);
+        EXPECT_NE(standard.body, url_only.body);
+    }
 
-    const auto apng = ReadFixture("palette-alpha.png");
+    const auto apng = ReadFixture("issue-2-color-timing.png");
     const auto apng_standard = convert_media(apng, MimeType::image_png, false,
         OutputFormat::webp, ImageDimensions{320, 320},
         EncodingQuality::standard);
@@ -106,7 +113,14 @@ TEST_F(MediaConversionTest, AppliesQualityToAnimatedVipsButNotApng)
         EncodingQuality::url_only);
     ASSERT_TRUE(apng_standard);
     ASSERT_TRUE(apng_url_only);
-    EXPECT_EQ(apng_standard.body, apng_url_only.body);
+    const auto direct_standard = mediaproxy::media::convert_apng_to_webp(
+        apng, 4, 4, EncodingQuality::standard);
+    const auto direct_url_only = mediaproxy::media::convert_apng_to_webp(
+        apng, 4, 4, EncodingQuality::url_only);
+    ASSERT_TRUE(direct_standard);
+    ASSERT_TRUE(direct_url_only);
+    EXPECT_EQ(apng_standard.body, direct_standard.body);
+    EXPECT_EQ(apng_url_only.body, direct_url_only.body);
 }
 
 TEST_F(MediaConversionTest, NonPaletteApngIgnoresStaticPreferenceAndLimits)
