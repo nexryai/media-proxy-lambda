@@ -447,9 +447,8 @@ selected through another caller of the media conversion API.
   compare page counts at the quality selected by the request.
 - AVIF: selector-dependent quality above, effort 1, lossy.
 - APNG: selector-dependent quality above in the direct libwebp `WebPConfig`;
-  retain lossless encoding and `method=0`. The pinned libwebp encoder may emit
-  identical bytes at quality 65 and 70 in this mode; the configured quality
-  value remains normative.
+  encode lossy WebP at `method=0`, matching the other WebP paths' lossy mode.
+  Quality 65 and 70 must be applied to every APNG frame.
 - A static request for an animation encodes only the first decoded page.
 
 Pin libvips, libjxl, libwebp, libheif, libaom, and every
@@ -566,15 +565,14 @@ displayed the first frame for 10 seconds in that image and mishandled varying
 delays.
 
 Initialize a `WebPConfig` with libwebp defaults, then set
-`lossless=1`, `method=0`, and `quality` to the value selected in section 7.4
+`lossless=0`, `method=0`, and `quality` to the value selected in section 7.4
 before adding frames; use that config for every frame. This applies to both
-direct `convert_apng_to_webp` calls and the media conversion entry point. The
-former null config implicitly selected `lossless=1` with default `method=4`.
-The faster method retains lossless frame pixels but changes encoded WebP bytes
-and can increase output size. Keep all other config fields at their defaults. Set
-`WebPPicture.use_argb=1` before importing each displayed RGBA canvas and before
-its single resize. The default YUVA import subsamples and changes colors even
-with `lossless=1`. ARGB import preserves the decoded source colors. Do not add
+direct `convert_apng_to_webp` calls and the media conversion entry point. This
+intentionally changes the previous lossless APNG output to lossy WebP; encoded
+bytes and decoded color values change. Keep all other config fields at their
+defaults. Set `WebPPicture.use_argb=1` before importing each displayed RGBA
+canvas and before its single resize. This keeps the composed pixels in ARGB
+until the lossy encoder performs color conversion. Do not add
 a synthetic terminal frame, and assemble with `WebPAnimEncoderAssemble`.
 
 ### 8.5 Required APNG tests
@@ -590,8 +588,9 @@ The fixture matrix must include:
 - frame rectangles touching each canvas edge and invalid out-of-bounds frames;
 - first-callback emission and disposal, including the Issue #1 frame layout,
   and cumulative timestamps derived from preceding frame delays;
-- lossless WebP frame pixels matching composed RGBA canvases, including the
-  Issue #2 image layout with distinct adjacent colors, at both quality values;
+- full decoded WebP frame pixel hashes at both quality values, including the
+  Issue #2 image layout with distinct adjacent colors; composed RGBA canvas
+  hashes remain exact before lossy encoding;
 - direct APNG and media-entry conversions using quality 65 by default and 70
   for `url`-only requests, inspecting the direct libwebp configuration and
   pinning encoded hashes at each value;

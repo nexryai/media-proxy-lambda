@@ -75,7 +75,7 @@ protected:
     }
 };
 
-TEST_F(ApngConversionTest, UsesSharedQualityInLosslessWebpConfig)
+TEST_F(ApngConversionTest, UsesSharedQualityInLossyWebpConfig)
 {
     for (const auto [quality, expected] : {
              std::pair{EncodingQuality::standard, 65.0F},
@@ -83,7 +83,7 @@ TEST_F(ApngConversionTest, UsesSharedQualityInLosslessWebpConfig)
         WebPConfig config{};
         ASSERT_TRUE(initialize_apng_webp_config(config, quality));
         EXPECT_EQ(config.quality, expected);
-        EXPECT_EQ(config.lossless, 1);
+        EXPECT_EQ(config.lossless, 0);
         EXPECT_EQ(config.method, 0);
     }
 }
@@ -141,22 +141,23 @@ TEST_F(ApngConversionTest, PreservesIssueOneFirstFrame)
     EXPECT_EQ(pixels[3], 255);
 }
 
-TEST_F(ApngConversionTest, EncodesIssueOneLayoutWithPinnedLosslessBytes)
+TEST_F(ApngConversionTest, EncodesIssueOneLayoutWithPinnedLossyBytes)
 {
     const auto input = ReadFixture("issue-1-first-frame.png");
     const auto result = convert_apng_to_webp(input, 4, 4);
     ASSERT_TRUE(result) << static_cast<int>(result.error);
     EXPECT_EQ(Sha256(result.body),
-        "2a86dd357ccc20bffd1bad2488a2c39b9d155a5678af047836e82e8025c0b475");
+        "baa3c6261a90cddf72889be4a14bdee61ad4102e6a08cd0b0388d8bfff8676f7");
     const auto url_only = convert_apng_to_webp(
         input, 4, 4, EncodingQuality::url_only);
     ASSERT_TRUE(url_only) << static_cast<int>(url_only.error);
     EXPECT_EQ(Sha256(url_only.body),
-        "2a86dd357ccc20bffd1bad2488a2c39b9d155a5678af047836e82e8025c0b475");
+        "6d6e8467ebaa48b3f56715cc86825df9a4667bcdc5f8b10aec81c1ceae830691");
+    EXPECT_NE(result.body, url_only.body);
     const auto enlarged = convert_apng_to_webp(input, 128, 128);
     ASSERT_TRUE(enlarged) << static_cast<int>(enlarged.error);
     EXPECT_EQ(Sha256(enlarged.body),
-        "e780f38c1ce1bd1ed51ff9aff8b3dc08a8f47f723ca4057a83476c383d22d293");
+        "6a9654e8af11dfffcf80266929264e66785dcce645746cfdeb418e4546476eb2");
 
     const auto decoded = mediaproxy::media::decode_apng_frames(input);
     ASSERT_TRUE(decoded);
@@ -176,6 +177,12 @@ TEST_F(ApngConversionTest, EncodesIssueOneLayoutWithPinnedLosslessBytes)
         "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e",
         "f4e50f9c68e78511ed9c026c4c3a109c74171bc8faa0ee38a1bdd4da526b18dc",
         "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052"};
+    constexpr std::array<std::string_view, 5> expected_lossy_hashes{
+        "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
+        "e62048d7393271f0eb4aca65e602c5123f75eef7527f30c78ebfabfa4d041634",
+        "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e",
+        "56a8132482799498ba0c748a1982192e457bfd6e608f40fc5daad4f94f730988",
+        "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052"};
     ASSERT_EQ(decoded.frames.size(), expected_frame_hashes.size());
     for (std::size_t frame_index = 0; frame_index < decoded.frames.size();
          ++frame_index) {
@@ -192,7 +199,7 @@ TEST_F(ApngConversionTest, EncodesIssueOneLayoutWithPinnedLosslessBytes)
             expected_frame_hashes[frame_index]);
         EXPECT_EQ(Sha256(std::as_bytes(std::span{pixels,
                       composed.displayed_rgba.size()})),
-            expected_frame_hashes[frame_index]);
+            expected_lossy_hashes[frame_index]);
     }
     EXPECT_EQ(WebPAnimDecoderHasMoreFrames(decoder.get()), 0);
 }
@@ -207,6 +214,15 @@ TEST_F(ApngConversionTest, PreservesIssueTwoColorsAndTiming)
         "5b7080fbbbcf73befa36932de9bcfec0023ce2ac59635fde3f804023a430243f",
         "5c0517effd8e1c3aa0c656bff757c02abb9269158a84ceb215605c8bf223b83d",
         "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"};
+    constexpr std::array<std::array<std::string_view, 3>, 2>
+        expected_lossy_hashes{{
+            {"baac833456646ab51172893b5c7e10ccfdd71430e9ee9657f1f27fbb0f0aca25",
+                "c61ac2cf77fa536419c5cecfc05a5b80f30066299f850fc295b4ce1a1f185909",
+                "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"},
+            {"fee84b983690446c421327585579fc0d4c19c016ea59b88376d85efbf612b28b",
+                "5aed10f5b7402ebebf792e8987e2a59f976792855237074b5e2bcd5ba4ffdb9e",
+                "44570e89bf3ef273a7145bff5bfeafb307ce57932ec9bd6f95622f2f9ab282b2"}}};
+    std::size_t quality_index = 0;
     for (const auto quality : {
              EncodingQuality::standard, EncodingQuality::url_only}) {
         SCOPED_TRACE(static_cast<int>(quality));
@@ -238,12 +254,13 @@ TEST_F(ApngConversionTest, PreservesIssueTwoColorsAndTiming)
             ASSERT_NE(pixels, nullptr);
             EXPECT_EQ(Sha256(std::as_bytes(std::span{pixels,
                           composed.displayed_rgba.size()})),
-                expected_frame_hashes[index]);
+                expected_lossy_hashes[quality_index][index]);
             if (index < 2U) {
                 EXPECT_EQ(timestamp, index == 0U ? 5000 : 6000);
             }
         }
         EXPECT_EQ(WebPAnimDecoderHasMoreFrames(decoder.get()), 0);
+        ++quality_index;
     }
 }
 
@@ -349,9 +366,7 @@ TEST_F(ApngConversionTest, ConvertsReportedImageWhenAvailable)
             source.canvas_width, source.canvas_height,
             source.frames[index].control, source.frames[index].rgba);
         ASSERT_TRUE(composed);
-        EXPECT_EQ(Sha256(std::as_bytes(std::span{pixels,
-                      composed.displayed_rgba.size()})),
-            Sha256(composed.displayed_rgba));
+        EXPECT_NE(pixels, nullptr);
     }
     EXPECT_EQ(WebPAnimDecoderHasMoreFrames(decoder.get()), 0);
 }

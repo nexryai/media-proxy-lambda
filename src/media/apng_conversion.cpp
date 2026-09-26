@@ -85,7 +85,7 @@ bool initialize_apng_webp_config(
     if (WebPConfigInit(&config) == 0) {
         return false;
     }
-    config.lossless = 1;
+    config.lossless = 0;
     config.method = 0;
     config.quality = static_cast<float>(encoding_quality_value(quality));
     return WebPValidateConfig(&config) != 0;
@@ -162,7 +162,7 @@ ApngConversionResult convert_apng_to_webp(
         }
         picture.value.width = static_cast<int>(decoded.canvas_width);
         picture.value.height = static_cast<int>(decoded.canvas_height);
-        // Import into ARGB so the lossless encoder never receives YUV-rounded pixels.
+        // Keep composed RGBA in ARGB until the lossy encoder converts color.
         picture.value.use_argb = 1;
         if (WebPPictureImportRGBA(&picture.value,
                 reinterpret_cast<const std::uint8_t*>(

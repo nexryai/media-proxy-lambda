@@ -123,19 +123,18 @@ five-second frame no longer displays for ten seconds. Full-frame pixel
 comparisons and timestamp checks cover both changes without requiring the
 reported URL during tests.
 The shared quality selector now also supplies 65 or 70 to direct APNG libwebp
-`WebPConfig`, while APNG remains lossless at method 0. Static, animated
+`WebPConfig`, with APNG now using lossy WebP at method 0. Static, animated
 GIF/WebP, and APNG conversions use the same request classification; focused
-tests pin APNG encoded output at both requested qualities and compare decoded
-frame pixels.
-The pinned lossless method-0 encoder can emit identical bytes for these two
-qualities; tests also inspect the configured libwebp value directly.
-The approved encoder-speed correction keeps lossless WebP but lowers its
+tests pin APNG encoded output and decoded full-frame pixel hashes at both
+requested qualities, while retaining exact source-canvas hashes.
+The earlier encoder-speed correction kept lossless WebP but lowered its
 per-frame method from the null-config default of 4 to 0. Local profiling of
 the Issue #1 input on x86_64 measured about 0.67 s and 51 MiB peak RSS at
 method 4 versus about 0.14 s and 28 MiB at method 0. Encoded bytes and size
 change, as explicitly approved for this performance fix. A test using the
-generated Issue #1 layout fixture pins the new output hash, while frame-pixel
-tests continue to cover composition semantics.
+generated Issue #1 layout fixture pinned that output hash. The later lossy
+change replaces those output hashes and decoded-frame expectations while
+retaining `method=0` and the composition tests.
 Preserve these remaining APNG behaviors:
 
 - chunk-boundary APNG and palette detection, including ancillary chunks before
@@ -486,7 +485,8 @@ Deliverables:
 - Implement static/animated WebP and AVIF options exactly.
 - Define shared WebP/AVIF quality values in C++ and carry the parsed `url`-only
   request distinction through static, animated, and direct APNG encoding:
-  quality 70 for that request, 65 otherwise. Keep APNG lossless and method 0.
+  quality 70 for that request, 65 otherwise. Encode APNG as lossy WebP at
+  method 0.
 - Bound arithmetic, pages, frame memory, and decoded resources above valid
   fixture maxima.
 - Add GoogleTest unit tests for MIME priority, format selection, dimension
@@ -516,7 +516,7 @@ Deliverables:
   target dimension source, corrected cumulative timestamps, default WebP
   animation options, no loop propagation, and response-type quirk.
 - Import composed RGBA canvases into WebP as ARGB before the single resize so
-  lossless output retains exact opaque frame colors.
+  the lossy encoder receives the composed pixels before its color conversion.
 - Set the APNG libwebp config quality from the shared 65/70 selector and
   verify both direct and media-entry conversion paths.
 - Add named regression fixtures for each section-8.5 case, including
@@ -527,8 +527,8 @@ Deliverables:
 
 Exit criteria:
 
-- Every displayed APNG frame pixel hash matches its expected full-canvas
-  composition.
+- Every composed APNG canvas hash matches its expected full-canvas pixels,
+  and every decoded lossy WebP frame hash matches its quality-specific golden.
 - `BACKGROUND` and `PREVIOUS` state-transition tests prove the next frame starts
   from the correct canvas.
 - Encoded hashes and timestamp/loop diagnostics match the approved golden
