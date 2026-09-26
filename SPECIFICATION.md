@@ -494,9 +494,16 @@ Parse `acTL`, `fcTL`, `IDAT`, and `fdAT` with CRC and bounds validation. Require
 `acTL` before the first `IDAT`. Copy `PLTE`, `tRNS`, and other shared pre-`IDAT`
 PNG chunks into each reconstructed frame PNG, including when they occur after
 the first `fcTL`. Decode indexed pixels and their palette alpha into straight
-RGBA before composition. An `IDAT` image with no preceding `fcTL` is a
-fallback-only default image. Omit its pixels from the animation and begin with
-the first `fdAT` frame. For each decoded callback obtain:
+RGBA before composition. When reading a 16-bit PNG frame without `gAMA` or
+`sRGB`, interpret its color samples as sRGB rather than linear light, including
+when an `iCCP` chunk is present. For example, 16-bit samples `0xbcbc`,
+`0xc3c3`, and `0xd8d8` must yield 8-bit RGB `(188, 195, 216)`, not the
+lightened `(222, 226, 236)`. The reported image identified below is 16-bit
+RGBA with `iCCP` but no `gAMA` or `sRGB` chunk.
+
+An `IDAT` image with no preceding `fcTL` is a fallback-only default image.
+Omit its pixels from the animation and begin with the first `fdAT` frame. For
+each decoded callback obtain:
 
 - zero-based callback number;
 - RGBA frame pixels and frame width/height;
@@ -588,6 +595,8 @@ The fixture matrix must include:
 - frame rectangles touching each canvas edge and invalid out-of-bounds frames;
 - first-callback emission and disposal, including the Issue #1 frame layout,
   and cumulative timestamps derived from preceding frame delays;
+- 16-bit APNG without `gAMA` or `sRGB` retaining exact midtone RGBA values
+  before WebP encoding;
 - full decoded WebP frame pixel hashes at both quality values, including the
   Issue #2 image layout with distinct adjacent colors; composed RGBA canvas
   hashes remain exact before lossy encoding;

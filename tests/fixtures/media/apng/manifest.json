@@ -457,6 +457,33 @@
             ]
         },
         {
+            "id": "apng.color.16bit-srgb-midtones",
+            "file": "16bit-srgb-midtones.png",
+            "inputSha256": "79325025414a5ae98488be5239d43345027014a71ca72cf5682dd36393876166",
+            "canvas": {
+                "width": 4,
+                "height": 4
+            },
+            "hasAnimationControl": true,
+            "hasPaletteChunk": false,
+            "expectedClassification": "apng-nonpalette",
+            "inputLoopCount": 0,
+            "emittedFrames": [
+                {
+                    "callbackNumber": 0,
+                    "timestampMs": 0,
+                    "displayedRgbaSha256": "e3c1560c9047fdc895df788296c39f6b57ef83f2c7db63b61144ea659e206a36",
+                    "nextCanvasRgbaSha256": "e3c1560c9047fdc895df788296c39f6b57ef83f2c7db63b61144ea659e206a36"
+                },
+                {
+                    "callbackNumber": 1,
+                    "timestampMs": 100,
+                    "displayedRgbaSha256": "3847df24f8ea3791e901504b0b9b49947a3add060c4753473e88047696906eae",
+                    "nextCanvasRgbaSha256": "3847df24f8ea3791e901504b0b9b49947a3add060c4753473e88047696906eae"
+                }
+            ]
+        },
+        {
             "id": "apng.issue-2.opaque-colors-and-timing",
             "file": "issue-2-color-timing.png",
             "inputSha256": "c8de038f9e9a3affa5088fc33209bf6c10792af025e4e2b46cd53ee54d8633a7",

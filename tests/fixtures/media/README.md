@@ -8,6 +8,8 @@ of the reported image with project-authored pixels. The reported input is
 identified by SHA-256 in `SPECIFICATION.md`; it is not a test dependency.
 `apng/issue-2-color-timing.png` combines adjacent opaque colors with a
 five-second first-frame delay and is also project-authored.
+`apng/16bit-srgb-midtones.png` has 16-bit midtone samples without `gAMA` or
+`sRGB`; it detects unwanted lightening during frame decode.
 The `palette-*.png` fixtures cover indexed colors, `tRNS` alpha, palette
 chunks after the first frame control, opaque palette entries, and a default
 image that is only a static fallback.

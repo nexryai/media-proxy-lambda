@@ -264,6 +264,51 @@ TEST_F(ApngConversionTest, PreservesIssueTwoColorsAndTiming)
     }
 }
 
+TEST_F(ApngConversionTest, Preserves16BitMidtonesAcrossLossyEncoding)
+{
+    const auto input = ReadFixture("16bit-srgb-midtones.png");
+    const auto source = mediaproxy::media::decode_apng_frames(input);
+    ASSERT_TRUE(source);
+    ASSERT_EQ(source.frames.size(), 2U);
+    constexpr std::array<std::array<std::uint8_t, 4>, 2> colors{{
+        {188, 195, 216, 255}, {43, 55, 94, 255}}};
+    for (std::size_t frame = 0; frame < colors.size(); ++frame) {
+        for (std::size_t channel = 0; channel < 4; ++channel) {
+            EXPECT_EQ(std::to_integer<std::uint8_t>(
+                          source.frames[frame].rgba[channel]),
+                colors[frame][channel]);
+        }
+    }
+
+    for (const auto quality : {
+             EncodingQuality::standard, EncodingQuality::url_only}) {
+        SCOPED_TRACE(static_cast<int>(quality));
+        const auto result = convert_apng_to_webp(input, 4, 4, quality);
+        ASSERT_TRUE(result) << static_cast<int>(result.error);
+        const WebPData webp{
+            .bytes = reinterpret_cast<const std::uint8_t*>(result.body.data()),
+            .size = result.body.size(),
+        };
+        using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
+            decltype(&WebPAnimDecoderDelete)>;
+        DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
+            &WebPAnimDecoderDelete);
+        ASSERT_NE(decoder, nullptr);
+        for (const auto& expected : colors) {
+            std::uint8_t* pixels = nullptr;
+            int timestamp = 0;
+            ASSERT_EQ(WebPAnimDecoderGetNext(decoder.get(), &pixels, &timestamp),
+                1);
+            ASSERT_NE(pixels, nullptr);
+            for (std::size_t channel = 0; channel < 3; ++channel) {
+                EXPECT_NEAR(pixels[channel], expected[channel], 10);
+            }
+            EXPECT_EQ(pixels[3], 255);
+        }
+        EXPECT_EQ(WebPAnimDecoderHasMoreFrames(decoder.get()), 0);
+    }
+}
+
 TEST_F(ApngConversionTest, PaletteAlphaSurvivesWebpEncoding)
 {
     const auto result = convert_apng_to_webp(

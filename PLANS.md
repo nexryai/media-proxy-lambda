@@ -117,11 +117,15 @@ applies its disposal, fixing the missing first frame in the Issue #1 APNG.
 The palette correction sends indexed-color APNG through the same animated WebP
 path, including palette alpha and fallback-only default images.
 The Issue #2 correction imports composed frames into WebP as ARGB before the
-single resize, avoiding YUV chroma loss in the reported opaque image. It also
-accumulates each preceding frame's integer-millisecond delay so the first
+single resize, avoiding early YUV chroma loss in the reported opaque image. It
+also accumulates each preceding frame's integer-millisecond delay so the first
 five-second frame no longer displays for ten seconds. Full-frame pixel
 comparisons and timestamp checks cover both changes without requiring the
 reported URL during tests.
+The remaining pale-color defect came from libpng's simplified reader treating
+16-bit samples without `gAMA` or `sRGB` as linear light. Set its 16-bit sRGB
+read flag after beginning each frame read and pin a generated midtone APNG
+fixture to verify decoded RGBA before the lossy WebP encoder.
 The shared quality selector now also supplies 65 or 70 to direct APNG libwebp
 `WebPConfig`, with APNG now using lossy WebP at method 0. Static, animated
 GIF/WebP, and APNG conversions use the same request classification; focused
@@ -505,6 +509,8 @@ Deliverables:
 
 - Parse PNG/APNG chunks, CRCs, frame rectangles, delay fields, blend, and
   disposal operations into bounded first-party structures.
+- Interpret 16-bit frame samples without `gAMA` or `sRGB` as sRGB, and pin
+  generated midtone pixels before encoding.
 - Scan bounded PNG chunks for `acTL` and pre-`IDAT` `PLTE`, including ancillary
   chunks before `acTL`. Reconstruct palette and transparency chunks for every
   frame, and exclude a fallback-only default image from the animation.

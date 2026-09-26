@@ -106,6 +106,9 @@ void append_chunk(
     if (image.width != control.width || image.height != control.height) {
         return ApngDecodeError::dimensions;
     }
+    // Libpng assumes 16-bit samples without gAMA/sRGB are linear; these APNG
+    // frames follow the specified sRGB assumption before 8-bit conversion.
+    image.flags |= PNG_IMAGE_FLAG_16BIT_sRGB;
     image.format = PNG_FORMAT_RGBA;
     std::size_t expected_size = 0;
     if (!rgba_size(control.width, control.height, expected_size)

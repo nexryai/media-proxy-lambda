@@ -449,6 +449,19 @@ fixtures.push({
         frame(4, 4, 0, 0, color, 0, 0, 5, 1))
 });
 
+fixtures.push({
+    id: "apng.color.16bit-srgb-midtones",
+    file: "16bit-srgb-midtones.png",
+    width: 4,
+    height: 4,
+    palette: null,
+    bitDepth: 16,
+    frames: [
+        frame(4, 4, 0, 0, [188, 195, 216, 255], 0, 0),
+        frame(4, 4, 0, 0, [43, 55, 94, 255], 0, 0)
+    ]
+});
+
 const issueTwoColors = [
     [222, 226, 236, 255],
     [255, 245, 240, 255],
