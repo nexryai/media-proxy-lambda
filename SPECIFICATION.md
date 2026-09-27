@@ -8,10 +8,11 @@ process must not require a legacy source tree or a separately downloaded
 reference implementation. Historical projects may be cited as provenance, but
 the behavior to implement is completely stated here.
 
-The intentional media changes in the C++ release are the APNG
+The intentional media changes in the C++ release are the AVIF `avis`
+animation classification and conversion in sections 5 through 7; the APNG
 `BLEND_OP_OVER`, chunk-classification, first-frame, palette, color-fidelity,
-and frame-timing fixes in section 8, the bounded resvg-based SVG input path in
-section 6, and the request-dependent encoding quality in section 7.
+and frame-timing fixes in section 8; the bounded resvg-based SVG input path in
+section 6; and the request-dependent encoding quality in section 7.
 All other unrelated legacy behavior, including unusual resize decisions and
 response content-type selection, remains part of this contract.
 
@@ -285,8 +286,10 @@ control bytes are `0x00..0x08`, `0x0b`, `0x0e..0x1a`, and `0x1c..0x1f`.
 
 - SVG is selected only by the body signature above. Origin `Content-Type` does
   not override an absent or malformed SVG signature.
-- If sniffing returns `application/octet-stream` and bytes 4 through 11 are
-  exactly `ftypavif`, use `image/avif`.
+- Before the standard signature scan, apply the bounded `avis` brand check
+  from section 6 to the complete body. If it succeeds, use `image/avif`.
+- If standard sniffing returns `application/octet-stream` and bytes 4 through
+  11 are exactly `ftypavif`, use `image/avif`.
 - No analogous override exists for other AVIF brands or HEIF. HEIF/HEIC is
   intentionally unsupported; the pinned media graph provides AVIF through
   libheif's built-in libaom backend without any HEVC decoder or encoder.
@@ -312,21 +315,37 @@ Animation classification before decode is:
 - GIF: animated unless `static=1`.
 - WebP: animated only when bytes `0x1e..0x21` are exactly `ANIM`, and only
   unless `static=1`.
+- AVIF: animated only unless `static=1`, and only when the body contains at
+  least 16 bytes, its first box has a big-endian 32-bit size from 16 through
+  the body length, and bytes 4 through 7 are exactly `ftyp`. The major brand at
+  bytes 8 through 11 or a complete compatible-brand word beginning at offset
+  16 and stepping by four bytes within the declared box must be exactly
+  `avis`. This check reads the input bytes directly without an external
+  library.
 - Other MIME types: not animated at this stage.
 
-An animated GIF or WebP forces the encoder to WebP. A non-animated request uses
-AVIF only when its selector prefers AVIF; otherwise it uses WebP. Animated
-output remains WebP even when the successful response header is selected as
-`image/avif` under section 2.4.
+An animated GIF, WebP, or AVIF forces the encoder to WebP. A non-animated
+request uses AVIF only when its selector prefers AVIF; otherwise it uses WebP.
+Animated output remains WebP even when the successful response header is
+selected as `image/avif` under section 2.4.
 
-Load raster images from the in-memory body with all pages enabled. No loader
-may make network requests or read arbitrary external files.
+Load libvips raster inputs from the in-memory body with all pages enabled. No
+loader may make network requests or read arbitrary external files.
 
-An AVIF image sequence remains non-animated under the classification above. If
-it has no top-level primary image for the libvips HEIF loader, use the pinned
-libheif sequence API to decode only the first frame of the first visual image
-track as RGBA. Keep the request body and decoded libheif plane alive through
-the synchronous libvips pipeline without a PNG intermediate. The result then
+An AVIF image sequence recognized by the `avis` brand follows the animated
+WebP path above. Decode the first visual `pict` track through the pinned
+libheif sequence API, one frame at a time as RGBA. Ignore its edit list while
+decoding so an infinite repetition cannot make decoding unbounded. Reject an
+absent track, invalid timescale, mismatched frame size, failed decode, empty
+sequence, more than 1024 frames, or more than 128,000,000 total decoded frame
+pixels. This total-pixel cap exceeds the checked-in AVIF sequence fixtures.
+Retain no decoded frame after its WebP encoder input is prepared.
+
+When an AVIF request follows the static path, including `static=1`, and has no
+top-level primary image for the libvips HEIF loader, use the pinned libheif
+sequence API to decode only the first frame of the first visual image track as
+RGBA. Keep the request body and decoded libheif plane alive through the
+synchronous libvips pipeline without a PNG intermediate. The result then
 continues through the static resize and selector-selected encoder path.
 
 JPEG XL input is decoded by the pinned decoder-only libjxl library. Both bare
@@ -414,7 +433,7 @@ height limit.
 This compares absolute excess rather than ratios and can produce a result that
 does not fit one limit. Preserve it. Never upscale when step 1 is false.
 
-### 7.3 Animated GIF/WebP resize algorithm
+### 7.3 Animated GIF/WebP/AVIF resize algorithm
 
 Initialize `newWidth=w`, `newHeight=h`. If `w > W || h > H`:
 
@@ -426,8 +445,9 @@ Initialize `newWidth=w`, `newHeight=h`. If `w > W || h > H`:
    `newHeight=round(newWidth/aspect)`.
 5. Else, only when `W == 0`, if `H != 0 && h > H`, set `newHeight=H` and
    `newWidth=round(newHeight*aspect)`.
-6. Call libvips thumbnail with `newWidth`, `newHeight`,
-   `VIPS_INTERESTING_ALL`, and `VIPS_SIZE_DOWN`.
+6. For GIF and WebP, call libvips thumbnail with `newWidth`, `newHeight`,
+   `VIPS_INTERESTING_ALL`, and `VIPS_SIZE_DOWN`. For AVIF, resize each decoded
+   RGBA frame once to those dimensions with libwebp `WebPPictureRescale`.
 
 The step-5 dependency on `W == 0` is intentional: a height-only overflow can
 remain unresized when the width limit is non-zero.
@@ -445,6 +465,14 @@ selected through another caller of the media conversion API.
   preserving the pages/timing behavior produced by the pinned libvips/codec
   graph. The codec may coalesce frames differently at quality 65 and 70;
   compare page counts at the quality selected by the request.
+- Animated AVIF conversion: direct libwebp animation at the same quality,
+  lossy, `method=0`, with default animation options. Start at timestamp zero.
+  For each frame, convert its libheif track duration to integer milliseconds
+  as `max(1, floor(duration_ticks * 1000 / track_timescale))`; the next frame
+  starts at the sum of preceding converted durations. Add a terminal null
+  frame at the total duration so the final frame retains its specified delay.
+  Reject timestamps beyond signed 32-bit milliseconds. Do not propagate the
+  AVIF edit-list repetition count to WebP.
 - AVIF: selector-dependent quality above, effort 1, lossy.
 - APNG: selector-dependent quality above in the direct libwebp `WebPConfig`;
   encode lossy WebP at `method=0`, matching the other WebP paths' lossy mode.

@@ -6,6 +6,8 @@
 #include <span>
 #include <string_view>
 
+#include <mediaproxy/media/classification.hpp>
+
 namespace mediaproxy::media {
 namespace {
 
@@ -320,11 +322,13 @@ template <std::size_t Size>
 
 MimeType sniff_mime(std::span<const std::byte> body) noexcept
 {
+    if (is_animated_avif(body)) {
+        return MimeType::image_avif;
+    }
     const std::span<const std::byte> sample =
         body.first(std::min(body.size(), maximum_mime_sample_bytes));
     const MimeType detected = sniff_standard(sample);
-    // AVIF is the sole origin-type override and is intentionally evaluated
-    // only after binary fallback, at the exact major-brand offset.
+    // Static AVIF keeps its original octet-stream-only major-brand override.
     if (detected == MimeType::application_octet_stream && sample.size() >= 12
         && starts_with(sample.subspan(4), "ftypavif")) {
         return MimeType::image_avif;

@@ -1,5 +1,8 @@
 #include <array>
 #include <cstddef>
+#include <cstdint>
+#include <initializer_list>
+#include <string_view>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -12,6 +15,45 @@ using mediaproxy::media::MimeType;
 using mediaproxy::media::OutputFormat;
 using mediaproxy::media::classify_media;
 using mediaproxy::media::is_convertible_mime;
+
+void WriteU32Be(
+    std::vector<std::byte>& bytes,
+    std::size_t offset,
+    std::uint32_t value)
+{
+    for (std::size_t index = 0; index < 4; ++index) {
+        const unsigned int shift = static_cast<unsigned int>(24U - index * 8U);
+        bytes[offset + index] = static_cast<std::byte>(value >> shift);
+    }
+}
+
+void WriteAscii(
+    std::vector<std::byte>& bytes,
+    std::size_t offset,
+    std::string_view value)
+{
+    for (std::size_t index = 0; index < value.size(); ++index) {
+        bytes[offset + index] = static_cast<std::byte>(
+            static_cast<unsigned char>(value[index]));
+    }
+}
+
+std::vector<std::byte> MakeAvifFtyp(
+    std::string_view major_brand,
+    std::initializer_list<std::string_view> compatible_brands = {})
+{
+    const auto size = 16U + compatible_brands.size() * 4U;
+    std::vector<std::byte> bytes(size, std::byte{0});
+    WriteU32Be(bytes, 0, static_cast<std::uint32_t>(size));
+    WriteAscii(bytes, 4, "ftyp");
+    WriteAscii(bytes, 8, major_brand);
+    std::size_t offset = 16;
+    for (const std::string_view brand : compatible_brands) {
+        WriteAscii(bytes, offset, brand);
+        offset += 4;
+    }
+    return bytes;
+}
 
 TEST(MediaClassification, AcceptsExactlySpecifiedMimeTypes)
 {
@@ -105,6 +147,56 @@ TEST(MediaClassification, WebpRequiresAnimAtExactFixedOffset)
         MimeType::image_webp, body, true, OutputFormat::avif);
     ASSERT_TRUE(plan.has_value());
     EXPECT_FALSE(plan->animated);
+}
+
+TEST(MediaClassification, AvifUsesAvisMajorOrCompatibleBrand)
+{
+    const auto major_brand = MakeAvifFtyp("avis");
+    auto plan = classify_media(
+        MimeType::image_avif, major_brand, false, OutputFormat::avif);
+    ASSERT_TRUE(plan.has_value());
+    EXPECT_EQ(*plan, (MediaPlan{true, OutputFormat::webp}));
+
+    const auto compatible_brand = MakeAvifFtyp("avif", {"mif1", "avis"});
+    plan = classify_media(
+        MimeType::image_avif, compatible_brand, false, OutputFormat::avif);
+    ASSERT_TRUE(plan.has_value());
+    EXPECT_EQ(*plan, (MediaPlan{true, OutputFormat::webp}));
+
+    plan = classify_media(
+        MimeType::image_avif, major_brand, true, OutputFormat::avif);
+    ASSERT_TRUE(plan.has_value());
+    EXPECT_EQ(*plan, (MediaPlan{false, OutputFormat::avif}));
+}
+
+TEST(MediaClassification, AvifRequiresAvisInsideValidFtypBox)
+{
+    auto body = MakeAvifFtyp("avif", {"mif1", "avis"});
+    ASSERT_TRUE(classify_media(
+        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+
+    WriteU32Be(body, 0, 16);
+    EXPECT_FALSE(classify_media(
+        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+
+    body = MakeAvifFtyp("avif", {"avis"});
+    WriteU32Be(body, 0, 19);
+    EXPECT_FALSE(classify_media(
+        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+
+    body = MakeAvifFtyp("avis");
+    WriteU32Be(body, 0, 17);
+    EXPECT_FALSE(classify_media(
+        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+
+    body = MakeAvifFtyp("avis");
+    WriteAscii(body, 4, "free");
+    EXPECT_FALSE(classify_media(
+        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+
+    EXPECT_FALSE(classify_media(MimeType::image_avif,
+        std::vector<std::byte>(15), false,
+        OutputFormat::webp)->animated);
 }
 
 TEST(MediaClassification, OtherImagesRemainStaticAndUsePreference)

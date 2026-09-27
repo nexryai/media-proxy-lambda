@@ -22,6 +22,9 @@ struct MediaPlan {
 
 [[nodiscard]] bool is_convertible_mime(MimeType mime) noexcept;
 
+[[nodiscard]] bool is_animated_avif(
+    std::span<const std::byte> body) noexcept;
+
 [[nodiscard]] std::optional<MediaPlan> classify_media(
     MimeType mime,
     std::span<const std::byte> body,

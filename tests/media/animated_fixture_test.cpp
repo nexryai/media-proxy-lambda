@@ -87,15 +87,14 @@ constexpr std::array animated_dimensions_800_by_450{
 };
 
 constexpr std::array fixtures{
-    // AVIF sequences deliberately follow the specified static first-page path.
-    Fixture{"800x450_1.avif", MimeType::image_avif, false,
-        {{1, 1, 1, 1, 1, 1, 1}}, static_dimensions_800_by_450},
+    Fixture{"800x450_1.avif", MimeType::image_avif, true,
+        {{325, 324, 322, 163, 325, 101, 325}}, static_dimensions_800_by_450},
     Fixture{"800x450_1.webp", MimeType::image_webp, true,
         // libwebp coalesces identical encoded frames at selector quality 65.
         {{234, 233, 229, 234, 234, 220, 234}},
         animated_dimensions_800_by_450},
-    Fixture{"800x450_2.avif", MimeType::image_avif, false,
-        {{1, 1, 1, 1, 1, 1, 1}}, static_dimensions_800_by_450},
+    Fixture{"800x450_2.avif", MimeType::image_avif, true,
+        {{99, 95, 95, 89, 100, 88, 100}}, static_dimensions_800_by_450},
     Fixture{"800x450_2.webp", MimeType::image_webp, true,
         {{325, 325, 325, 325, 325, 111, 325}},
         animated_dimensions_800_by_450},

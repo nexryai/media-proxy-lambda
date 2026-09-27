@@ -104,7 +104,9 @@ MediaConversionResult convert_media(
         return fail(MediaConversionError::unsupported);
     }
     if (plan->animated) {
-        auto converted = convert_animated_image(body, limits, quality);
+        auto converted = mime == MimeType::image_avif
+            ? convert_animated_avif(body, limits, quality)
+            : convert_animated_image(body, limits, quality);
         if (!converted) {
             return fail(MediaConversionError::convert);
         }

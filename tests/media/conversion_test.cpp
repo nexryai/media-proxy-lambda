@@ -1,5 +1,6 @@
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <iterator>
 #include <memory>
@@ -12,7 +13,9 @@
 #include <gtest/gtest.h>
 #include <mediaproxy/media/apng_conversion.hpp>
 #include <mediaproxy/media/conversion.hpp>
+#include <mediaproxy/media/mime.hpp>
 #include <mediaproxy/media/vips_runtime.hpp>
+#include <openssl/sha.h>
 #include <vips/vips.h>
 
 namespace {
@@ -34,6 +37,7 @@ using mediaproxy::media::OutputFormat;
 using mediaproxy::media::convert_media;
 using mediaproxy::media::initialize_vips;
 using mediaproxy::media::encoding_quality_value;
+using mediaproxy::media::sniff_mime;
 
 std::vector<std::byte> ReadMediaFixture(std::string_view path)
 {
@@ -89,7 +93,8 @@ TEST_F(MediaConversionTest, AppliesSharedQualityToAnimatedAndApng)
     for (const auto& [path, mime] : {
              std::pair{"animated/animated-webp-supported.webp",
                  MimeType::image_webp},
-             std::pair{"animated/elephant.gif", MimeType::image_gif}}) {
+             std::pair{"animated/elephant.gif", MimeType::image_gif},
+             std::pair{"animated/800x450_2.avif", MimeType::image_avif}}) {
         SCOPED_TRACE(path);
         const auto animation = ReadMediaFixture(path);
         ASSERT_FALSE(animation.empty());
@@ -121,6 +126,73 @@ TEST_F(MediaConversionTest, AppliesSharedQualityToAnimatedAndApng)
     ASSERT_TRUE(direct_url_only);
     EXPECT_EQ(apng_standard.body, direct_standard.body);
     EXPECT_EQ(apng_url_only.body, direct_url_only.body);
+}
+
+TEST_F(MediaConversionTest, ConvertsAvisSequenceWithFrameTiming)
+{
+    const auto input = ReadMediaFixture("animated/800x450_2.avif");
+    ASSERT_FALSE(input.empty());
+    const MimeType mime = sniff_mime(input);
+    ASSERT_EQ(mime, MimeType::image_avif);
+
+    const auto animated = convert_media(input, mime, false,
+        OutputFormat::avif, ImageDimensions{320, 180});
+    ASSERT_TRUE(animated) << static_cast<int>(animated.error);
+    EXPECT_EQ(animated.encoded_format, OutputFormat::webp);
+    std::array<std::uint8_t, SHA256_DIGEST_LENGTH> digest{};
+    ASSERT_EQ(::SHA256(reinterpret_cast<const std::uint8_t*>(
+                    animated.body.data()), animated.body.size(),
+                  digest.data()), digest.data());
+    constexpr char hex[] = "0123456789abcdef";
+    std::string encoded_hash;
+    for (const std::uint8_t byte : digest) {
+        encoded_hash.push_back(hex[byte >> 4U]);
+        encoded_hash.push_back(hex[byte & 0x0fU]);
+    }
+    EXPECT_EQ(encoded_hash,
+        "9b6c7b5d9ead9ad86ff9aa4e37d5ef560855cf159ea200aea2b77551a515229b");
+    const ImagePtr decoded = LoadAll(animated.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    int page_count = 0;
+    ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_N_PAGES,
+                  &page_count), 0);
+    EXPECT_EQ(page_count, 99);
+    int* delays = nullptr;
+    int delay_count = 0;
+    ASSERT_EQ(vips_image_get_array_int(decoded.get(), "delay", &delays,
+                  &delay_count), 0);
+    ASSERT_EQ(delay_count, 99);
+    std::int32_t total_duration = 0;
+    for (int index = 0; index < delay_count; ++index) {
+        total_duration += delays[index];
+    }
+    EXPECT_EQ(delays[0], 40);
+    EXPECT_EQ(delays[delay_count - 1], 40);
+    EXPECT_EQ(total_duration, 4000);
+
+    const auto static_image = convert_media(input, mime, true,
+        OutputFormat::avif, ImageDimensions{320, 180});
+    ASSERT_TRUE(static_image) << static_cast<int>(static_image.error);
+    EXPECT_EQ(static_image.encoded_format, OutputFormat::avif);
+    const ImagePtr static_decoded = LoadAll(static_image.body);
+    ASSERT_NE(static_decoded, nullptr) << vips_error_buffer();
+    EXPECT_EQ(vips_image_get_width(static_decoded.get()), 320);
+    EXPECT_EQ(vips_image_get_height(static_decoded.get()), 180);
+}
+
+TEST_F(MediaConversionTest, RejectsMalformedAvisSequence)
+{
+    std::array<std::byte, 16> body{};
+    body[3] = std::byte{16};
+    constexpr std::string_view signature = "ftypavis";
+    for (std::size_t index = 0; index < signature.size(); ++index) {
+        body[4 + index] = static_cast<std::byte>(signature[index]);
+    }
+    ASSERT_EQ(sniff_mime(body), MimeType::image_avif);
+    const auto result = convert_media(body, MimeType::image_avif, false,
+        OutputFormat::avif, ImageDimensions{320, 320});
+    EXPECT_FALSE(result);
+    EXPECT_EQ(result.error, mediaproxy::media::MediaConversionError::convert);
 }
 
 TEST_F(MediaConversionTest, NonPaletteApngIgnoresStaticPreferenceAndLimits)

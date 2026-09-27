@@ -352,7 +352,7 @@
             "sections": ["5", "5.1"],
             "suite": "mime",
             "variants": [
-                "only first 512 bytes inspected",
+                "standard signatures inspect only the first 512 bytes",
                 "signature priority on overlapping samples",
                 "case-sensitive signature mismatch",
                 "plain UTF-8 fallback",
@@ -371,8 +371,10 @@
                 "SVG root name is case-sensitive and boundary checked",
                 "DOCTYPE prefix is not skipped",
                 "exact ftypavif at bytes 4 through 11 overrides octet stream",
+                "valid avis major or compatible brand overrides standard sniffing",
+                "invalid avis box size is rejected",
                 "other AVIF or HEIF brands do not override and HEIF remains unsupported",
-                "override precondition MIME must match"
+                "ftypavif override precondition MIME must match"
             ]
         },
         {
@@ -391,6 +393,9 @@
                 "WebP ANIM at exact offset animated",
                 "WebP non-ANIM static",
                 "WebP static flag",
+                "AVIF avis major or compatible brand animated",
+                "AVIF invalid ftyp box static",
+                "AVIF static flag",
                 "other MIME not preclassified animated"
             ]
         },
@@ -402,6 +407,19 @@
                 "animated input forces WebP",
                 "static AVIF preference selects AVIF",
                 "static WebP preference selects WebP"
+            ]
+        },
+        {
+            "id": "avif.sequence-conversion",
+            "sections": ["5.2", "6", "7.3", "7.4"],
+            "suite": "media-golden",
+            "variants": [
+                "avis major and compatible MIME recognition",
+                "first visual pict track decoded frame by frame",
+                "animated resize target and frame count",
+                "track duration converted to cumulative milliseconds",
+                "last frame duration retained",
+                "static flag selects first frame"
             ]
         },
         {

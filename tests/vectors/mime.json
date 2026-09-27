@@ -48,7 +48,10 @@
         {"id": "mime.svg.doctype-not-sniffed", "sampleUtf8": "<!DOCTYPE svg><svg/>", "expected": "text/plain; charset=utf-8"},
         {"id": "mime.overrides.avif-exact", "sampleHex": "00000018667479706176696600000000", "expected": "image/avif"},
         {"id": "mime.overrides.avif-wrong-offset", "sampleHex": "006674797061766966", "expected": "application/octet-stream"},
-        {"id": "mime.overrides.avif-other-brand", "sampleHex": "00000018667479706176697300000000", "expected": "application/octet-stream"},
+        {"id": "mime.overrides.avif-avis-major", "sampleHex": "00000010667479706176697300000000", "expected": "image/avif"},
+        {"id": "mime.overrides.avif-avis-compatible", "sampleHex": "00000014667479706d6966310000000061766973", "expected": "image/avif"},
+        {"id": "mime.overrides.avif-avis-compatible-mp4-major", "sampleHex": "000000146674797069736f6d0000000061766973", "expected": "image/avif"},
+        {"id": "mime.overrides.avif-invalid-box-size", "sampleHex": "00000018667479706176697300000000", "expected": "application/octet-stream"},
         {"id": "mime.overrides.avif-plain-precondition", "sampleUtf8": "xxxxftypavif", "expected": "text/plain; charset=utf-8"}
     ]
 }

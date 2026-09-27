@@ -33,4 +33,9 @@ struct AnimatedConversionResult {
     ImageDimensions limits,
     EncodingQuality quality = EncodingQuality::standard);
 
+[[nodiscard]] AnimatedConversionResult convert_animated_avif(
+    std::span<const std::byte> body,
+    ImageDimensions limits,
+    EncodingQuality quality = EncodingQuality::standard);
+
 } // namespace mediaproxy::media

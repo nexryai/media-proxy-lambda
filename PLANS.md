@@ -481,20 +481,27 @@ Exit criteria:
 Deliverables:
 
 - Implement the 512-byte signature priority, bounded SVG root recognition,
-  binary fallback, and exact AVIF brand check from specification section 5.
+  binary fallback, and exact AVIF brand checks from specification sections 5
+  and 6, including `avis` sequence MIME recognition.
 - Initialize libvips once with concurrency/cache settings from section 7.
 - Implement supported MIME classification, all-pages loading, ICO first-entry
-  fallback, AVIF-sequence first-frame fallback, 7680-by-4320 rejection
-  boundaries, and static/animated resize formulas.
+  fallback, AVIF `avis` animation classification from its bounded `ftyp` box,
+  AVIF-sequence first-frame fallback for static requests,
+  7680-by-4320 rejection boundaries, and static/animated resize formulas.
 - Implement static/animated WebP and AVIF options exactly.
+- Decode `avis` tracks one frame at a time with the pinned libheif sequence
+  API and assemble timed lossy WebP with direct libwebp, preserving the final
+  frame duration and bounding frame count, total decoded pixels, and
+  timestamps.
 - Define shared WebP/AVIF quality values in C++ and carry the parsed `url`-only
   request distinction through static, animated, and direct APNG encoding:
   quality 70 for that request, 65 otherwise. Encode APNG as lossy WebP at
   method 0.
 - Bound arithmetic, pages, frame memory, and decoded resources above valid
   fixture maxima.
-- Add GoogleTest unit tests for MIME priority, format selection, dimension
-  validation, and the pure static/animated resize calculations.
+- Add GoogleTest unit tests for MIME priority, AVIF brand classification,
+  format selection, dimension validation, and the pure static/animated resize
+  calculations.
 
 Exit criteria:
 
