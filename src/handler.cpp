@@ -75,7 +75,7 @@ http::HttpResponse handle_function_url_event(
     }
     http::UrlPolicyResult origin =
         http::validate_origin_url(request.source_url);
-    if (!origin) {
+    if (!origin.url.has_value()) {
         record_outcome(diagnostics, HandlerOutcome::access_denied);
         return http::make_error_response(http::ErrorResponse::access_denied);
     }

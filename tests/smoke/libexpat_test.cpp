@@ -3,8 +3,13 @@
 #include <memory>
 #include <type_traits>
 
-#include <expat.h>
+// This configuration header enables declarations in expat.h, so preserve the
+// include order.
+// clang-format off
 #include <expat_config.h>
+#include <expat.h>
+// clang-format on
+
 #include <gtest/gtest.h>
 
 namespace {

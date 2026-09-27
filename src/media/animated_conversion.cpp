@@ -270,7 +270,8 @@ AnimatedConversionResult convert_animated_avif(
         if (error.code != heif_error_Ok || !frame) {
             return fail(AnimatedConversionError::decode);
         }
-        if (++frame_count > maximum_avif_frames || frame_count > maximum_avif_decoded_pixels / pixels_per_frame) {
+        ++frame_count;
+        if (frame_count > maximum_avif_frames || frame_count > maximum_avif_decoded_pixels / pixels_per_frame) {
             return fail(AnimatedConversionError::dimensions);
         }
         if (heif_image_get_width(frame.get(), heif_channel_interleaved) != width || heif_image_get_height(frame.get(), heif_channel_interleaved) != height) {

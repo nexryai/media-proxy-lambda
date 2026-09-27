@@ -108,7 +108,7 @@ std::optional<RedirectTracker> RedirectTracker::create(
     const OriginUrl &initial) {
     UrlPolicyResult validated =
         validate_origin_url(initial.canonical_url);
-    if (!validated || validated.url->canonical_url != initial.canonical_url || validated.url->hostname != initial.hostname || validated.url->port != initial.port || validated.url->request_target != initial.request_target || !equal_address(validated.url->literal_address, initial.literal_address)) {
+    if (!validated.url.has_value() || validated.url->canonical_url != initial.canonical_url || validated.url->hostname != initial.hostname || validated.url->port != initial.port || validated.url->request_target != initial.request_target || !equal_address(validated.url->literal_address, initial.literal_address)) {
         return std::nullopt;
     }
     return RedirectTracker{std::move(*validated.url)};
@@ -133,7 +133,7 @@ RedirectResult RedirectTracker::follow(std::string_view location) {
     }
 
     UrlPolicyResult validated = validate_origin_url(*resolved);
-    if (!validated) {
+    if (!validated.url.has_value()) {
         return fail(RedirectError::url_policy, validated.error);
     }
     for (std::size_t index = 0; index < visited_count_; ++index) {

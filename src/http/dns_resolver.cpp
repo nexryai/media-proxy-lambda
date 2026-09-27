@@ -52,7 +52,7 @@ using AddressInfo = std::unique_ptr<addrinfo, AddressInfoDeleter>;
     // OriginUrl is public data rather than an unforgeable capability. Reparse
     // the canonical URL and compare every derived field before DNS or bypass.
     UrlPolicyResult validated = validate_origin_url(origin.canonical_url);
-    if (!validated || validated.url->canonical_url != origin.canonical_url || validated.url->hostname != origin.hostname || validated.url->port != origin.port || validated.url->request_target != origin.request_target || !equal_address(validated.url->literal_address, origin.literal_address)) {
+    if (!validated.url.has_value() || validated.url->canonical_url != origin.canonical_url || validated.url->hostname != origin.hostname || validated.url->port != origin.port || validated.url->request_target != origin.request_target || !equal_address(validated.url->literal_address, origin.literal_address)) {
         return std::nullopt;
     }
     return std::move(validated.url);

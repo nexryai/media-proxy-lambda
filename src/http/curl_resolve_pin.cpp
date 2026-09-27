@@ -65,7 +65,7 @@ CurlResolvePin CurlResolvePin::create(
     const OriginUrl &origin,
     std::span<const ValidatedAddress> addresses) {
     const auto canonical = validate_origin_url(origin.canonical_url);
-    if (!canonical || canonical.url->canonical_url != origin.canonical_url || canonical.url->hostname != origin.hostname || canonical.url->port != origin.port || canonical.url->request_target != origin.request_target || origin.hostname.empty() || origin.hostname.find(':') != std::string::npos || (origin.port != 80 && origin.port != 443)) {
+    if (!canonical.url.has_value() || canonical.url->canonical_url != origin.canonical_url || canonical.url->hostname != origin.hostname || canonical.url->port != origin.port || canonical.url->request_target != origin.request_target || origin.hostname.empty() || origin.hostname.find(':') != std::string::npos || (origin.port != 80 && origin.port != 443)) {
         return CurlResolvePin{ResolvePinError::invalid_origin};
     }
     if (addresses.empty()) {
