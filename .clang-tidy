@@ -1,0 +1,21 @@
+Checks:
+  - '-*'
+  - 'bugprone-*'
+  - 'performance-*'
+  - 'modernize-*'
+  - 'readability-*'
+  - 'cppcoreguidelines-*'
+  - 'cert-*'
+  - 'clang-analyzer-security.*'
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '.*'
+
+CheckOptions:
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+
+  modernize-use-nullptr.NullMacros: 'NULL'
