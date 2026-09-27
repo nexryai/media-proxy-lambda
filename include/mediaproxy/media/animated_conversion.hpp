@@ -32,4 +32,6 @@ struct AnimatedConversionResult {
 
 [[nodiscard]] auto convert_animated_avif(std::span<const std::byte> body, ImageDimensions limits, EncodingQuality quality = EncodingQuality::standard) -> AnimatedConversionResult;
 
+[[nodiscard]] auto convert_animated_jxl(std::span<const std::byte> body, ImageDimensions limits, EncodingQuality quality = EncodingQuality::standard) -> AnimatedConversionResult;
+
 } // namespace mediaproxy::media

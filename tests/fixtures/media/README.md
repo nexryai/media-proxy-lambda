@@ -14,6 +14,15 @@ The `palette-*.png` fixtures cover indexed colors, `tRNS` alpha, palette
 chunks after the first frame control, opaque palette entries, and a default
 image that is only a static fallback.
 
+`animated/tiny.jxl` is `jxl/spline_on_first_frame.jxl` from pinned libjxl
+testdata revision `873045a9c42ed60721756e26e2a6b32e17415205`, SHA-256
+`70f753c0de4ccc28859b3aa5c6810030784c1b6989831c81b9f72d4ca9776193`.
+It covers a JPEG XL input whose basic information does not signal animation.
+`animated/anim-icos.jxl` is the sample linked from issue #3, downloaded from
+`https://jpegxl.info/images/anim-icos.jxl`, SHA-256
+`4a4c545a478e1fbebf674ee465be0afd498f94501564f9b71d9f745f960da1fe`.
+It covers animated JPEG XL routing, frame decoding, and static preference offline.
+
 The checked-in `apng/manifest.json` records each input SHA-256, chunk-scan
 classification, input loop count, and full-canvas RGBA SHA-256 before and after
 disposal for every emitted callback. Malformed inputs record the parser error

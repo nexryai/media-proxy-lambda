@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -12,6 +13,7 @@
 #include <glib.h>
 #include <gtest/gtest.h>
 #include <mediaproxy/media/apng_conversion.hpp>
+#include <mediaproxy/media/classification.hpp>
 #include <mediaproxy/media/conversion.hpp>
 #include <mediaproxy/media/mime.hpp>
 #include <mediaproxy/media/vips_runtime.hpp>
@@ -147,6 +149,52 @@ TEST_F(MediaConversionTest, ConvertsAvisSequenceWithFrameTiming) {
     ASSERT_NE(static_decoded, nullptr) << vips_error_buffer();
     EXPECT_EQ(vips_image_get_width(static_decoded.get()), 320);
     EXPECT_EQ(vips_image_get_height(static_decoded.get()), 180);
+}
+
+TEST_F(MediaConversionTest, ConvertsAnimatedJxlAndHonorsStaticPreference) {
+    const auto input = read_media_fixture("animated/anim-icos.jxl");
+    ASSERT_FALSE(input.empty());
+    ASSERT_EQ(sniff_mime(input), MimeType::image_jxl);
+    const auto plan = mediaproxy::media::classify_media(MimeType::image_jxl, input, false, OutputFormat::avif);
+    ASSERT_TRUE(plan.has_value());
+    ASSERT_TRUE(plan->animated);
+    EXPECT_EQ(plan->output, OutputFormat::webp);
+
+    const auto animated = convert_media(input, MimeType::image_jxl, false, OutputFormat::avif, ImageDimensions{.width = 320, .height = 320});
+    ASSERT_TRUE(animated) << static_cast<int>(animated.error);
+    EXPECT_EQ(animated.encoded_format, OutputFormat::webp);
+    EXPECT_EQ(sniff_mime(animated.body), MimeType::image_webp);
+    constexpr std::array<std::byte, 4> icc_tag{std::byte{'I'}, std::byte{'C'}, std::byte{'C'}, std::byte{'P'}};
+    EXPECT_NE(std::search(animated.body.begin(), animated.body.end(), icc_tag.begin(), icc_tag.end()), animated.body.end());
+    const ImagePtr decoded = load_all(animated.body);
+    ASSERT_NE(decoded, nullptr) << vips_error_buffer();
+    int pages = 0;
+    ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_N_PAGES, &pages), 0);
+    EXPECT_EQ(pages, 48);
+    int *delays = nullptr;
+    int delay_count = 0;
+    ASSERT_EQ(vips_image_get_array_int(decoded.get(), "delay", &delays, &delay_count), 0);
+    ASSERT_EQ(delay_count, pages);
+    EXPECT_EQ(delays[0], 50);
+    EXPECT_EQ(delays[1], 50);
+    int total_duration = 0;
+    for (int index = 0; index < delay_count; ++index) {
+        total_duration += delays[index];
+    }
+    EXPECT_EQ(total_duration, 2400);
+
+    const auto static_plan = mediaproxy::media::classify_media(MimeType::image_jxl, input, true, OutputFormat::avif);
+    ASSERT_TRUE(static_plan.has_value());
+    EXPECT_FALSE(static_plan->animated);
+    const auto static_image = convert_media(input, MimeType::image_jxl, true, OutputFormat::avif, ImageDimensions{.width = 320, .height = 320});
+    ASSERT_TRUE(static_image) << static_cast<int>(static_image.error);
+    EXPECT_EQ(static_image.encoded_format, OutputFormat::avif);
+    EXPECT_EQ(sniff_mime(static_image.body), MimeType::image_avif);
+
+    const auto non_animated = read_media_fixture("animated/tiny.jxl");
+    ASSERT_FALSE(non_animated.empty());
+    EXPECT_FALSE(mediaproxy::media::is_animated_jxl(non_animated));
+    EXPECT_FALSE(mediaproxy::media::is_animated_jxl({}));
 }
 
 TEST_F(MediaConversionTest, RejectsMalformedAvisSequence) {

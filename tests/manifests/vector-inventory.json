@@ -443,6 +443,17 @@
             ]
         },
         {
+            "id": "jxl.animation",
+            "sections": ["6", "7.3", "7.4"],
+            "suite": "media-golden",
+            "variants": [
+                "libjxl basic information selects animated WebP",
+                "coalesced displayed frames retain duration",
+                "static flag selects first displayed frame",
+                "malformed JPEG XL remains a conversion error"
+            ]
+        },
+        {
             "id": "svg.bounded-static-render",
             "sections": ["5", "6", "7.1", "7.4"],
             "suite": "media-golden",

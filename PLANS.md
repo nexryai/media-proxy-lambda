@@ -493,6 +493,9 @@ Deliverables:
   API and assemble timed lossy WebP with direct libwebp, preserving the final
   frame duration and bounding frame count, total decoded pixels, and
   timestamps.
+- Detect animated JPEG XL from libjxl basic information, decode coalesced
+  displayed frames one at a time, and assemble timed lossy WebP with the same
+  frame, pixel, and timestamp bounds. Keep `static=1` on the first-frame path.
 - Define shared WebP/AVIF quality values in C++ and carry the parsed `url`-only
   request distinction through static, animated, and direct APNG encoding:
   quality 70 for that request, 65 otherwise. Encode APNG as lossy WebP at

@@ -8,7 +8,7 @@ process must not require a legacy source tree or a separately downloaded
 reference implementation. Historical projects may be cited as provenance, but
 the behavior to implement is completely stated here.
 
-The intentional media changes in the C++ release are the AVIF `avis`
+The intentional media changes in the C++ release are the AVIF `avis` and JPEG XL
 animation classification and conversion in sections 5 through 7; the APNG
 `BLEND_OP_OVER`, chunk-classification, first-frame, palette, color-fidelity,
 and frame-timing fixes in section 8; the bounded resvg-based SVG input path in
@@ -322,9 +322,13 @@ Animation classification before decode is:
   16 and stepping by four bytes within the declared box must be exactly
   `avis`. This check reads the input bytes directly without an external
   library.
+- JPEG XL: animated only unless `static=1`, and only when the pinned libjxl
+  decoder reports `have_animation` in basic image information. Malformed input
+  that cannot supply basic information continues through the static path and
+  fails during decode.
 - Other MIME types: not animated at this stage.
 
-An animated GIF, WebP, or AVIF forces the encoder to WebP. A non-animated
+An animated GIF, WebP, AVIF, or JPEG XL forces the encoder to WebP. A non-animated
 request uses AVIF only when its selector prefers AVIF; otherwise it uses WebP.
 Animated output remains WebP even when the successful response header is
 selected as `image/avif` under section 2.4.
@@ -350,11 +354,14 @@ continues through the static resize and selector-selected encoder path.
 
 JPEG XL input is decoded by the pinned decoder-only libjxl library. Both bare
 codestream and ISO BMFF container signatures are accepted. JPEG reconstruction
-and box extraction are disabled, and only the first displayed frame is passed
-to the static resize path. Preserve the decoder-output ICC profile when one is
+and box extraction are disabled. A static request, including `static=1`, passes
+only the first displayed frame to the static resize path. Animated JPEG XL
+uses the decoder's default frame coalescing so each emitted RGBA image is the
+complete displayed canvas. Preserve the decoder-output ICC profile when one is
 available, rejecting a generated or embedded profile larger than the 10 MiB
-origin-body limit. JXL never selects a JXL encoder: output remains AVIF or WebP
-under the rules above.
+origin-body limit. Attach that profile to animated WebP as an `ICCP` chunk.
+JXL never selects a JXL encoder: output remains AVIF or WebP under the rules
+above.
 
 SVG input is parsed and rendered by the pinned resvg library through a
 first-party Rust C-ABI shim. Only static SVG is supported; scripts, events,
@@ -433,7 +440,7 @@ height limit.
 This compares absolute excess rather than ratios and can produce a result that
 does not fit one limit. Preserve it. Never upscale when step 1 is false.
 
-### 7.3 Animated GIF/WebP/AVIF resize algorithm
+### 7.3 Animated GIF/WebP/AVIF/JPEG XL resize algorithm
 
 Initialize `newWidth=w`, `newHeight=h`. If `w > W || h > H`:
 
@@ -446,8 +453,9 @@ Initialize `newWidth=w`, `newHeight=h`. If `w > W || h > H`:
 5. Else, only when `W == 0`, if `H != 0 && h > H`, set `newHeight=H` and
    `newWidth=round(newHeight*aspect)`.
 6. For GIF and WebP, call libvips thumbnail with `newWidth`, `newHeight`,
-   `VIPS_INTERESTING_ALL`, and `VIPS_SIZE_DOWN`. For AVIF, resize each decoded
-   RGBA frame once to those dimensions with libwebp `WebPPictureRescale`.
+   `VIPS_INTERESTING_ALL`, and `VIPS_SIZE_DOWN`. For AVIF and JPEG XL, resize
+   each decoded RGBA frame once to those dimensions with libwebp
+   `WebPPictureRescale`.
 
 The step-5 dependency on `W == 0` is intentional: a height-only overflow can
 remain unresized when the width limit is non-zero.
@@ -473,6 +481,14 @@ selected through another caller of the media conversion API.
   frame at the total duration so the final frame retains its specified delay.
   Reject timestamps beyond signed 32-bit milliseconds. Do not propagate the
   AVIF edit-list repetition count to WebP.
+- Animated JPEG XL conversion: direct libwebp animation with the same quality,
+  lossy, `method=0`, and default animation options. Start at timestamp zero.
+  Convert each displayed frame's duration to integer milliseconds as
+  `max(1, floor(duration_ticks * 1000 * tps_denominator / tps_numerator))`.
+  Add a terminal null frame at the sum of converted durations; reject a zero
+  timebase or timestamps beyond signed 32-bit milliseconds. Do not propagate
+  the JPEG XL loop count to WebP. Reject more than 1024 frames or 128,000,000
+  total decoded frame pixels.
 - AVIF: selector-dependent quality above, effort 1, lossy.
 - APNG: selector-dependent quality above in the direct libwebp `WebPConfig`;
   encode lossy WebP at `method=0`, matching the other WebP paths' lossy mode.

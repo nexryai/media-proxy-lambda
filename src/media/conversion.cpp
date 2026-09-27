@@ -88,11 +88,20 @@ auto convert_media(std::span<const std::byte> body, MimeType mime, bool force_st
     if (!plan.has_value()) {
         return fail(MediaConversionError::unsupported);
     }
+
     if (plan->animated) {
-        auto converted = mime == MimeType::image_avif ? convert_animated_avif(body, limits, quality) : convert_animated_image(body, limits, quality);
+        AnimatedConversionResult converted;
+        if (mime == MimeType::image_avif) {
+            converted = convert_animated_avif(body, limits, quality);
+        } else if (mime == MimeType::image_jxl) {
+            converted = convert_animated_jxl(body, limits, quality);
+        } else {
+            converted = convert_animated_image(body, limits, quality);
+        }
         if (!converted) {
             return fail(MediaConversionError::convert);
         }
+
         return {
             .error = MediaConversionError::none,
             .encoded_format = OutputFormat::webp,

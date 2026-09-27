@@ -2,8 +2,11 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <string_view>
+
+#include <jxl/decode.h>
 
 namespace mediaproxy::media {
 namespace {
@@ -74,6 +77,28 @@ auto is_animated_avif(std::span<const std::byte> body) noexcept -> bool {
     return false;
 }
 
+auto is_animated_jxl(std::span<const std::byte> body) noexcept -> bool {
+    if (body.empty()) {
+        return false;
+    }
+    std::unique_ptr<JxlDecoder, decltype(&JxlDecoderDestroy)> decoder(JxlDecoderCreate(nullptr), &JxlDecoderDestroy);
+    if (!decoder) {
+        return false;
+    }
+    const bool subscribed = JxlDecoderSubscribeEvents(decoder.get(), JXL_DEC_BASIC_INFO) == JXL_DEC_SUCCESS;
+    bool animated = false;
+    if (subscribed) {
+        JxlDecoderSetInput(decoder.get(), reinterpret_cast<const std::uint8_t *>(body.data()), body.size());
+        JxlDecoderCloseInput(decoder.get());
+        if (JxlDecoderProcessInput(decoder.get()) == JXL_DEC_BASIC_INFO) {
+            JxlBasicInfo info{};
+            animated = JxlDecoderGetBasicInfo(decoder.get(), &info) == JXL_DEC_SUCCESS && info.have_animation == JXL_TRUE;
+        }
+    }
+
+    return animated;
+}
+
 auto is_convertible_mime(MimeType mime) noexcept -> bool {
     switch (mime) {
         case MimeType::image_avif:
@@ -96,7 +121,7 @@ auto classify_media(MimeType mime, std::span<const std::byte> body, bool force_s
         return std::nullopt;
     }
 
-    const bool animated = !force_static && (mime == MimeType::image_gif || (mime == MimeType::image_avif && is_animated_avif(body)) || (mime == MimeType::image_webp && is_animated_webp(body)));
+    const bool animated = !force_static && (mime == MimeType::image_gif || (mime == MimeType::image_avif && is_animated_avif(body)) || (mime == MimeType::image_jxl && is_animated_jxl(body)) || (mime == MimeType::image_webp && is_animated_webp(body)));
 
     return MediaPlan{
         .animated = animated,
