@@ -25,9 +25,7 @@ using mediaproxy::http::validate_origin_url;
 
 class CurlGlobal final {
   public:
-    CurlGlobal() noexcept
-        : result_(curl_global_init(CURL_GLOBAL_DEFAULT)) {
-    }
+    CurlGlobal() noexcept : result_(curl_global_init(CURL_GLOBAL_DEFAULT)) {}
 
     ~CurlGlobal() {
         if (result_ == CURLE_OK) {
@@ -35,7 +33,8 @@ class CurlGlobal final {
         }
     }
 
-    [[nodiscard]] CURLcode result() const noexcept {
+    [[nodiscard]] auto result() const noexcept -> CURLcode {
+
         return result_;
     }
 
@@ -61,69 +60,61 @@ struct FakeTransportState {
     int response_code_calls = 0;
 };
 
-CURL *FakeCreate(void *context) {
+auto fake_create(void *context) -> CURL * {
     auto &state = *static_cast<FakeTransportState *>(context);
     ++state.create_calls;
+
     return state.fail_create ? nullptr : curl_easy_init();
 }
 
-void FakeDestroy(CURL *easy, void *context) {
+void fake_destroy(CURL *easy, void *context) {
     auto &state = *static_cast<FakeTransportState *>(context);
     ++state.destroy_calls;
     curl_easy_cleanup(easy);
 }
 
-CURLcode FakePerform(
-    CURL *,
-    OriginResponseAccumulator &response,
-    void *context) {
+auto fake_perform(CURL * /*unused*/, OriginResponseAccumulator &response, void *context) -> CURLcode {
     auto &state = *static_cast<FakeTransportState *>(context);
     ++state.perform_calls;
     if (state.action == ResponseAction::fill_body_limit) {
         const std::array<std::byte, 64U * 1024U> chunk{};
         while (!response.at_body_limit()) {
-            const std::size_t remaining =
-                maximum_origin_body_bytes - response.body().size();
-            EXPECT_EQ(
-                response.append_body(
-                    std::span{chunk}.first(
-                        std::min(remaining, chunk.size()))),
-                std::min(remaining, chunk.size()));
+            const std::size_t remaining = maximum_origin_body_bytes - response.body().size();
+            EXPECT_EQ(response.append_body(std::span{chunk}.first(std::min(remaining, chunk.size()))), std::min(remaining, chunk.size()));
         }
     } else if (state.action == ResponseAction::block_by_nextdns) {
         response.consume_header_line("Blocked-By: NextDNS\r\n");
     }
+
     return state.perform_result;
 }
 
-CURLcode FakeResponseCode(CURL *, long *status, void *context) {
+auto fake_response_code(CURL * /*unused*/, long *status, void *context) -> CURLcode {
     auto &state = *static_cast<FakeTransportState *>(context);
     ++state.response_code_calls;
+
     *status = state.status;
     return state.response_code_result;
 }
 
-OriginTransportApi FakeTransport(FakeTransportState &state) {
+auto fake_transport(FakeTransportState &state) -> OriginTransportApi {
+
     return {
         .context = &state,
-        .create = &FakeCreate,
-        .destroy = &FakeDestroy,
-        .perform = &FakePerform,
-        .response_code = &FakeResponseCode,
+        .create = &fake_create,
+        .destroy = &fake_destroy,
+        .perform = &fake_perform,
+        .response_code = &fake_response_code,
     };
 }
 
-int FailingLookup(
-    const char *,
-    const char *,
-    const addrinfo *,
-    addrinfo **result) {
+auto failing_lookup(const char * /*unused*/, const char * /*unused*/, const addrinfo * /*unused*/, addrinfo **result) -> int {
+
     *result = nullptr;
     return EAI_AGAIN;
 }
 
-void NoopRelease(addrinfo *) {
-}
+void noop_release(addrinfo * /*unused*/) {}
 
 TEST(OriginDownload, PerformsValidatedPinnedLiteralRequest) {
     const CurlGlobal global;
@@ -132,8 +123,7 @@ TEST(OriginDownload, PerformsValidatedPinnedLiteralRequest) {
     ASSERT_TRUE(origin);
     FakeTransportState transport_state;
 
-    const auto result = download_origin_once(
-        *origin.url, 1500, {}, FakeTransport(transport_state));
+    const auto result = download_origin_once(*origin.url, 1500, {}, fake_transport(transport_state));
 
     EXPECT_TRUE(result);
     EXPECT_EQ(result.status, 200);
@@ -150,12 +140,11 @@ TEST(OriginDownload, StopsBeforeTransportWhenResolutionFails) {
     ASSERT_TRUE(origin);
     FakeTransportState transport_state;
     const AddressResolverApi resolver{
-        .lookup = &FailingLookup,
-        .release = &NoopRelease,
+        .lookup = &failing_lookup,
+        .release = &noop_release,
     };
 
-    const auto result = download_origin_once(
-        *origin.url, 1500, resolver, FakeTransport(transport_state));
+    const auto result = download_origin_once(*origin.url, 1500, resolver, fake_transport(transport_state));
 
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error, OriginDownloadError::resolution);
@@ -171,8 +160,7 @@ TEST(OriginDownload, SeparatesTransferInfoAndResponsePolicyFailures) {
 
     FakeTransportState transfer;
     transfer.perform_result = CURLE_COULDNT_CONNECT;
-    auto result = download_origin_once(
-        *origin.url, 1500, {}, FakeTransport(transfer));
+    auto result = download_origin_once(*origin.url, 1500, {}, fake_transport(transfer));
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error, OriginDownloadError::transfer);
     EXPECT_EQ(transfer.response_code_calls, 0);
@@ -180,16 +168,14 @@ TEST(OriginDownload, SeparatesTransferInfoAndResponsePolicyFailures) {
 
     FakeTransportState response_info;
     response_info.response_code_result = CURLE_BAD_FUNCTION_ARGUMENT;
-    result = download_origin_once(
-        *origin.url, 1500, {}, FakeTransport(response_info));
+    result = download_origin_once(*origin.url, 1500, {}, fake_transport(response_info));
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error, OriginDownloadError::response_info);
     EXPECT_EQ(response_info.destroy_calls, 1);
 
     FakeTransportState non_200;
     non_200.status = 404;
-    result = download_origin_once(
-        *origin.url, 1500, {}, FakeTransport(non_200));
+    result = download_origin_once(*origin.url, 1500, {}, fake_transport(non_200));
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error, OriginDownloadError::response_policy);
     EXPECT_EQ(result.response.error(), OriginResponseError::non_200_status);
@@ -204,20 +190,17 @@ TEST(OriginDownload, PreservesExactLimitAndCallbackPolicyErrors) {
     FakeTransportState exact_limit;
     exact_limit.perform_result = CURLE_WRITE_ERROR;
     exact_limit.action = ResponseAction::fill_body_limit;
-    auto result = download_origin_once(
-        *origin.url, 1500, {}, FakeTransport(exact_limit));
+    auto result = download_origin_once(*origin.url, 1500, {}, fake_transport(exact_limit));
     EXPECT_TRUE(result);
     EXPECT_EQ(result.response.body().size(), maximum_origin_body_bytes);
 
     FakeTransportState blocked;
     blocked.perform_result = CURLE_WRITE_ERROR;
     blocked.action = ResponseAction::block_by_nextdns;
-    result = download_origin_once(
-        *origin.url, 1500, {}, FakeTransport(blocked));
+    result = download_origin_once(*origin.url, 1500, {}, fake_transport(blocked));
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error, OriginDownloadError::response_policy);
-    EXPECT_EQ(
-        result.response.error(), OriginResponseError::blocked_by_nextdns);
+    EXPECT_EQ(result.response.error(), OriginResponseError::blocked_by_nextdns);
     EXPECT_EQ(blocked.response_code_calls, 0);
 }
 
@@ -225,7 +208,7 @@ TEST(OriginDownload, RejectsInvalidTimeoutAndTransportTable) {
     const auto origin = validate_origin_url("https://1.1.1.1/image");
     ASSERT_TRUE(origin);
     FakeTransportState transport_state;
-    auto transport = FakeTransport(transport_state);
+    auto transport = fake_transport(transport_state);
 
     auto result = download_origin_once(*origin.url, 0, {}, transport);
     EXPECT_FALSE(result);
@@ -251,8 +234,7 @@ TEST(OriginDownload, ReportsEasyHandleAllocationFailure) {
     FakeTransportState transport_state;
     transport_state.fail_create = true;
 
-    const auto result = download_origin_once(
-        *origin.url, 1500, {}, FakeTransport(transport_state));
+    const auto result = download_origin_once(*origin.url, 1500, {}, fake_transport(transport_state));
 
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error, OriginDownloadError::easy_init);

@@ -23,24 +23,19 @@
 namespace mediaproxy {
 namespace {
 
-[[nodiscard]] media::OutputFormat preferred_output(
-    http::PreferredOutput output) noexcept {
-    return output == http::PreferredOutput::avif
-               ? media::OutputFormat::avif
-               : media::OutputFormat::webp;
+[[nodiscard]] auto preferred_output(http::PreferredOutput output) noexcept -> media::OutputFormat {
+
+    return output == http::PreferredOutput::avif ? media::OutputFormat::avif : media::OutputFormat::webp;
 }
 
-[[nodiscard]] std::uint64_t elapsed_microseconds(
-    std::chrono::steady_clock::time_point start) noexcept {
+[[nodiscard]] auto elapsed_microseconds(std::chrono::steady_clock::time_point start) noexcept -> std::uint64_t {
     const auto elapsed = std::chrono::steady_clock::now() - start;
-    const auto microseconds =
-        std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+    const auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+
     return microseconds > 0 ? static_cast<std::uint64_t>(microseconds) : 0;
 }
 
-void record_outcome(
-    HandlerDiagnostics *diagnostics,
-    HandlerOutcome outcome) noexcept {
+void record_outcome(HandlerDiagnostics *diagnostics, HandlerOutcome outcome) noexcept {
     if (diagnostics != nullptr) {
         diagnostics->outcome = outcome;
     }
@@ -48,41 +43,29 @@ void record_outcome(
 
 } // namespace
 
-http::HttpResponse handle_function_url_event(
-    std::span<const std::byte> event,
-    http::OriginTimeoutApi timeout,
-    http::AddressResolverApi resolver,
-    http::OriginTransportApi transport,
-    HandlerDiagnostics *diagnostics) {
+auto handle_function_url_event(std::span<const std::byte> event, http::OriginTimeoutApi timeout, http::AddressResolverApi resolver, http::OriginTransportApi transport, HandlerDiagnostics *diagnostics) -> http::HttpResponse {
     if (diagnostics != nullptr) {
         *diagnostics = {};
     }
-    const std::string_view payload{
-        reinterpret_cast<const char *>(event.data()), event.size()};
+    const std::string_view payload{reinterpret_cast<const char *>(event.data()), event.size()};
     http::MediaRequest request;
     {
-        const http::EventParseResult parsed =
-            http::parse_function_url_event(payload);
+        const http::EventParseResult parsed = http::parse_function_url_event(payload);
         http::RequestPlan plan = http::plan_request(parsed);
         if (std::holds_alternative<http::HttpResponse>(plan)) {
-            record_outcome(diagnostics,
-                           parsed.request && parsed.request->route == http::RequestRoute::status
-                               ? HandlerOutcome::status
-                               : HandlerOutcome::bad_request);
+            record_outcome(diagnostics, parsed.request && parsed.request->route == http::RequestRoute::status ? HandlerOutcome::status : HandlerOutcome::bad_request);
             return std::get<http::HttpResponse>(std::move(plan));
         }
         request = std::get<http::MediaRequest>(std::move(plan));
     }
-    http::UrlPolicyResult origin =
-        http::validate_origin_url(request.source_url);
+    http::UrlPolicyResult origin = http::validate_origin_url(request.source_url);
     if (!origin.url.has_value()) {
         record_outcome(diagnostics, HandlerOutcome::access_denied);
         return http::make_error_response(http::ErrorResponse::access_denied);
     }
 
     const auto fetch_start = std::chrono::steady_clock::now();
-    http::OriginDownloadResult downloaded = http::download_origin(
-        *origin.url, timeout, resolver, transport);
+    http::OriginDownloadResult downloaded = http::download_origin(*origin.url, timeout, resolver, transport);
     if (diagnostics != nullptr) {
         diagnostics->fetch_microseconds = elapsed_microseconds(fetch_start);
         diagnostics->origin_error = downloaded.error;
@@ -95,15 +78,12 @@ http::HttpResponse handle_function_url_event(
 
     const std::span<const std::byte> source{downloaded.response.body()};
     const auto media_start = std::chrono::steady_clock::now();
-    media::MediaConversionResult converted = media::convert_media(source,
-                                                                  media::sniff_mime(source), request.options.force_static,
-                                                                  preferred_output(request.options.preferred_output),
+    media::MediaConversionResult converted = media::convert_media(source, media::sniff_mime(source), request.options.force_static, preferred_output(request.options.preferred_output),
                                                                   media::ImageDimensions{
                                                                       .width = request.options.width_limit,
                                                                       .height = request.options.height_limit,
                                                                   },
-                                                                  request.options.url_only ? media::EncodingQuality::url_only
-                                                                                           : media::EncodingQuality::standard);
+                                                                  request.options.url_only ? media::EncodingQuality::url_only : media::EncodingQuality::standard);
     if (diagnostics != nullptr) {
         diagnostics->media_microseconds = elapsed_microseconds(media_start);
         diagnostics->media_error = converted.error;
@@ -113,8 +93,8 @@ http::HttpResponse handle_function_url_event(
         return http::make_error_response(http::ErrorResponse::invalid_image);
     }
     record_outcome(diagnostics, HandlerOutcome::media_success);
-    return http::make_media_response(
-        request.options.preferred_output, std::move(converted.body));
+
+    return http::make_media_response(request.options.preferred_output, std::move(converted.body));
 }
 
 } // namespace mediaproxy

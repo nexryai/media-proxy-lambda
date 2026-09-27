@@ -10,10 +10,7 @@
 namespace mediaproxy::media {
 namespace {
 
-[[nodiscard]] bool rgba_size(
-    std::uint32_t width,
-    std::uint32_t height,
-    std::size_t &output) noexcept {
+[[nodiscard]] auto rgba_size(std::uint32_t width, std::uint32_t height, std::size_t &output) noexcept -> bool {
     constexpr std::size_t channels = 4;
     if (width == 0 || height == 0 || width > std::numeric_limits<std::size_t>::max() / height) {
         return false;
@@ -23,55 +20,39 @@ namespace {
         return false;
     }
     output = pixels * channels;
+
     return true;
 }
 
-[[nodiscard]] std::size_t pixel_offset(
-    std::uint32_t x,
-    std::uint32_t y,
-    std::uint32_t width) noexcept {
-    return (static_cast<std::size_t>(y) * width + x) * 4;
+[[nodiscard]] auto pixel_offset(std::uint32_t x, std::uint32_t y, std::uint32_t width) noexcept -> std::size_t {
+
+    return ((static_cast<std::size_t>(y) * width) + x) * 4;
 }
 
-void clear_rectangle(
-    std::vector<std::byte> &canvas,
-    std::uint32_t canvas_width,
-    const ApngFrameControl &control) {
+void clear_rectangle(std::vector<std::byte> &canvas, std::uint32_t canvas_width, const ApngFrameControl &control) {
     for (std::uint32_t y = 0; y < control.height; ++y) {
-        const std::size_t begin = pixel_offset(
-            control.x_offset, control.y_offset + y, canvas_width);
-        std::fill_n(canvas.begin() + static_cast<std::ptrdiff_t>(begin),
-                    static_cast<std::size_t>(control.width) * 4, std::byte{0});
+        const std::size_t begin = pixel_offset(control.x_offset, control.y_offset + y, canvas_width);
+        std::fill_n(canvas.begin() + static_cast<std::ptrdiff_t>(begin), static_cast<std::size_t>(control.width) * 4, std::byte{0});
     }
 }
 
-void source_copy(
-    std::vector<std::byte> &canvas,
-    std::uint32_t canvas_width,
-    const ApngFrameControl &control,
-    std::span<const std::byte> frame) {
+void source_copy(std::vector<std::byte> &canvas, std::uint32_t canvas_width, const ApngFrameControl &control, std::span<const std::byte> frame) {
     const std::size_t row_size = static_cast<std::size_t>(control.width) * 4;
     for (std::uint32_t y = 0; y < control.height; ++y) {
         const std::size_t source = static_cast<std::size_t>(y) * row_size;
-        const std::size_t destination = pixel_offset(
-            control.x_offset, control.y_offset + y, canvas_width);
-        std::copy_n(frame.begin() + static_cast<std::ptrdiff_t>(source),
-                    row_size,
-                    canvas.begin() + static_cast<std::ptrdiff_t>(destination));
+        const std::size_t destination = pixel_offset(control.x_offset, control.y_offset + y, canvas_width);
+        std::copy_n(frame.begin() + static_cast<std::ptrdiff_t>(source), row_size, canvas.begin() + static_cast<std::ptrdiff_t>(destination));
     }
 }
 
-[[nodiscard]] std::uint8_t rounded_divide(
-    std::uint32_t numerator,
-    std::uint32_t denominator) noexcept {
-    return static_cast<std::uint8_t>((numerator + denominator / 2U) / denominator);
+[[nodiscard]] auto rounded_divide(std::uint32_t numerator, std::uint32_t denominator) noexcept -> std::uint8_t {
+
+    return static_cast<std::uint8_t>((numerator + (denominator / 2U)) / denominator);
 }
 
 void source_over_pixel(std::byte *destination, const std::byte *source) {
-    const std::uint32_t source_alpha =
-        std::to_integer<std::uint8_t>(source[3]);
-    const std::uint32_t destination_alpha =
-        std::to_integer<std::uint8_t>(destination[3]);
+    const std::uint32_t source_alpha = std::to_integer<std::uint8_t>(source[3]);
+    const std::uint32_t destination_alpha = std::to_integer<std::uint8_t>(destination[3]);
     if (source_alpha == 0) {
         return;
     }
@@ -81,49 +62,34 @@ void source_over_pixel(std::byte *destination, const std::byte *source) {
     }
 
     const std::uint32_t inverse_source_alpha = 255 - source_alpha;
-    const std::uint32_t alpha_numerator = source_alpha * 255 + destination_alpha * inverse_source_alpha;
+    const std::uint32_t alpha_numerator = (source_alpha * 255) + (destination_alpha * inverse_source_alpha);
     for (std::size_t channel = 0; channel < 3; ++channel) {
-        const std::uint32_t source_color =
-            std::to_integer<std::uint8_t>(source[channel]);
-        const std::uint32_t destination_color =
-            std::to_integer<std::uint8_t>(destination[channel]);
-        const std::uint32_t color_numerator =
-            source_color * source_alpha * 255 + destination_color * destination_alpha * inverse_source_alpha;
-        destination[channel] = static_cast<std::byte>(
-            rounded_divide(color_numerator, alpha_numerator));
+        const std::uint32_t source_color = std::to_integer<std::uint8_t>(source[channel]);
+        const std::uint32_t destination_color = std::to_integer<std::uint8_t>(destination[channel]);
+        const std::uint32_t color_numerator = (source_color * source_alpha * 255) + (destination_color * destination_alpha * inverse_source_alpha);
+        destination[channel] = static_cast<std::byte>(rounded_divide(color_numerator, alpha_numerator));
     }
-    destination[3] = static_cast<std::byte>(
-        rounded_divide(alpha_numerator, 255));
+    destination[3] = static_cast<std::byte>(rounded_divide(alpha_numerator, 255));
 }
 
-void source_over(
-    std::vector<std::byte> &canvas,
-    std::uint32_t canvas_width,
-    const ApngFrameControl &control,
-    std::span<const std::byte> frame) {
+void source_over(std::vector<std::byte> &canvas, std::uint32_t canvas_width, const ApngFrameControl &control, std::span<const std::byte> frame) {
     for (std::uint32_t y = 0; y < control.height; ++y) {
         for (std::uint32_t x = 0; x < control.width; ++x) {
             const std::size_t source = pixel_offset(x, y, control.width);
-            const std::size_t destination = pixel_offset(control.x_offset + x,
-                                                         control.y_offset + y, canvas_width);
-            source_over_pixel(canvas.data() + destination,
-                              frame.data() + source);
+            const std::size_t destination = pixel_offset(control.x_offset + x, control.y_offset + y, canvas_width);
+            source_over_pixel(canvas.data() + destination, frame.data() + source);
         }
     }
 }
 
-[[nodiscard]] ApngComposedFrame fail(ApngCompositionError error) {
+[[nodiscard]] auto fail(ApngCompositionError error) -> ApngComposedFrame {
+
     return {.error = error, .displayed_rgba = {}};
 }
 
 } // namespace
 
-ApngComposedFrame compose_apng_frame(
-    std::vector<std::byte> &canvas_rgba,
-    std::uint32_t canvas_width,
-    std::uint32_t canvas_height,
-    const ApngFrameControl &control,
-    std::span<const std::byte> frame_rgba) {
+auto compose_apng_frame(std::vector<std::byte> &canvas_rgba, std::uint32_t canvas_width, std::uint32_t canvas_height, const ApngFrameControl &control, std::span<const std::byte> frame_rgba) -> ApngComposedFrame {
     std::size_t canvas_size = 0;
     if (!rgba_size(canvas_width, canvas_height, canvas_size) || canvas_rgba.size() != canvas_size) {
         return fail(ApngCompositionError::canvas_size);
@@ -159,17 +125,16 @@ ApngComposedFrame compose_apng_frame(
     } else if (control.dispose == 2) {
         canvas_rgba = previous_canvas;
     }
+
     return result;
 }
 
-std::int32_t apng_frame_duration_ms(
-    std::uint16_t delay_numerator,
-    std::uint16_t delay_denominator) noexcept {
+auto apng_frame_duration_ms(std::uint16_t delay_numerator, std::uint16_t delay_denominator) noexcept -> std::int32_t {
     if (delay_denominator == 0) {
         return 0;
     }
-    return static_cast<std::int32_t>(
-        static_cast<std::uint32_t>(delay_numerator) * 1000U / delay_denominator);
+
+    return static_cast<std::int32_t>(static_cast<std::uint32_t>(delay_numerator) * 1000U / delay_denominator);
 }
 
 } // namespace mediaproxy::media

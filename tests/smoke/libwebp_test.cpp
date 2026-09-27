@@ -23,9 +23,10 @@ class WebPDataOwner final {
     }
 
     WebPDataOwner(const WebPDataOwner &) = delete;
-    WebPDataOwner &operator=(const WebPDataOwner &) = delete;
+    auto operator=(const WebPDataOwner &) -> WebPDataOwner & = delete;
 
-    [[nodiscard]] WebPData *get() noexcept {
+    [[nodiscard]] auto get() noexcept -> WebPData * {
+
         return &data_;
     }
 
@@ -46,18 +47,14 @@ TEST(BuildSmoke, AssemblesPinnedAnimatedWebPInMemory) {
     constexpr std::array<std::uint8_t, 4> first_pixel = {17, 34, 51, 68};
     constexpr std::array<std::uint8_t, 4> second_pixel = {85, 102, 119, 136};
     std::uint8_t *first_bytes = nullptr;
-    const std::size_t first_size = WebPEncodeLosslessRGBA(
-        first_pixel.data(), 1, 1, 4, &first_bytes);
-    std::unique_ptr<std::uint8_t, decltype(&WebPFree)> first(
-        first_bytes, &WebPFree);
+    const std::size_t first_size = WebPEncodeLosslessRGBA(first_pixel.data(), 1, 1, 4, &first_bytes);
+    std::unique_ptr<std::uint8_t, decltype(&WebPFree)> first(first_bytes, &WebPFree);
     ASSERT_GT(first_size, 0U);
     ASSERT_NE(first, nullptr);
 
     std::uint8_t *second_bytes = nullptr;
-    const std::size_t second_size = WebPEncodeLosslessRGBA(
-        second_pixel.data(), 1, 1, 4, &second_bytes);
-    std::unique_ptr<std::uint8_t, decltype(&WebPFree)> second(
-        second_bytes, &WebPFree);
+    const std::size_t second_size = WebPEncodeLosslessRGBA(second_pixel.data(), 1, 1, 4, &second_bytes);
+    std::unique_ptr<std::uint8_t, decltype(&WebPFree)> second(second_bytes, &WebPFree);
     ASSERT_GT(second_size, 0U);
     ASSERT_NE(second, nullptr);
 
@@ -69,10 +66,7 @@ TEST(BuildSmoke, AssemblesPinnedAnimatedWebPInMemory) {
     EXPECT_EQ(WebPGetInfo(first.get(), first_size / 2, nullptr, nullptr), 0);
     int decoded_width = 0;
     int decoded_height = 0;
-    std::unique_ptr<std::uint8_t, decltype(&WebPFree)> decoded(
-        WebPDecodeRGBA(
-            first.get(), first_size, &decoded_width, &decoded_height),
-        &WebPFree);
+    std::unique_ptr<std::uint8_t, decltype(&WebPFree)> decoded(WebPDecodeRGBA(first.get(), first_size, &decoded_width, &decoded_height), &WebPFree);
     ASSERT_NE(decoded, nullptr);
     ASSERT_EQ(decoded_width, 1);
     ASSERT_EQ(decoded_height, 1);
@@ -80,16 +74,14 @@ TEST(BuildSmoke, AssemblesPinnedAnimatedWebPInMemory) {
         EXPECT_EQ(decoded.get()[index], first_pixel[index]);
     }
 
-    std::unique_ptr<WebPMux, decltype(&WebPMuxDelete)> mux(
-        WebPMuxNew(), &WebPMuxDelete);
+    std::unique_ptr<WebPMux, decltype(&WebPMuxDelete)> mux(WebPMuxNew(), &WebPMuxDelete);
     ASSERT_NE(mux, nullptr);
     ASSERT_EQ(WebPMuxSetCanvasSize(mux.get(), 1, 1), WEBP_MUX_OK);
     constexpr WebPMuxAnimParams animation = {
         .bgcolor = 0,
         .loop_count = 3,
     };
-    ASSERT_EQ(
-        WebPMuxSetAnimationParams(mux.get(), &animation), WEBP_MUX_OK);
+    ASSERT_EQ(WebPMuxSetAnimationParams(mux.get(), &animation), WEBP_MUX_OK);
 
     WebPMuxFrameInfo frame{};
     frame.bitstream = {.bytes = first.get(), .size = first_size};
@@ -108,8 +100,7 @@ TEST(BuildSmoke, AssemblesPinnedAnimatedWebPInMemory) {
     ASSERT_NE(assembled.get()->bytes, nullptr);
     ASSERT_GT(assembled.get()->size, 0U);
 
-    std::unique_ptr<WebPDemuxer, decltype(&WebPDemuxDelete)> demux(
-        WebPDemux(assembled.get()), &WebPDemuxDelete);
+    std::unique_ptr<WebPDemuxer, decltype(&WebPDemuxDelete)> demux(WebPDemux(assembled.get()), &WebPDemuxDelete);
     ASSERT_NE(demux, nullptr);
     EXPECT_EQ(WebPDemuxGetI(demux.get(), WEBP_FF_CANVAS_WIDTH), 1U);
     EXPECT_EQ(WebPDemuxGetI(demux.get(), WEBP_FF_CANVAS_HEIGHT), 1U);
@@ -118,8 +109,7 @@ TEST(BuildSmoke, AssemblesPinnedAnimatedWebPInMemory) {
 
     WebPIterator raw_iterator{};
     ASSERT_NE(WebPDemuxGetFrame(demux.get(), 1, &raw_iterator), 0);
-    std::unique_ptr<WebPIterator, decltype(&WebPDemuxReleaseIterator)>
-        iterator(&raw_iterator, &WebPDemuxReleaseIterator);
+    std::unique_ptr<WebPIterator, decltype(&WebPDemuxReleaseIterator)> iterator(&raw_iterator, &WebPDemuxReleaseIterator);
     EXPECT_EQ(iterator->duration, 40);
     EXPECT_EQ(iterator->dispose_method, WEBP_MUX_DISPOSE_NONE);
     EXPECT_EQ(iterator->blend_method, WEBP_MUX_NO_BLEND);

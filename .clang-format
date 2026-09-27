@@ -4,8 +4,8 @@ IndentWidth: 4
 ContinuationIndentWidth: 4
 UseTab: Never
 
-# 行長による折り返しをしない
-ColumnLimit: 0
+ColumnLimit: 300
+PenaltyBreakBeforeFirstCallParameter: 300
 
 BreakBeforeBraces: Custom
 BraceWrapping:
@@ -39,6 +39,8 @@ AllowShortIfStatementsOnASingleLine: WithoutElse
 
 BinPackArguments: true
 BinPackParameters: true
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
 
 IndentCaseLabels: true
 IndentCaseBlocks: false

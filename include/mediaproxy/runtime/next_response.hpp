@@ -28,21 +28,23 @@ enum class NextParseStatus {
 
 class NextResponseParser {
   public:
-    [[nodiscard]] NextParseStatus feed(std::span<const std::byte> bytes);
-    [[nodiscard]] NextParseStatus status() const noexcept {
+    [[nodiscard]] auto feed(std::span<const std::byte> bytes) -> NextParseStatus;
+    [[nodiscard]] auto status() const noexcept -> NextParseStatus {
+
         return status_;
     }
-    [[nodiscard]] const Invocation &invocation() const noexcept {
+    [[nodiscard]] auto invocation() const noexcept -> const Invocation & {
+
         return invocation_;
     }
-    [[nodiscard]] Invocation take_invocation() noexcept {
+    [[nodiscard]] auto take_invocation() noexcept -> Invocation {
+
         return std::move(invocation_);
     }
 
   private:
-    [[nodiscard]] bool parse_headers(std::size_t header_end);
-    [[nodiscard]] NextParseStatus append_event(
-        std::span<const std::byte> bytes);
+    [[nodiscard]] auto parse_headers(std::size_t header_end) -> bool;
+    [[nodiscard]] auto append_event(std::span<const std::byte> bytes) -> NextParseStatus;
 
     NextParseStatus status_ = NextParseStatus::incomplete;
     std::vector<std::byte> buffer_;
@@ -51,7 +53,6 @@ class NextResponseParser {
     Invocation invocation_;
 };
 
-[[nodiscard]] std::string make_next_request_head(
-    std::string_view runtime_authority);
+[[nodiscard]] auto make_next_request_head(std::string_view runtime_authority) -> std::string;
 
 } // namespace mediaproxy::runtime

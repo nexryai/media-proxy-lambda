@@ -12,28 +12,20 @@ struct ImageDimensions {
     std::uint32_t width = 0;
     std::uint32_t height = 0;
 
-    [[nodiscard]] bool operator==(const ImageDimensions &) const = default;
+    [[nodiscard]] auto operator==(const ImageDimensions &) const -> bool = default;
 };
 
 struct AnimatedResize {
     std::uint32_t width = 0;
     std::uint32_t height = 0;
 
-    [[nodiscard]] bool operator==(const AnimatedResize &) const = default;
+    [[nodiscard]] auto operator==(const AnimatedResize &) const -> bool = default;
 };
 
-[[nodiscard]] std::optional<ImageDimensions> validate_dimensions(
-    std::int64_t loaded_width,
-    std::int64_t loaded_height,
-    std::int64_t page_count,
-    bool animated) noexcept;
+[[nodiscard]] auto validate_dimensions(std::int64_t loaded_width, std::int64_t loaded_height, std::int64_t page_count, bool animated) noexcept -> std::optional<ImageDimensions>;
 
-[[nodiscard]] std::optional<double> static_resize_scale(
-    ImageDimensions source,
-    ImageDimensions limits) noexcept;
+[[nodiscard]] auto static_resize_scale(ImageDimensions source, ImageDimensions limits) noexcept -> std::optional<double>;
 
-[[nodiscard]] std::optional<AnimatedResize> animated_resize_target(
-    ImageDimensions source,
-    ImageDimensions limits) noexcept;
+[[nodiscard]] auto animated_resize_target(ImageDimensions source, ImageDimensions limits) noexcept -> std::optional<AnimatedResize>;
 
 } // namespace mediaproxy::media

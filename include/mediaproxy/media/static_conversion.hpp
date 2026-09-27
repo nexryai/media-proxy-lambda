@@ -25,15 +25,11 @@ struct StaticConversionResult {
     std::vector<std::byte> body;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == StaticConversionError::none;
     }
 };
 
-[[nodiscard]] StaticConversionResult convert_static_image(
-    std::span<const std::byte> body,
-    MimeType mime,
-    OutputFormat output,
-    ImageDimensions limits,
-    EncodingQuality quality = EncodingQuality::standard);
+[[nodiscard]] auto convert_static_image(std::span<const std::byte> body, MimeType mime, OutputFormat output, ImageDimensions limits, EncodingQuality quality = EncodingQuality::standard) -> StaticConversionResult;
 
 } // namespace mediaproxy::media

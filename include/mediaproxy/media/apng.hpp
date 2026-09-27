@@ -52,14 +52,13 @@ struct ApngDescription {
     std::vector<ApngFrameControl> frames;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == ApngParseError::none;
     }
 };
 
-[[nodiscard]] ApngClassification classify_apng(
-    std::span<const std::byte> body) noexcept;
+[[nodiscard]] auto classify_apng(std::span<const std::byte> body) noexcept -> ApngClassification;
 
-[[nodiscard]] ApngDescription parse_apng(
-    std::span<const std::byte> body);
+[[nodiscard]] auto parse_apng(std::span<const std::byte> body) -> ApngDescription;
 
 } // namespace mediaproxy::media

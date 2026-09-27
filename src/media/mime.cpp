@@ -11,13 +11,12 @@
 namespace mediaproxy::media {
 namespace {
 
-[[nodiscard]] unsigned char octet(std::byte value) noexcept {
+[[nodiscard]] auto octet(std::byte value) noexcept -> unsigned char {
+
     return std::to_integer<unsigned char>(value);
 }
 
-[[nodiscard]] bool starts_with(
-    std::span<const std::byte> sample,
-    std::string_view signature) noexcept {
+[[nodiscard]] auto starts_with(std::span<const std::byte> sample, std::string_view signature) noexcept -> bool {
     if (sample.size() < signature.size()) {
         return false;
     }
@@ -26,13 +25,11 @@ namespace {
             return false;
         }
     }
+
     return true;
 }
 
-template <std::size_t Size>
-[[nodiscard]] bool starts_with(
-    std::span<const std::byte> sample,
-    const std::array<unsigned char, Size> &signature) noexcept {
+template <std::size_t Size> [[nodiscard]] auto starts_with(std::span<const std::byte> sample, const std::array<unsigned char, Size> &signature) noexcept -> bool {
     if (sample.size() < signature.size()) {
         return false;
     }
@@ -41,32 +38,30 @@ template <std::size_t Size>
             return false;
         }
     }
+
     return true;
 }
 
-[[nodiscard]] bool ascii_whitespace(unsigned char value) noexcept {
+[[nodiscard]] auto ascii_whitespace(unsigned char value) noexcept -> bool {
+
     return value == '\t' || value == '\n' || value == '\f' || value == '\r' || value == ' ';
 }
 
-[[nodiscard]] unsigned char ascii_lower(unsigned char value) noexcept {
-    return value >= 'A' && value <= 'Z'
-               ? static_cast<unsigned char>(value - 'A' + 'a')
-               : value;
+[[nodiscard]] auto ascii_lower(unsigned char value) noexcept -> unsigned char {
+
+    return value >= 'A' && value <= 'Z' ? static_cast<unsigned char>(value - 'A' + 'a') : value;
 }
 
-[[nodiscard]] std::span<const std::byte> skip_ascii_whitespace(
-    std::span<const std::byte> sample) noexcept {
+[[nodiscard]] auto skip_ascii_whitespace(std::span<const std::byte> sample) noexcept -> std::span<const std::byte> {
     std::size_t offset = 0;
     while (offset < sample.size() && ascii_whitespace(octet(sample[offset]))) {
         ++offset;
     }
+
     return sample.subspan(offset);
 }
 
-[[nodiscard]] bool html_prefix(
-    std::span<const std::byte> sample,
-    std::string_view signature,
-    bool require_boundary = true) noexcept {
+[[nodiscard]] auto html_prefix(std::span<const std::byte> sample, std::string_view signature, bool require_boundary = true) noexcept -> bool {
     if (sample.size() < signature.size()) {
         return false;
     }
@@ -82,57 +77,40 @@ template <std::size_t Size>
         return false;
     }
     const unsigned char next = octet(sample[signature.size()]);
+
     return ascii_whitespace(next) || next == '>';
 }
 
-[[nodiscard]] bool is_html(std::span<const std::byte> sample) noexcept {
+[[nodiscard]] auto is_html(std::span<const std::byte> sample) noexcept -> bool {
     sample = skip_ascii_whitespace(sample);
     constexpr std::array<std::string_view, 16> tags{
-        "<!DOCTYPE HTML",
-        "<HTML",
-        "<HEAD",
-        "<SCRIPT",
-        "<IFRAME",
-        "<H1",
-        "<DIV",
-        "<FONT",
-        "<TABLE",
-        "<A",
-        "<STYLE",
-        "<TITLE",
-        "<B",
-        "<BODY",
-        "<BR",
-        "<P",
+        "<!DOCTYPE HTML", "<HTML", "<HEAD", "<SCRIPT", "<IFRAME", "<H1", "<DIV", "<FONT", "<TABLE", "<A", "<STYLE", "<TITLE", "<B", "<BODY", "<BR", "<P",
     };
     for (const std::string_view tag : tags) {
         if (html_prefix(sample, tag)) {
             return true;
         }
     }
+
     return html_prefix(sample, "<!--", false);
 }
 
-[[nodiscard]] bool consume_markup(
-    std::span<const std::byte> &sample,
-    std::string_view prefix,
-    std::string_view suffix) noexcept {
+[[nodiscard]] auto consume_markup(std::span<const std::byte> &sample, std::string_view prefix, std::string_view suffix) noexcept -> bool {
     if (!starts_with(sample, prefix)) {
         return false;
     }
-    for (std::size_t offset = prefix.size();
-         offset + suffix.size() <= sample.size(); ++offset) {
+    for (std::size_t offset = prefix.size(); offset + suffix.size() <= sample.size(); ++offset) {
         if (starts_with(sample.subspan(offset), suffix)) {
-            sample = skip_ascii_whitespace(
-                sample.subspan(offset + suffix.size()));
+            sample = skip_ascii_whitespace(sample.subspan(offset + suffix.size()));
             return true;
         }
     }
     sample = {};
+
     return true;
 }
 
-[[nodiscard]] bool is_svg(std::span<const std::byte> sample) noexcept {
+[[nodiscard]] auto is_svg(std::span<const std::byte> sample) noexcept -> bool {
     constexpr std::array<unsigned char, 3> utf8_bom{0xef, 0xbb, 0xbf};
     if (starts_with(sample, utf8_bom)) {
         sample = sample.subspan(utf8_bom.size());
@@ -158,58 +136,48 @@ template <std::size_t Size>
         return false;
     }
     const unsigned char boundary = octet(sample[4]);
+
     return ascii_whitespace(boundary) || boundary == '>' || boundary == '/';
 }
 
-[[nodiscard]] bool riff_type(
-    std::span<const std::byte> sample,
-    std::string_view type) noexcept {
+[[nodiscard]] auto riff_type(std::span<const std::byte> sample, std::string_view type) noexcept -> bool {
+
     return sample.size() >= 12 && starts_with(sample, "RIFF") && starts_with(sample.subspan(8), type);
 }
 
-[[nodiscard]] bool is_mp4(std::span<const std::byte> sample) noexcept {
+[[nodiscard]] auto is_mp4(std::span<const std::byte> sample) noexcept -> bool {
     if (sample.size() < 12 || !starts_with(sample.subspan(4), "ftyp")) {
         return false;
     }
     constexpr std::array<std::string_view, 8> brands{
-        "mp41",
-        "mp42",
-        "isom",
-        "iso2",
-        "avc1",
-        "M4V ",
-        "M4A ",
-        "3gp5",
+        "mp41", "mp42", "isom", "iso2", "avc1", "M4V ", "M4A ", "3gp5",
     };
     for (const std::string_view brand : brands) {
         if (starts_with(sample.subspan(8), brand)) {
             return true;
         }
     }
+
     return false;
 }
 
-[[nodiscard]] bool has_binary_control(
-    std::span<const std::byte> sample) noexcept {
+[[nodiscard]] auto has_binary_control(std::span<const std::byte> sample) noexcept -> bool {
     for (const std::byte value : sample) {
         const unsigned char byte = octet(value);
         if (byte <= 0x08 || byte == 0x0b || (byte >= 0x0e && byte <= 0x1a) || (byte >= 0x1c && byte <= 0x1f)) {
             return true;
         }
     }
+
     return false;
 }
 
-[[nodiscard]] MimeType sniff_standard(
-    std::span<const std::byte> sample) noexcept {
+[[nodiscard]] auto sniff_standard(std::span<const std::byte> sample) noexcept -> MimeType {
     constexpr std::array<unsigned char, 4> ico{0x00, 0x00, 0x01, 0x00};
-    constexpr std::array<unsigned char, 8> png{
-        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
+    constexpr std::array<unsigned char, 8> png{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
     constexpr std::array<unsigned char, 3> jpeg{0xff, 0xd8, 0xff};
     constexpr std::array<unsigned char, 2> jxl_codestream{0xff, 0x0a};
-    constexpr std::array<unsigned char, 12> jxl_container{
-        0x00, 0x00, 0x00, 0x0c, 0x4a, 0x58,
-        0x4c, 0x20, 0x0d, 0x0a, 0x87, 0x0a};
+    constexpr std::array<unsigned char, 12> jxl_container{0x00, 0x00, 0x00, 0x0c, 0x4a, 0x58, 0x4c, 0x20, 0x0d, 0x0a, 0x87, 0x0a};
     constexpr std::array<unsigned char, 5> ogg{0x4f, 0x67, 0x67, 0x53, 0x00};
     constexpr std::array<unsigned char, 4> webm{0x1a, 0x45, 0xdf, 0xa3};
     constexpr std::array<unsigned char, 4> zip{0x50, 0x4b, 0x03, 0x04};
@@ -310,28 +278,27 @@ template <std::size_t Size>
     if (sample.size() >= 36 && octet(sample[34]) == 'L' && octet(sample[35]) == 'P') {
         return MimeType::application_eot;
     }
-    return has_binary_control(sample)
-               ? MimeType::application_octet_stream
-               : MimeType::text_plain_utf8;
+
+    return has_binary_control(sample) ? MimeType::application_octet_stream : MimeType::text_plain_utf8;
 }
 
 } // namespace
 
-MimeType sniff_mime(std::span<const std::byte> body) noexcept {
+auto sniff_mime(std::span<const std::byte> body) noexcept -> MimeType {
     if (is_animated_avif(body)) {
         return MimeType::image_avif;
     }
-    const std::span<const std::byte> sample =
-        body.first(std::min(body.size(), maximum_mime_sample_bytes));
+    const std::span<const std::byte> sample = body.first(std::min(body.size(), maximum_mime_sample_bytes));
     const MimeType detected = sniff_standard(sample);
     // Static AVIF keeps its original octet-stream-only major-brand override.
     if (detected == MimeType::application_octet_stream && sample.size() >= 12 && starts_with(sample.subspan(4), "ftypavif")) {
         return MimeType::image_avif;
     }
+
     return detected;
 }
 
-std::string_view mime_type_name(MimeType type) noexcept {
+auto mime_type_name(MimeType type) noexcept -> std::string_view {
     switch (type) {
         case MimeType::image_avif:
             return "image/avif";
@@ -400,6 +367,7 @@ std::string_view mime_type_name(MimeType type) noexcept {
         case MimeType::application_octet_stream:
             return "application/octet-stream";
     }
+
     return "application/octet-stream";
 }
 

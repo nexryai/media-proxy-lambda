@@ -30,15 +30,12 @@ TEST(CurlResolvePin, PinsMixedPublicAddressesInResolverOrder) {
     auto pin = CurlResolvePin::create(*parsed.url, resolved.addresses);
     ASSERT_TRUE(pin);
     EXPECT_EQ(pin.error(), ResolvePinError::none);
-    EXPECT_EQ(
-        pin.entry(),
-        "origin.example:443:1.1.1.1,[2606:4700:4700::1111],8.8.8.8");
+    EXPECT_EQ(pin.entry(), "origin.example:443:1.1.1.1,[2606:4700:4700::1111],8.8.8.8");
     EXPECT_NE(pin.native_handle(), nullptr);
 }
 
 TEST(CurlResolvePin, RetainsCanonicalHostAndExplicitPort) {
-    const auto parsed =
-        validate_origin_url("https://Origin.Example:80/image.png");
+    const auto parsed = validate_origin_url("https://Origin.Example:80/image.png");
     ASSERT_TRUE(parsed);
     ASSERT_TRUE(parsed.url.has_value());
     constexpr std::array<std::string_view, 1> candidates{"1.1.1.1"};
@@ -64,8 +61,7 @@ TEST(CurlResolvePin, RejectsEmptyCandidatesAndInvalidOrigins) {
     constexpr std::array<std::string_view, 1> candidates{"1.1.1.1"};
     const auto resolved = validate_resolved_addresses(candidates);
     ASSERT_TRUE(resolved);
-    const auto invalid_pin =
-        CurlResolvePin::create(invalid_origin, resolved.addresses);
+    const auto invalid_pin = CurlResolvePin::create(invalid_origin, resolved.addresses);
     EXPECT_FALSE(invalid_pin);
     EXPECT_EQ(invalid_pin.error(), ResolvePinError::invalid_origin);
 }

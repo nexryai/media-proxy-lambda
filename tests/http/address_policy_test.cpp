@@ -14,27 +14,23 @@ using mediaproxy::http::AddressError;
 using mediaproxy::http::AddressFamily;
 using mediaproxy::http::validate_public_address;
 
-std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadAddressVectors() {
+auto load_address_vectors() -> std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> {
     const std::string path = std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/vectors/address-policy.json";
     std::ifstream input(path, std::ios::binary);
     EXPECT_TRUE(input.is_open()) << path;
-    std::string json{
-        std::istreambuf_iterator<char>{input},
-        std::istreambuf_iterator<char>{}};
+    std::string json{std::istreambuf_iterator<char>{input}, std::istreambuf_iterator<char>{}};
 
     yyjson_read_err error{};
-    std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> document(
-        yyjson_read_opts(
-            json.data(), json.size(), YYJSON_READ_NOFLAG, nullptr, &error),
-        &yyjson_doc_free);
+    std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> document(yyjson_read_opts(json.data(), json.size(), YYJSON_READ_NOFLAG, nullptr, &error), &yyjson_doc_free);
     EXPECT_NE(document, nullptr) << error.msg;
+
     return document;
 }
 
 } // namespace
 
 TEST(AddressPolicy, MatchesCheckedInPublicAddressCorpus) {
-    const auto document = LoadAddressVectors();
+    const auto document = load_address_vectors();
     ASSERT_NE(document, nullptr);
     yyjson_val *const root = yyjson_doc_get_root(document.get());
     ASSERT_TRUE(yyjson_is_obj(root));
@@ -47,10 +43,8 @@ TEST(AddressPolicy, MatchesCheckedInPublicAddressCorpus) {
     yyjson_arr_foreach(cases, index, maximum, vector) {
         ASSERT_TRUE(yyjson_is_obj(vector));
         const char *const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
-        const char *const address =
-            yyjson_get_str(yyjson_obj_get(vector, "address"));
-        yyjson_val *const accepted_value =
-            yyjson_obj_get(vector, "accepted");
+        const char *const address = yyjson_get_str(yyjson_obj_get(vector, "address"));
+        yyjson_val *const accepted_value = yyjson_obj_get(vector, "accepted");
         ASSERT_NE(id, nullptr);
         ASSERT_NE(address, nullptr);
         ASSERT_TRUE(yyjson_is_bool(accepted_value));

@@ -15,8 +15,7 @@ struct RuntimeAuthority {
     std::string service;
 };
 
-[[nodiscard]] std::optional<RuntimeAuthority> parse_runtime_authority(
-    std::string_view authority);
+[[nodiscard]] auto parse_runtime_authority(std::string_view authority) -> std::optional<RuntimeAuthority>;
 
 class SocketTransport final : public ByteSink {
   public:
@@ -24,18 +23,17 @@ class SocketTransport final : public ByteSink {
     ~SocketTransport() override;
 
     SocketTransport(const SocketTransport &) = delete;
-    SocketTransport &operator=(const SocketTransport &) = delete;
+    auto operator=(const SocketTransport &) -> SocketTransport & = delete;
     SocketTransport(SocketTransport &&other) noexcept;
-    SocketTransport &operator=(SocketTransport &&other) noexcept;
+    auto operator=(SocketTransport &&other) noexcept -> SocketTransport &;
 
-    [[nodiscard]] static std::optional<SocketTransport> connect(
-        std::string_view authority);
+    [[nodiscard]] static auto connect(std::string_view authority) -> std::optional<SocketTransport>;
 
-    [[nodiscard]] bool write(std::span<const std::byte> bytes) override;
-    [[nodiscard]] std::ptrdiff_t read_some(
-        std::span<std::byte> output) noexcept;
-    [[nodiscard]] bool shutdown_write() noexcept;
+    [[nodiscard]] auto write(std::span<const std::byte> bytes) -> bool override;
+    [[nodiscard]] auto read_some(std::span<std::byte> output) const noexcept -> std::ptrdiff_t;
+    [[nodiscard]] auto shutdown_write() const noexcept -> bool;
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return fd_ >= 0;
     }
 

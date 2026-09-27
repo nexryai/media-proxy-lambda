@@ -30,15 +30,17 @@ struct CurlStringDeleter {
 using CurlUrl = std::unique_ptr<CURLU, CurlUrlDeleter>;
 using CurlString = std::unique_ptr<char, CurlStringDeleter>;
 
-[[nodiscard]] bool is_ascii_alpha(char value) noexcept {
+[[nodiscard]] auto is_ascii_alpha(char value) noexcept -> bool {
+
     return (value >= 'a' && value <= 'z') || (value >= 'A' && value <= 'Z');
 }
 
-[[nodiscard]] bool is_ascii_digit(char value) noexcept {
+[[nodiscard]] auto is_ascii_digit(char value) noexcept -> bool {
+
     return value >= '0' && value <= '9';
 }
 
-[[nodiscard]] bool has_scheme(std::string_view value) noexcept {
+[[nodiscard]] auto has_scheme(std::string_view value) noexcept -> bool {
     if (value.empty() || !is_ascii_alpha(value.front())) {
         return false;
     }
@@ -51,12 +53,11 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
             return false;
         }
     }
+
     return false;
 }
 
-[[nodiscard]] std::optional<std::string> resolve_relative_location(
-    const OriginUrl &current,
-    std::string_view location) {
+[[nodiscard]] auto resolve_relative_location(const OriginUrl &current, std::string_view location) -> std::optional<std::string> {
     CurlUrl handle{curl_url()};
     if (!handle) {
         return std::nullopt;
@@ -74,21 +75,20 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
         return std::nullopt;
     }
     CurlString resolved{raw};
+
     return std::string{resolved.get()};
 }
 
-[[nodiscard]] bool equal_address(
-    const std::optional<ValidatedAddress> &left,
-    const std::optional<ValidatedAddress> &right) noexcept {
+[[nodiscard]] auto equal_address(const std::optional<ValidatedAddress> &left, const std::optional<ValidatedAddress> &right) noexcept -> bool {
     if (left.has_value() != right.has_value()) {
         return false;
     }
+
     return !left || (left->family == right->family && left->bytes == right->bytes);
 }
 
-[[nodiscard]] RedirectResult fail(
-    RedirectError error,
-    UrlError url_error = UrlError::none) {
+[[nodiscard]] auto fail(RedirectError error, UrlError url_error = UrlError::none) -> RedirectResult {
+
     return {
         .url = std::nullopt,
         .error = error,
@@ -98,23 +98,21 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
 
 } // namespace
 
-RedirectTracker::RedirectTracker(OriginUrl initial)
-    : current_(std::move(initial)) {
+RedirectTracker::RedirectTracker(OriginUrl initial) : current_(std::move(initial)), visited_count_(1) {
     visited_[0] = current_.canonical_url;
-    visited_count_ = 1;
 }
 
-std::optional<RedirectTracker> RedirectTracker::create(
-    const OriginUrl &initial) {
-    UrlPolicyResult validated =
-        validate_origin_url(initial.canonical_url);
-    if (!validated.url.has_value() || validated.url->canonical_url != initial.canonical_url || validated.url->hostname != initial.hostname || validated.url->port != initial.port || validated.url->request_target != initial.request_target || !equal_address(validated.url->literal_address, initial.literal_address)) {
+auto RedirectTracker::create(const OriginUrl &initial) -> std::optional<RedirectTracker> {
+    UrlPolicyResult validated = validate_origin_url(initial.canonical_url);
+    if (!validated.url.has_value() || validated.url->canonical_url != initial.canonical_url || validated.url->hostname != initial.hostname || validated.url->port != initial.port || validated.url->request_target != initial.request_target ||
+        !equal_address(validated.url->literal_address, initial.literal_address)) {
         return std::nullopt;
     }
+
     return RedirectTracker{std::move(*validated.url)};
 }
 
-RedirectResult RedirectTracker::follow(std::string_view location) {
+auto RedirectTracker::follow(std::string_view location) -> RedirectResult {
     if (redirect_count_ >= maximum_origin_redirects) {
         return fail(RedirectError::too_many_redirects);
     }
@@ -150,6 +148,7 @@ RedirectResult RedirectTracker::follow(std::string_view location) {
     visited_[visited_count_] = std::move(history);
     ++visited_count_;
     ++redirect_count_;
+
     return {
         .url = std::move(returned),
         .error = RedirectError::none,
@@ -157,11 +156,13 @@ RedirectResult RedirectTracker::follow(std::string_view location) {
     };
 }
 
-const OriginUrl &RedirectTracker::current() const noexcept {
+auto RedirectTracker::current() const noexcept -> const OriginUrl & {
+
     return current_;
 }
 
-std::size_t RedirectTracker::redirect_count() const noexcept {
+auto RedirectTracker::redirect_count() const noexcept -> std::size_t {
+
     return redirect_count_;
 }
 

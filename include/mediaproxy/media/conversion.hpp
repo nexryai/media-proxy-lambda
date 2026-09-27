@@ -24,16 +24,11 @@ struct MediaConversionResult {
     std::vector<std::byte> body;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == MediaConversionError::none;
     }
 };
 
-[[nodiscard]] MediaConversionResult convert_media(
-    std::span<const std::byte> body,
-    MimeType mime,
-    bool force_static,
-    OutputFormat preferred_output,
-    ImageDimensions limits,
-    EncodingQuality quality = EncodingQuality::standard);
+[[nodiscard]] auto convert_media(std::span<const std::byte> body, MimeType mime, bool force_static, OutputFormat preferred_output, ImageDimensions limits, EncodingQuality quality = EncodingQuality::standard) -> MediaConversionResult;
 
 } // namespace mediaproxy::media

@@ -13,11 +13,7 @@ namespace mediaproxy::http {
 
 inline constexpr std::size_t maximum_dns_candidates = 64;
 
-using AddressLookupFunction = int (*)(
-    const char *,
-    const char *,
-    const addrinfo *,
-    addrinfo **);
+using AddressLookupFunction = int (*)(const char *, const char *, const addrinfo *, addrinfo **);
 using AddressReleaseFunction = void (*)(addrinfo *);
 
 struct AddressResolverApi {
@@ -44,12 +40,11 @@ struct OriginResolutionResult {
     AddressError address_error = AddressError::none;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == OriginResolutionError::none;
     }
 };
 
-[[nodiscard]] OriginResolutionResult resolve_origin_addresses(
-    const OriginUrl &origin,
-    AddressResolverApi api = {});
+[[nodiscard]] auto resolve_origin_addresses(const OriginUrl &origin, AddressResolverApi api = {}) -> OriginResolutionResult;
 
 } // namespace mediaproxy::http

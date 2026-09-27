@@ -1,5 +1,17 @@
 # AGENTS.md
 
+## Code style
+
+- Leave a blank line before a function's final `return`, as in
+  `initialize_apng_webp_config` in `src/media/apng_conversion.cpp`.
+- Follow the line-break and blank-line style in `src/media/apng_decoder.cpp`
+  when making code readable across functions and files. Prefer keeping
+  function calls and argument lists together on one line; when they need
+  wrapping, group arguments instead of putting each on a separate line.
+- Before committing, run `clang-tidy` Quick Fixes on all project translation
+  units, review the edits for correctness, and run `clang-format` on all project
+  C/C++ source and header files using `.clang-format`.
+
 ## Purpose
 
 This repository implements a C++ MediaProxy as an AWS Lambda custom runtime.

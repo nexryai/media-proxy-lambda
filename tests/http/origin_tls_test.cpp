@@ -44,8 +44,7 @@ using mediaproxy::http::OriginResponseAccumulator;
 using mediaproxy::http::OriginTransportApi;
 using mediaproxy::http::validate_origin_url;
 
-template <typename Type, auto Destroy>
-struct OwnedDeleter {
+template <typename Type, auto Destroy> struct OwnedDeleter {
     void operator()(Type *value) const noexcept {
         if (value != nullptr) {
             static_cast<void>(Destroy(value));
@@ -53,14 +52,11 @@ struct OwnedDeleter {
     }
 };
 
-template <typename Type, auto Destroy>
-using Owned = std::unique_ptr<Type, OwnedDeleter<Type, Destroy>>;
+template <typename Type, auto Destroy> using Owned = std::unique_ptr<Type, OwnedDeleter<Type, Destroy>>;
 
 class FileDescriptor final {
   public:
-    explicit FileDescriptor(int value = -1) noexcept
-        : value_(value) {
-    }
+    explicit FileDescriptor(int value = -1) noexcept : value_(value) {}
 
     ~FileDescriptor() {
         if (value_ >= 0) {
@@ -69,21 +65,21 @@ class FileDescriptor final {
     }
 
     FileDescriptor(const FileDescriptor &) = delete;
-    FileDescriptor &operator=(const FileDescriptor &) = delete;
-    FileDescriptor(FileDescriptor &&other) noexcept
-        : value_(std::exchange(other.value_, -1)) {
-    }
-    FileDescriptor &operator=(FileDescriptor &&other) noexcept {
+    auto operator=(const FileDescriptor &) -> FileDescriptor & = delete;
+    FileDescriptor(FileDescriptor &&other) noexcept : value_(std::exchange(other.value_, -1)) {}
+    auto operator=(FileDescriptor &&other) noexcept -> FileDescriptor & {
         if (this != &other) {
             if (value_ >= 0) {
                 ::close(value_);
             }
             value_ = std::exchange(other.value_, -1);
         }
+
         return *this;
     }
 
-    [[nodiscard]] int get() const noexcept {
+    [[nodiscard]] auto get() const noexcept -> int {
+
         return value_;
     }
 
@@ -97,11 +93,12 @@ struct TestIdentity {
     std::string certificate_pem;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return key != nullptr && certificate != nullptr && !certificate_pem.empty();
     }
 };
 
-[[nodiscard]] TestIdentity CreateIdentity(std::string_view hostname) {
+[[nodiscard]] auto create_identity(std::string_view hostname) -> TestIdentity {
     TestIdentity identity;
     Owned<BIGNUM, &BN_free> exponent{BN_new()};
     Owned<RSA, &RSA_free> rsa{RSA_new()};
@@ -112,37 +109,32 @@ struct TestIdentity {
     static_cast<void>(rsa.release());
 
     identity.certificate.reset(X509_new());
-    if (!identity.certificate || X509_set_version(identity.certificate.get(), 2) != 1 || ASN1_INTEGER_set(X509_get_serialNumber(identity.certificate.get()), 1) != 1 || X509_gmtime_adj(X509_get_notBefore(identity.certificate.get()), -60) == nullptr || X509_gmtime_adj(X509_get_notAfter(identity.certificate.get()), 3600) == nullptr || X509_set_pubkey(identity.certificate.get(), identity.key.get()) != 1) {
+    if (!identity.certificate || X509_set_version(identity.certificate.get(), 2) != 1 || ASN1_INTEGER_set(X509_get_serialNumber(identity.certificate.get()), 1) != 1 || X509_gmtime_adj(X509_get_notBefore(identity.certificate.get()), -60) == nullptr ||
+        X509_gmtime_adj(X509_get_notAfter(identity.certificate.get()), 3600) == nullptr || X509_set_pubkey(identity.certificate.get(), identity.key.get()) != 1) {
         return {};
     }
-    X509_NAME *const subject =
-        X509_get_subject_name(identity.certificate.get());
+    X509_NAME *const subject = X509_get_subject_name(identity.certificate.get());
     const std::string terminated_hostname{hostname};
     if (subject == nullptr || X509_NAME_add_entry_by_txt(subject, "CN", MBSTRING_ASC, reinterpret_cast<const unsigned char *>(terminated_hostname.c_str()), -1, -1, 0) != 1 || X509_set_issuer_name(identity.certificate.get(), subject) != 1) {
         return {};
     }
 
-    if (X509_sign(identity.certificate.get(), identity.key.get(),
-                  EVP_sha256()) <= 0) {
+    if (X509_sign(identity.certificate.get(), identity.key.get(), EVP_sha256()) <= 0) {
         return {};
     }
 
     Owned<BIO, &BIO_free> pem{BIO_new(BIO_s_mem())};
     char *pem_bytes = nullptr;
-    const long pem_size = pem
-                              ? PEM_write_bio_X509(pem.get(), identity.certificate.get()) == 1
-                                    ? BIO_get_mem_data(pem.get(), &pem_bytes)
-                                    : 0
-                              : 0;
+    const long pem_size = pem ? PEM_write_bio_X509(pem.get(), identity.certificate.get()) == 1 ? BIO_get_mem_data(pem.get(), &pem_bytes) : 0 : 0;
     if (pem_size <= 0 || pem_bytes == nullptr) {
         return {};
     }
-    identity.certificate_pem.assign(
-        pem_bytes, static_cast<std::size_t>(pem_size));
+    identity.certificate_pem.assign(pem_bytes, static_cast<std::size_t>(pem_size));
+
     return identity;
 }
 
-[[nodiscard]] FileDescriptor CreateListener(std::uint16_t &port) {
+[[nodiscard]] auto create_listener(std::uint16_t &port) -> FileDescriptor {
     FileDescriptor listener{::socket(AF_INET, SOCK_STREAM, 0)};
     if (listener.get() < 0) {
         return listener;
@@ -153,71 +145,68 @@ struct TestIdentity {
         .sin_addr = {.s_addr = htonl(INADDR_LOOPBACK)},
         .sin_zero = {},
     };
-    if (::bind(listener.get(), reinterpret_cast<const sockaddr *>(&address),
-               sizeof(address)) != 0 ||
-        ::listen(listener.get(), 1) != 0) {
+    if (::bind(listener.get(), reinterpret_cast<const sockaddr *>(&address), sizeof(address)) != 0 || ::listen(listener.get(), 1) != 0) {
         return FileDescriptor{};
     }
     sockaddr_in bound{};
     socklen_t bound_size = sizeof(bound);
-    if (::getsockname(listener.get(), reinterpret_cast<sockaddr *>(&bound),
-                      &bound_size) != 0) {
+    if (::getsockname(listener.get(), reinterpret_cast<sockaddr *>(&bound), &bound_size) != 0) {
         return FileDescriptor{};
     }
     port = ntohs(bound.sin_port);
+
     return listener;
 }
 
-[[nodiscard]] bool WriteAll(SSL *ssl, std::string_view bytes) {
+[[nodiscard]] auto write_all(SSL *ssl, std::string_view bytes) -> bool {
     std::size_t offset = 0;
     while (offset < bytes.size()) {
-        const int request = static_cast<int>(std::min<std::size_t>(
-            bytes.size() - offset, static_cast<std::size_t>(INT_MAX)));
+        const int request = static_cast<int>(std::min<std::size_t>(bytes.size() - offset, static_cast<std::size_t>(INT_MAX)));
         const int written = SSL_write(ssl, bytes.data() + offset, request);
         if (written <= 0) {
             return false;
         }
         offset += static_cast<std::size_t>(written);
     }
+
     return true;
 }
 
 class TlsOriginServer final {
   public:
-    TlsOriginServer(
-        const TestIdentity &identity,
-        std::span<const std::byte> body,
-        std::string extra_headers = {})
-        : body_(body.begin(), body.end()), extra_headers_(std::move(extra_headers)), context_(SSL_CTX_new(TLS_server_method())) {
+    TlsOriginServer(const TestIdentity &identity, std::span<const std::byte> body, std::string extra_headers = {}) : body_(body.begin(), body.end()), extra_headers_(std::move(extra_headers)), context_(SSL_CTX_new(TLS_server_method())) {
         if (!context_ || SSL_CTX_use_certificate(context_.get(), identity.certificate.get()) != 1 || SSL_CTX_use_PrivateKey(context_.get(), identity.key.get()) != 1 || SSL_CTX_check_private_key(context_.get()) != 1) {
             return;
         }
-        listener_ = CreateListener(port_);
+        listener_ = create_listener(port_);
         if (listener_.get() < 0) {
             return;
         }
-        thread_ = std::thread{[this] { Serve(); }};
+        thread_ = std::thread{[this]() -> void { serve(); }};
     }
 
     ~TlsOriginServer() {
-        Finish();
+        finish();
     }
 
     TlsOriginServer(const TlsOriginServer &) = delete;
-    TlsOriginServer &operator=(const TlsOriginServer &) = delete;
+    auto operator=(const TlsOriginServer &) -> TlsOriginServer & = delete;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return context_ != nullptr && listener_.get() >= 0 && port_ != 0;
     }
 
-    [[nodiscard]] std::uint16_t port() const noexcept {
+    [[nodiscard]] auto port() const noexcept -> std::uint16_t {
+
         return port_;
     }
-    [[nodiscard]] bool served() const noexcept {
+    [[nodiscard]] auto served() const noexcept -> bool {
+
         return served_.load();
     }
 
-    void Finish() noexcept {
+    void finish() noexcept {
         if (thread_.joinable()) {
             ::shutdown(listener_.get(), SHUT_RDWR);
             thread_.join();
@@ -225,7 +214,7 @@ class TlsOriginServer final {
     }
 
   private:
-    void Serve() noexcept {
+    void serve() noexcept {
         FileDescriptor client{::accept(listener_.get(), nullptr, nullptr)};
         if (client.get() < 0) {
             return;
@@ -237,8 +226,7 @@ class TlsOriginServer final {
         std::string request;
         std::array<char, 1024> buffer{};
         while (request.size() <= 64U * 1024U && request.find("\r\n\r\n") == std::string::npos) {
-            const int received =
-                SSL_read(ssl.get(), buffer.data(), buffer.size());
+            const int received = SSL_read(ssl.get(), buffer.data(), buffer.size());
             if (received <= 0) {
                 return;
             }
@@ -252,9 +240,8 @@ class TlsOriginServer final {
         response += "\r\nContent-Type: image/png\r\n";
         response += extra_headers_;
         response += "Connection: close\r\n\r\n";
-        response.append(reinterpret_cast<const char *>(body_.data()),
-                        body_.size());
-        served_.store(WriteAll(ssl.get(), response));
+        response.append(reinterpret_cast<const char *>(body_.data()), body_.size());
+        served_.store(write_all(ssl.get(), response));
         static_cast<void>(SSL_shutdown(ssl.get()));
     }
 
@@ -270,11 +257,7 @@ class TlsOriginServer final {
 sockaddr_in public_address{};
 addrinfo public_answer{};
 
-int PublicLookup(
-    const char *,
-    const char *,
-    const addrinfo *,
-    addrinfo **result) {
+auto public_lookup(const char * /*unused*/, const char * /*unused*/, const addrinfo * /*unused*/, addrinfo **result) -> int {
     if (result == nullptr) {
         return EAI_FAIL;
     }
@@ -297,12 +280,12 @@ int PublicLookup(
         .ai_canonname = nullptr,
         .ai_next = nullptr,
     };
+
     *result = &public_answer;
     return 0;
 }
 
-void PublicRelease(addrinfo *) {
-}
+void public_release(addrinfo * /*unused*/) {}
 
 struct LocalTlsTransport {
     std::string hostname;
@@ -310,23 +293,20 @@ struct LocalTlsTransport {
     std::string ca_pem;
 };
 
-CURL *CreateEasy(void *) {
+auto create_easy(void * /*unused*/) -> CURL * {
+
     return curl_easy_init();
 }
 
-void DestroyEasy(CURL *easy, void *) {
+void destroy_easy(CURL *easy, void * /*unused*/) {
     curl_easy_cleanup(easy);
 }
 
-CURLcode PerformLocalTls(
-    CURL *easy,
-    OriginResponseAccumulator &,
-    void *context) {
+auto perform_local_tls(CURL *easy, OriginResponseAccumulator & /*unused*/, void *context) -> CURLcode {
     auto &transport = *static_cast<LocalTlsTransport *>(context);
     const std::string mapping = transport.hostname + ":443:127.0.0.1:" + std::to_string(transport.port);
     curl_slist *raw_mapping = curl_slist_append(nullptr, mapping.c_str());
-    std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> connect_to(
-        raw_mapping, &curl_slist_free_all);
+    std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> connect_to(raw_mapping, &curl_slist_free_all);
     if (!connect_to) {
         return CURLE_OUT_OF_MEMORY;
     }
@@ -338,42 +318,43 @@ CURLcode PerformLocalTls(
     if (curl_easy_setopt(easy, CURLOPT_CONNECT_TO, connect_to.get()) != CURLE_OK || curl_easy_setopt(easy, CURLOPT_CAINFO_BLOB, &ca_blob) != CURLE_OK) {
         return CURLE_FAILED_INIT;
     }
+
     return curl_easy_perform(easy);
 }
 
-CURLcode ResponseCode(CURL *easy, long *status, void *) {
+auto response_code(CURL *easy, long *status, void * /*unused*/) -> CURLcode {
+
     return curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, status);
 }
 
-OriginTransportApi Transport(LocalTlsTransport &transport) {
+auto make_transport(LocalTlsTransport &transport) -> OriginTransportApi {
+
     return {
         .context = &transport,
-        .create = &CreateEasy,
-        .destroy = &DestroyEasy,
-        .perform = &PerformLocalTls,
-        .response_code = &ResponseCode,
+        .create = &create_easy,
+        .destroy = &destroy_easy,
+        .perform = &perform_local_tls,
+        .response_code = &response_code,
     };
 }
 
-std::vector<std::byte> ReadFile(const std::string &path) {
+auto read_file(const std::string &path) -> std::vector<std::byte> {
     std::ifstream input(path, std::ios::binary);
     if (!input.is_open()) {
         return {};
     }
-    const std::string bytes{
-        std::istreambuf_iterator<char>{input},
-        std::istreambuf_iterator<char>{}};
+    const std::string bytes{std::istreambuf_iterator<char>{input}, std::istreambuf_iterator<char>{}};
     const auto body = std::as_bytes(std::span{bytes});
+
     return {body.begin(), body.end()};
 }
 
-std::vector<std::byte> Gzip(std::span<const std::byte> input) {
+auto gzip(std::span<const std::byte> input) -> std::vector<std::byte> {
     if (input.size() > std::numeric_limits<uInt>::max()) {
         return {};
     }
     z_stream stream{};
-    if (deflateInit2(&stream, Z_BEST_SPEED, Z_DEFLATED, 15 + 16, 8,
-                     Z_DEFAULT_STRATEGY) != Z_OK) {
+    if (deflateInit2(&stream, Z_BEST_SPEED, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
         return {};
     }
     struct DeflateCleanup {
@@ -386,8 +367,7 @@ std::vector<std::byte> Gzip(std::span<const std::byte> input) {
     if (output.size() > std::numeric_limits<uInt>::max()) {
         return {};
     }
-    stream.next_in = reinterpret_cast<Bytef *>(
-        const_cast<std::byte *>(input.data()));
+    stream.next_in = reinterpret_cast<Bytef *>(const_cast<std::byte *>(input.data()));
     stream.avail_in = static_cast<uInt>(input.size());
     stream.next_out = reinterpret_cast<Bytef *>(output.data());
     stream.avail_out = static_cast<uInt>(output.size());
@@ -396,6 +376,7 @@ std::vector<std::byte> Gzip(std::span<const std::byte> input) {
         return {};
     }
     output.resize(stream.total_out);
+
     return output;
 }
 
@@ -411,53 +392,45 @@ class OriginTlsTest : public testing::Test {
 };
 
 TEST_F(OriginTlsTest, DownloadsFromPinnedHostWithPeerVerification) {
-    const TestIdentity identity = CreateIdentity("origin.example");
+    const TestIdentity identity = create_identity("origin.example");
     ASSERT_TRUE(identity);
-    const std::vector<std::byte> body = ReadFile(
-        std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/fixtures/media/apng/palette-alpha.png");
+    const std::vector<std::byte> body = read_file(std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/fixtures/media/apng/palette-alpha.png");
     ASSERT_FALSE(body.empty());
     TlsOriginServer server{identity, body};
     ASSERT_TRUE(server);
 
-    const auto origin =
-        validate_origin_url("https://origin.example/image.png");
+    const auto origin = validate_origin_url("https://origin.example/image.png");
     ASSERT_TRUE(origin);
     LocalTlsTransport transport{
         .hostname = "origin.example",
         .port = server.port(),
         .ca_pem = identity.certificate_pem,
     };
-    const auto downloaded = download_origin_once(*origin.url, 5'000,
-                                                 AddressResolverApi{.lookup = &PublicLookup, .release = &PublicRelease},
-                                                 Transport(transport));
-    server.Finish();
+    const auto downloaded = download_origin_once(*origin.url, 5'000, AddressResolverApi{.lookup = &public_lookup, .release = &public_release}, make_transport(transport));
+    server.finish();
 
-    ASSERT_TRUE(downloaded) << static_cast<int>(downloaded.error) << ": "
-                            << curl_easy_strerror(downloaded.curl_error);
+    ASSERT_TRUE(downloaded) << static_cast<int>(downloaded.error) << ": " << curl_easy_strerror(downloaded.curl_error);
     EXPECT_EQ(downloaded.status, 200);
     EXPECT_EQ(downloaded.response.body(), body);
     EXPECT_TRUE(server.served());
 }
 
 TEST_F(OriginTlsTest, RejectsCertificateForDifferentPinnedHostname) {
-    const TestIdentity identity = CreateIdentity("origin.example");
+    const TestIdentity identity = create_identity("origin.example");
     ASSERT_TRUE(identity);
     const std::array<std::byte, 1> body{std::byte{0}};
     TlsOriginServer server{identity, body};
     ASSERT_TRUE(server);
 
-    const auto origin =
-        validate_origin_url("https://different.example/image.png");
+    const auto origin = validate_origin_url("https://different.example/image.png");
     ASSERT_TRUE(origin);
     LocalTlsTransport transport{
         .hostname = "different.example",
         .port = server.port(),
         .ca_pem = identity.certificate_pem,
     };
-    const auto downloaded = download_origin_once(*origin.url, 5'000,
-                                                 AddressResolverApi{.lookup = &PublicLookup, .release = &PublicRelease},
-                                                 Transport(transport));
-    server.Finish();
+    const auto downloaded = download_origin_once(*origin.url, 5'000, AddressResolverApi{.lookup = &public_lookup, .release = &public_release}, make_transport(transport));
+    server.finish();
 
     EXPECT_FALSE(downloaded);
     EXPECT_EQ(downloaded.error, OriginDownloadError::transfer);
@@ -465,26 +438,23 @@ TEST_F(OriginTlsTest, RejectsCertificateForDifferentPinnedHostname) {
 }
 
 TEST_F(OriginTlsTest, RejectsUntrustedCertificateChain) {
-    const TestIdentity identity = CreateIdentity("origin.example");
-    const TestIdentity untrusted_identity = CreateIdentity("origin.example");
+    const TestIdentity identity = create_identity("origin.example");
+    const TestIdentity untrusted_identity = create_identity("origin.example");
     ASSERT_TRUE(identity);
     ASSERT_TRUE(untrusted_identity);
     const std::array<std::byte, 1> body{std::byte{0}};
     TlsOriginServer server{identity, body};
     ASSERT_TRUE(server);
 
-    const auto origin =
-        validate_origin_url("https://origin.example/image.png");
+    const auto origin = validate_origin_url("https://origin.example/image.png");
     ASSERT_TRUE(origin);
     LocalTlsTransport transport{
         .hostname = "origin.example",
         .port = server.port(),
         .ca_pem = untrusted_identity.certificate_pem,
     };
-    const auto downloaded = download_origin_once(*origin.url, 5'000,
-                                                 AddressResolverApi{.lookup = &PublicLookup, .release = &PublicRelease},
-                                                 Transport(transport));
-    server.Finish();
+    const auto downloaded = download_origin_once(*origin.url, 5'000, AddressResolverApi{.lookup = &public_lookup, .release = &public_release}, make_transport(transport));
+    server.finish();
 
     EXPECT_FALSE(downloaded);
     EXPECT_EQ(downloaded.error, OriginDownloadError::transfer);
@@ -492,28 +462,23 @@ TEST_F(OriginTlsTest, RejectsUntrustedCertificateChain) {
 }
 
 TEST_F(OriginTlsTest, TransparentlyDecodesGzipBeforeReturningBody) {
-    const TestIdentity identity = CreateIdentity("origin.example");
+    const TestIdentity identity = create_identity("origin.example");
     ASSERT_TRUE(identity);
-    const std::vector<std::byte> body = ReadFile(
-        std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/fixtures/media/apng/palette-alpha.png");
-    const std::vector<std::byte> compressed = Gzip(body);
+    const std::vector<std::byte> body = read_file(std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/fixtures/media/apng/palette-alpha.png");
+    const std::vector<std::byte> compressed = gzip(body);
     ASSERT_FALSE(compressed.empty());
-    TlsOriginServer server{
-        identity, compressed, "Content-Encoding: gzip\r\n"};
+    TlsOriginServer server{identity, compressed, "Content-Encoding: gzip\r\n"};
     ASSERT_TRUE(server);
 
-    const auto origin =
-        validate_origin_url("https://origin.example/image.png");
+    const auto origin = validate_origin_url("https://origin.example/image.png");
     ASSERT_TRUE(origin);
     LocalTlsTransport transport{
         .hostname = "origin.example",
         .port = server.port(),
         .ca_pem = identity.certificate_pem,
     };
-    const auto downloaded = download_origin_once(*origin.url, 5'000,
-                                                 AddressResolverApi{.lookup = &PublicLookup, .release = &PublicRelease},
-                                                 Transport(transport));
-    server.Finish();
+    const auto downloaded = download_origin_once(*origin.url, 5'000, AddressResolverApi{.lookup = &public_lookup, .release = &public_release}, make_transport(transport));
+    server.finish();
 
     ASSERT_TRUE(downloaded) << curl_easy_strerror(downloaded.curl_error);
     EXPECT_EQ(downloaded.response.body(), body);

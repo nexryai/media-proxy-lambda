@@ -14,14 +14,8 @@ namespace mediaproxy::http {
 
 using OriginEasyCreateFunction = CURL *(*)(void *context);
 using OriginEasyDestroyFunction = void (*)(CURL *easy, void *context);
-using OriginPerformFunction = CURLcode (*)(
-    CURL *easy,
-    OriginResponseAccumulator &response,
-    void *context);
-using OriginResponseCodeFunction = CURLcode (*)(
-    CURL *easy,
-    long *status,
-    void *context);
+using OriginPerformFunction = CURLcode (*)(CURL *easy, OriginResponseAccumulator &response, void *context);
+using OriginResponseCodeFunction = CURLcode (*)(CURL *easy, long *status, void *context);
 
 struct OriginTransportApi {
     void *context = nullptr;
@@ -31,7 +25,7 @@ struct OriginTransportApi {
     OriginResponseCodeFunction response_code = nullptr;
 };
 
-[[nodiscard]] OriginTransportApi system_origin_transport() noexcept;
+[[nodiscard]] auto system_origin_transport() noexcept -> OriginTransportApi;
 
 using OriginRemainingTimeFunction = long (*)(void *context);
 
@@ -68,20 +62,13 @@ struct OriginDownloadResult {
     std::size_t redirect_count = 0;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == OriginDownloadError::none;
     }
 };
 
-[[nodiscard]] OriginDownloadResult download_origin_once(
-    const OriginUrl &origin,
-    long timeout_milliseconds,
-    AddressResolverApi resolver = {},
-    OriginTransportApi transport = system_origin_transport());
+[[nodiscard]] auto download_origin_once(const OriginUrl &origin, long timeout_milliseconds, AddressResolverApi resolver = {}, OriginTransportApi transport = system_origin_transport()) -> OriginDownloadResult;
 
-[[nodiscard]] OriginDownloadResult download_origin(
-    const OriginUrl &initial,
-    OriginTimeoutApi timeout,
-    AddressResolverApi resolver = {},
-    OriginTransportApi transport = system_origin_transport());
+[[nodiscard]] auto download_origin(const OriginUrl &initial, OriginTimeoutApi timeout, AddressResolverApi resolver = {}, OriginTransportApi transport = system_origin_transport()) -> OriginDownloadResult;
 
 } // namespace mediaproxy::http

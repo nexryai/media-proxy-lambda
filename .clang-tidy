@@ -13,6 +13,8 @@ WarningsAsErrors: ''
 HeaderFilterRegex: '.*'
 
 CheckOptions:
+  readability-function-cognitive-complexity.Threshold: 64
+
   readability-identifier-naming.VariableCase: lower_case
   readability-identifier-naming.FunctionCase: lower_case
   readability-identifier-naming.ClassCase: CamelCase

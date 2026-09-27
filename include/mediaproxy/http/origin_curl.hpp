@@ -9,8 +9,7 @@
 
 namespace mediaproxy::http {
 
-inline constexpr char origin_user_agent[] =
-    "Misskey-Media-Proxy-Go v0.10";
+inline constexpr char origin_user_agent[] = "Misskey-Media-Proxy-Go v0.10";
 
 enum class OriginCurlConfigError {
     none,
@@ -18,27 +17,12 @@ enum class OriginCurlConfigError {
     curl_option,
 };
 
-[[nodiscard]] OriginCurlConfigError configure_origin_curl(
-    CURL *easy,
-    const OriginUrl &origin,
-    const CurlResolvePin &pin,
-    OriginResponseAccumulator &response,
-    long timeout_milliseconds) noexcept;
+[[nodiscard]] auto configure_origin_curl(CURL *easy, const OriginUrl &origin, const CurlResolvePin &pin, OriginResponseAccumulator &response, long timeout_milliseconds) noexcept -> OriginCurlConfigError;
 
-[[nodiscard]] std::size_t origin_header_callback(
-    char *data,
-    std::size_t size,
-    std::size_t count,
-    void *user_data) noexcept;
+[[nodiscard]] auto origin_header_callback(char *data, std::size_t size, std::size_t count, void *user_data) noexcept -> std::size_t;
 
-[[nodiscard]] std::size_t origin_body_callback(
-    char *data,
-    std::size_t size,
-    std::size_t count,
-    void *user_data) noexcept;
+[[nodiscard]] auto origin_body_callback(char *data, std::size_t size, std::size_t count, void *user_data) noexcept -> std::size_t;
 
-[[nodiscard]] bool is_body_limit_completion(
-    CURLcode result,
-    const OriginResponseAccumulator &response) noexcept;
+[[nodiscard]] auto is_body_limit_completion(CURLcode result, const OriginResponseAccumulator &response) noexcept -> bool;
 
 } // namespace mediaproxy::http

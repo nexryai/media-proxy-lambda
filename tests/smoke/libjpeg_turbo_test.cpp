@@ -21,9 +21,10 @@ class JpegCompressor final {
     }
 
     JpegCompressor(const JpegCompressor &) = delete;
-    JpegCompressor &operator=(const JpegCompressor &) = delete;
+    auto operator=(const JpegCompressor &) -> JpegCompressor & = delete;
 
-    [[nodiscard]] jpeg_compress_struct *get() noexcept {
+    [[nodiscard]] auto get() noexcept -> jpeg_compress_struct * {
+
         return &state_;
     }
 
@@ -44,9 +45,10 @@ class JpegDecompressor final {
     }
 
     JpegDecompressor(const JpegDecompressor &) = delete;
-    JpegDecompressor &operator=(const JpegDecompressor &) = delete;
+    auto operator=(const JpegDecompressor &) -> JpegDecompressor & = delete;
 
-    [[nodiscard]] jpeg_decompress_struct *get() noexcept {
+    [[nodiscard]] auto get() noexcept -> jpeg_decompress_struct * {
+
         return &state_;
     }
 
@@ -75,11 +77,10 @@ TEST(BuildSmoke, RoundTripsWithPinnedLibJpegTurbo) {
     }
     jpeg_set_quality(compressor.get(), 100, TRUE);
     jpeg_start_compress(compressor.get(), TRUE);
-    JSAMPROW input_row = const_cast<JSAMPLE *>(expected_pixel.data());
+    auto *input_row = const_cast<JSAMPLE *>(expected_pixel.data());
     ASSERT_EQ(jpeg_write_scanlines(compressor.get(), &input_row, 1), 1U);
     jpeg_finish_compress(compressor.get());
-    std::unique_ptr<unsigned char, decltype(&std::free)> encoded(
-        encoded_bytes, &std::free);
+    std::unique_ptr<unsigned char, decltype(&std::free)> encoded(encoded_bytes, &std::free);
     ASSERT_NE(encoded, nullptr);
     ASSERT_GT(encoded_size, 4U);
     EXPECT_EQ(encoded.get()[0], 0xffU);

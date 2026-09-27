@@ -23,11 +23,11 @@ struct HostnameNormalization {
     HostnameError error = HostnameError::none;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == HostnameError::none;
     }
 };
 
-[[nodiscard]] HostnameNormalization normalize_hostname(
-    std::string_view hostname);
+[[nodiscard]] auto normalize_hostname(std::string_view hostname) -> HostnameNormalization;
 
 } // namespace mediaproxy::http

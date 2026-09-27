@@ -23,19 +23,13 @@ struct ApngComposedFrame {
     std::vector<std::byte> displayed_rgba;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == ApngCompositionError::none;
     }
 };
 
-[[nodiscard]] ApngComposedFrame compose_apng_frame(
-    std::vector<std::byte> &canvas_rgba,
-    std::uint32_t canvas_width,
-    std::uint32_t canvas_height,
-    const ApngFrameControl &control,
-    std::span<const std::byte> frame_rgba);
+[[nodiscard]] auto compose_apng_frame(std::vector<std::byte> &canvas_rgba, std::uint32_t canvas_width, std::uint32_t canvas_height, const ApngFrameControl &control, std::span<const std::byte> frame_rgba) -> ApngComposedFrame;
 
-[[nodiscard]] std::int32_t apng_frame_duration_ms(
-    std::uint16_t delay_numerator,
-    std::uint16_t delay_denominator) noexcept;
+[[nodiscard]] auto apng_frame_duration_ms(std::uint16_t delay_numerator, std::uint16_t delay_denominator) noexcept -> std::int32_t;
 
 } // namespace mediaproxy::media

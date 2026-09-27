@@ -5,6 +5,6 @@
 
 namespace mediaproxy::media {
 
-[[nodiscard]] std::span<const std::byte> embedded_svg_font() noexcept;
+[[nodiscard]] auto embedded_svg_font() noexcept -> std::span<const std::byte>;
 
 } // namespace mediaproxy::media

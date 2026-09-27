@@ -17,18 +17,13 @@ struct MediaPlan {
     bool animated = false;
     OutputFormat output = OutputFormat::webp;
 
-    [[nodiscard]] bool operator==(const MediaPlan &) const = default;
+    [[nodiscard]] auto operator==(const MediaPlan &) const -> bool = default;
 };
 
-[[nodiscard]] bool is_convertible_mime(MimeType mime) noexcept;
+[[nodiscard]] auto is_convertible_mime(MimeType mime) noexcept -> bool;
 
-[[nodiscard]] bool is_animated_avif(
-    std::span<const std::byte> body) noexcept;
+[[nodiscard]] auto is_animated_avif(std::span<const std::byte> body) noexcept -> bool;
 
-[[nodiscard]] std::optional<MediaPlan> classify_media(
-    MimeType mime,
-    std::span<const std::byte> body,
-    bool force_static,
-    OutputFormat preferred_output) noexcept;
+[[nodiscard]] auto classify_media(MimeType mime, std::span<const std::byte> body, bool force_static, OutputFormat preferred_output) noexcept -> std::optional<MediaPlan>;
 
 } // namespace mediaproxy::media

@@ -11,33 +11,28 @@
 namespace mediaproxy::runtime {
 namespace {
 
-[[nodiscard]] char ascii_lower(char value) noexcept {
-    return value >= 'A' && value <= 'Z'
-               ? static_cast<char>(value - 'A' + 'a')
-               : value;
+[[nodiscard]] auto ascii_lower(char value) noexcept -> char {
+
+    return value >= 'A' && value <= 'Z' ? static_cast<char>(value - 'A' + 'a') : value;
 }
 
-[[nodiscard]] bool ascii_equal(
-    std::string_view left,
-    std::string_view right) noexcept {
-    return left.size() == right.size() && std::equal(left.begin(), left.end(), right.begin(),
-                                                     [](char first, char second) {
-                                                         return ascii_lower(first) == ascii_lower(second);
-                                                     });
+[[nodiscard]] auto ascii_equal(std::string_view left, std::string_view right) noexcept -> bool {
+
+    return left.size() == right.size() && std::equal(left.begin(), left.end(), right.begin(), [](char first, char second) -> bool { return ascii_lower(first) == ascii_lower(second); });
 }
 
-[[nodiscard]] std::string_view trim(std::string_view value) noexcept {
+[[nodiscard]] auto trim(std::string_view value) noexcept -> std::string_view {
     while (!value.empty() && (value.front() == ' ' || value.front() == '\t')) {
         value.remove_prefix(1);
     }
     while (!value.empty() && (value.back() == ' ' || value.back() == '\t')) {
         value.remove_suffix(1);
     }
+
     return value;
 }
 
-template <typename Integer>
-[[nodiscard]] bool parse_decimal(std::string_view value, Integer &output) noexcept {
+template <typename Integer> [[nodiscard]] auto parse_decimal(std::string_view value, Integer &output) noexcept -> bool {
     if (value.empty()) {
         return false;
     }
@@ -46,38 +41,41 @@ template <typename Integer>
         if (character < '0' || character > '9') {
             return false;
         }
-        const Integer digit = static_cast<Integer>(character - '0');
+        const auto digit = static_cast<Integer>(character - '0');
         if (parsed > (std::numeric_limits<Integer>::max() - digit) / 10) {
             return false;
         }
-        parsed = static_cast<Integer>(parsed * 10 + digit);
+        parsed = static_cast<Integer>((parsed * 10) + digit);
     }
     output = parsed;
+
     return true;
 }
 
-[[nodiscard]] std::size_t find_header_end(
-    std::span<const std::byte> bytes) noexcept {
+[[nodiscard]] auto find_header_end(std::span<const std::byte> bytes) noexcept -> std::size_t {
     constexpr std::string_view delimiter = "\r\n\r\n";
     if (bytes.size() < delimiter.size()) {
         return std::string_view::npos;
     }
     const auto *characters = reinterpret_cast<const char *>(bytes.data());
     const std::string_view text{characters, bytes.size()};
+
     return text.find(delimiter);
 }
 
-[[nodiscard]] bool safe_authority(std::string_view value) noexcept {
+[[nodiscard]] auto safe_authority(std::string_view value) noexcept -> bool {
+
     return !value.empty() && value.find_first_of("\r\n \t") == std::string_view::npos;
 }
 
-[[nodiscard]] bool safe_request_id(std::string_view value) noexcept {
+[[nodiscard]] auto safe_request_id(std::string_view value) noexcept -> bool {
+
     return !value.empty() && value.find_first_of("/ ?#\t\\") == std::string_view::npos;
 }
 
 } // namespace
 
-NextParseStatus NextResponseParser::feed(std::span<const std::byte> bytes) {
+auto NextResponseParser::feed(std::span<const std::byte> bytes) -> NextParseStatus {
     if (status_ != NextParseStatus::incomplete) {
         return status_;
     }
@@ -85,12 +83,9 @@ NextParseStatus NextResponseParser::feed(std::span<const std::byte> bytes) {
         return append_event(bytes);
     }
 
-    const std::size_t available_header_bytes =
-        maximum_runtime_header_bytes - buffer_.size();
-    const std::size_t buffered =
-        std::min(bytes.size(), available_header_bytes);
-    buffer_.insert(buffer_.end(), bytes.begin(),
-                   bytes.begin() + static_cast<std::ptrdiff_t>(buffered));
+    const std::size_t available_header_bytes = maximum_runtime_header_bytes - buffer_.size();
+    const std::size_t buffered = std::min(bytes.size(), available_header_bytes);
+    buffer_.insert(buffer_.end(), bytes.begin(), bytes.begin() + static_cast<std::ptrdiff_t>(buffered));
 
     const std::size_t header_end = find_header_end(buffer_);
     if (header_end == std::string_view::npos) {
@@ -107,30 +102,29 @@ NextParseStatus NextResponseParser::feed(std::span<const std::byte> bytes) {
     }
     headers_complete_ = true;
     invocation_.event.reserve(content_length_);
-    const NextParseStatus buffered_status = append_event(
-        std::span<const std::byte>{buffer_}.subspan(body_offset));
+    const NextParseStatus buffered_status = append_event(std::span<const std::byte>{buffer_}.subspan(body_offset));
     if (buffered_status == NextParseStatus::error) {
         return status_;
     }
     buffer_.clear();
+
     return append_event(bytes.subspan(buffered));
 }
 
-NextParseStatus NextResponseParser::append_event(
-    std::span<const std::byte> bytes) {
+auto NextResponseParser::append_event(std::span<const std::byte> bytes) -> NextParseStatus {
     if (bytes.size() > content_length_ - invocation_.event.size()) {
         status_ = NextParseStatus::error;
         return status_;
     }
-    invocation_.event.insert(
-        invocation_.event.end(), bytes.begin(), bytes.end());
+    invocation_.event.insert(invocation_.event.end(), bytes.begin(), bytes.end());
     if (invocation_.event.size() == content_length_) {
         status_ = NextParseStatus::complete;
     }
+
     return status_;
 }
 
-bool NextResponseParser::parse_headers(std::size_t header_end) {
+auto NextResponseParser::parse_headers(std::size_t header_end) -> bool {
     const auto *characters = reinterpret_cast<const char *>(buffer_.data());
     const std::string_view headers{characters, header_end};
     const std::size_t first_end = headers.find("\r\n");
@@ -145,9 +139,7 @@ bool NextResponseParser::parse_headers(std::size_t header_end) {
     std::size_t line_begin = first_end + 2;
     while (line_begin < headers.size()) {
         const std::size_t line_end = headers.find("\r\n", line_begin);
-        const std::size_t end = line_end == std::string_view::npos
-                                    ? headers.size()
-                                    : line_end;
+        const std::size_t end = line_end == std::string_view::npos ? headers.size() : line_end;
         const std::string_view line = headers.substr(line_begin, end - line_begin);
         const std::size_t colon = line.find(':');
         if (colon == std::string_view::npos || colon == 0) {
@@ -182,17 +174,18 @@ bool NextResponseParser::parse_headers(std::size_t header_end) {
         }
         line_begin = end + 2;
     }
+
     return have_length && have_request_id && have_deadline && have_trace;
 }
 
-std::string make_next_request_head(std::string_view runtime_authority) {
+auto make_next_request_head(std::string_view runtime_authority) -> std::string {
     if (!safe_authority(runtime_authority)) {
         return {};
     }
-    std::string output =
-        "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\nHost: ";
+    std::string output = "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\nHost: ";
     output += runtime_authority;
     output += "\r\nConnection: close\r\n\r\n";
+
     return output;
 }
 

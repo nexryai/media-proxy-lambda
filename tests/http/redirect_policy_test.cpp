@@ -15,44 +15,38 @@ using mediaproxy::http::RedirectTracker;
 using mediaproxy::http::UrlError;
 using mediaproxy::http::validate_origin_url;
 
-std::optional<RedirectTracker> MakeTracker(const char *initial) {
+auto make_tracker(const char *initial) -> std::optional<RedirectTracker> {
     const auto parsed = validate_origin_url(initial);
     if (!parsed) {
         return std::nullopt;
     }
+
     return RedirectTracker::create(*parsed.url);
 }
 
 TEST(RedirectPolicy, ResolvesRelativeQueryAndNetworkLocations) {
-    auto created = MakeTracker(
-        "https://origin.example/a/b/source.png?old=1");
+    auto created = make_tracker("https://origin.example/a/b/source.png?old=1");
     ASSERT_TRUE(created.has_value());
     auto tracker = std::move(*created);
 
     const auto relative = tracker.follow("../image.png?x=1#not-sent");
     ASSERT_TRUE(relative);
-    EXPECT_EQ(
-        relative.url->canonical_url,
-        "https://origin.example/a/image.png?x=1");
+    EXPECT_EQ(relative.url->canonical_url, "https://origin.example/a/image.png?x=1");
     EXPECT_EQ(relative.url->request_target, "/a/image.png?x=1");
 
     const auto query = tracker.follow("?next=1");
     ASSERT_TRUE(query);
-    EXPECT_EQ(
-        query.url->canonical_url,
-        "https://origin.example/a/image.png?next=1");
+    EXPECT_EQ(query.url->canonical_url, "https://origin.example/a/image.png?next=1");
 
     const auto network = tracker.follow("//bücher.example/new");
     ASSERT_TRUE(network);
     EXPECT_EQ(network.url->hostname, "xn--bcher-kva.example");
-    EXPECT_EQ(
-        network.url->canonical_url,
-        "https://xn--bcher-kva.example/new");
+    EXPECT_EQ(network.url->canonical_url, "https://xn--bcher-kva.example/new");
     EXPECT_EQ(tracker.redirect_count(), 3U);
 }
 
 TEST(RedirectPolicy, ReappliesSyntaxAndLiteralAddressPolicy) {
-    auto created = MakeTracker("https://origin.example/start");
+    auto created = make_tracker("https://origin.example/start");
     ASSERT_TRUE(created.has_value());
     auto tracker = std::move(*created);
 
@@ -66,8 +60,7 @@ TEST(RedirectPolicy, ReappliesSyntaxAndLiteralAddressPolicy) {
     EXPECT_EQ(uppercase.error, RedirectError::url_policy);
     EXPECT_EQ(uppercase.url_error, UrlError::invalid_scheme);
 
-    const auto credentials =
-        tracker.follow("//user:secret@public.example/image");
+    const auto credentials = tracker.follow("//user:secret@public.example/image");
     EXPECT_FALSE(credentials);
     EXPECT_EQ(credentials.error, RedirectError::url_policy);
     EXPECT_EQ(credentials.url_error, UrlError::user_information);
@@ -84,7 +77,7 @@ TEST(RedirectPolicy, ReappliesSyntaxAndLiteralAddressPolicy) {
 }
 
 TEST(RedirectPolicy, DetectsCanonicalLoopsWithoutMutatingState) {
-    auto created = MakeTracker("https://origin.example/path?x=1");
+    auto created = make_tracker("https://origin.example/path?x=1");
     ASSERT_TRUE(created.has_value());
     auto tracker = std::move(*created);
 
@@ -92,16 +85,13 @@ TEST(RedirectPolicy, DetectsCanonicalLoopsWithoutMutatingState) {
     EXPECT_FALSE(fragment);
     EXPECT_EQ(fragment.error, RedirectError::loop);
     EXPECT_EQ(tracker.redirect_count(), 0U);
-    EXPECT_EQ(
-        tracker.current().canonical_url,
-        "https://origin.example/path?x=1");
+    EXPECT_EQ(tracker.current().canonical_url, "https://origin.example/path?x=1");
 
     const auto empty = tracker.follow("");
     EXPECT_FALSE(empty);
     EXPECT_EQ(empty.error, RedirectError::loop);
 
-    const auto explicit_default_port =
-        tracker.follow("https://origin.example:443/path?x=1");
+    const auto explicit_default_port = tracker.follow("https://origin.example:443/path?x=1");
     EXPECT_FALSE(explicit_default_port);
     EXPECT_EQ(explicit_default_port.error, RedirectError::loop);
 
@@ -115,7 +105,7 @@ TEST(RedirectPolicy, DetectsCanonicalLoopsWithoutMutatingState) {
 }
 
 TEST(RedirectPolicy, EnforcesTenSuccessfulRedirects) {
-    auto created = MakeTracker("https://origin.example/start");
+    auto created = make_tracker("https://origin.example/start");
     ASSERT_TRUE(created.has_value());
     auto tracker = std::move(*created);
     for (std::size_t index = 0; index < maximum_origin_redirects; ++index) {
@@ -133,12 +123,11 @@ TEST(RedirectPolicy, EnforcesTenSuccessfulRedirects) {
 }
 
 TEST(RedirectPolicy, RejectsMalformedLocationsAndForgedInitialState) {
-    auto created = MakeTracker("https://origin.example/start");
+    auto created = make_tracker("https://origin.example/start");
     ASSERT_TRUE(created.has_value());
     auto tracker = std::move(*created);
     constexpr char embedded_nul_source[] = "/safe\0https://attacker.example/";
-    const std::string embedded_nul{
-        embedded_nul_source, sizeof(embedded_nul_source) - 1};
+    const std::string embedded_nul{embedded_nul_source, sizeof(embedded_nul_source) - 1};
     const auto malformed = tracker.follow(embedded_nul);
     EXPECT_FALSE(malformed);
     EXPECT_EQ(malformed.error, RedirectError::invalid_location);

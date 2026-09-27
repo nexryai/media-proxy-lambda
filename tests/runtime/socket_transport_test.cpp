@@ -33,35 +33,27 @@ TEST(RuntimeSocketTransport, ParsesHostPortAndBracketedIpv6) {
 
 TEST(RuntimeSocketTransport, WritesAllBytesAndReadsFragments) {
     std::array<int, 2> sockets{};
-    ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0,
-                         sockets.data()),
-              0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets.data()), 0);
     SocketTransport transport{sockets[0]};
     const std::string outbound = "request-bytes";
     ASSERT_TRUE(transport.write(std::as_bytes(std::span{outbound})));
 
     std::array<char, 32> peer_buffer{};
-    const ssize_t peer_read =
-        recv(sockets[1], peer_buffer.data(), peer_buffer.size(), 0);
+    const ssize_t peer_read = recv(sockets[1], peer_buffer.data(), peer_buffer.size(), 0);
     ASSERT_EQ(peer_read, static_cast<ssize_t>(outbound.size()));
     EXPECT_EQ(std::string_view(peer_buffer.data(), outbound.size()), outbound);
 
     const std::string inbound = "fragmented-response";
-    ASSERT_EQ(send(sockets[1], inbound.data(), inbound.size(), MSG_NOSIGNAL),
-              static_cast<ssize_t>(inbound.size()));
+    ASSERT_EQ(send(sockets[1], inbound.data(), inbound.size(), MSG_NOSIGNAL), static_cast<ssize_t>(inbound.size()));
     std::array<std::byte, 4> fragment{};
     EXPECT_EQ(transport.read_some(fragment), 4);
-    EXPECT_EQ(std::string_view(
-                  reinterpret_cast<const char *>(fragment.data()), 4),
-              "frag");
+    EXPECT_EQ(std::string_view(reinterpret_cast<const char *>(fragment.data()), 4), "frag");
     ::close(sockets[1]);
 }
 
 TEST(RuntimeSocketTransport, ReportsPeerClosureWithoutSigpipe) {
     std::array<int, 2> sockets{};
-    ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0,
-                         sockets.data()),
-              0);
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets.data()), 0);
     SocketTransport transport{sockets[0]};
     ::close(sockets[1]);
     const std::string bytes = "response";

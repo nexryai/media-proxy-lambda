@@ -38,19 +38,17 @@ class RequestStateReset final {
     }
 };
 
-[[nodiscard]] MediaConversionResult fail(MediaConversionError error) {
+[[nodiscard]] auto fail(MediaConversionError error) -> MediaConversionResult {
     vips_error_clear();
+
     return {.error = error, .encoded_format = OutputFormat::webp, .body = {}};
 }
 
-[[nodiscard]] MediaConversionResult convert_apng(
-    std::span<const std::byte> body,
-    EncodingQuality quality) {
+[[nodiscard]] auto convert_apng(std::span<const std::byte> body, EncodingQuality quality) -> MediaConversionResult {
     if (!initialize_vips()) {
         return fail(MediaConversionError::decode);
     }
-    ImagePtr loaded(vips_image_new_from_buffer(
-        body.data(), body.size(), "", nullptr));
+    ImagePtr loaded(vips_image_new_from_buffer(body.data(), body.size(), "", nullptr));
     if (!loaded) {
         return fail(MediaConversionError::decode);
     }
@@ -59,12 +57,11 @@ class RequestStateReset final {
     if (width <= 0 || height <= 0) {
         return fail(MediaConversionError::decode);
     }
-    auto converted = convert_apng_to_webp(body,
-                                          static_cast<std::uint32_t>(width),
-                                          static_cast<std::uint32_t>(height), quality);
+    auto converted = convert_apng_to_webp(body, static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height), quality);
     if (!converted) {
         return fail(MediaConversionError::convert);
     }
+
     return {
         .error = MediaConversionError::none,
         .encoded_format = OutputFormat::webp,
@@ -74,13 +71,7 @@ class RequestStateReset final {
 
 } // namespace
 
-MediaConversionResult convert_media(
-    std::span<const std::byte> body,
-    MimeType mime,
-    bool force_static,
-    OutputFormat preferred_output,
-    ImageDimensions limits,
-    EncodingQuality quality) {
+auto convert_media(std::span<const std::byte> body, MimeType mime, bool force_static, OutputFormat preferred_output, ImageDimensions limits, EncodingQuality quality) -> MediaConversionResult {
     if (!initialize_vips()) {
         return fail(MediaConversionError::decode);
     }
@@ -93,15 +84,12 @@ MediaConversionResult convert_media(
         }
     }
 
-    const auto plan = classify_media(
-        mime, body, force_static, preferred_output);
+    const auto plan = classify_media(mime, body, force_static, preferred_output);
     if (!plan.has_value()) {
         return fail(MediaConversionError::unsupported);
     }
     if (plan->animated) {
-        auto converted = mime == MimeType::image_avif
-                             ? convert_animated_avif(body, limits, quality)
-                             : convert_animated_image(body, limits, quality);
+        auto converted = mime == MimeType::image_avif ? convert_animated_avif(body, limits, quality) : convert_animated_image(body, limits, quality);
         if (!converted) {
             return fail(MediaConversionError::convert);
         }
@@ -112,11 +100,11 @@ MediaConversionResult convert_media(
         };
     }
 
-    auto converted = convert_static_image(body, mime, plan->output, limits,
-                                          quality);
+    auto converted = convert_static_image(body, mime, plan->output, limits, quality);
     if (!converted) {
         return fail(MediaConversionError::convert);
     }
+
     return {
         .error = MediaConversionError::none,
         .encoded_format = plan->output,

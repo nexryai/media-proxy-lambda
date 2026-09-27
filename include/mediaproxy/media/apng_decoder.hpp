@@ -28,11 +28,11 @@ struct ApngDecodedAnimation {
     std::vector<ApngDecodedFrame> frames;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == ApngDecodeError::none;
     }
 };
 
-[[nodiscard]] ApngDecodedAnimation decode_apng_frames(
-    std::span<const std::byte> body);
+[[nodiscard]] auto decode_apng_frames(std::span<const std::byte> body) -> ApngDecodedAnimation;
 
 } // namespace mediaproxy::media

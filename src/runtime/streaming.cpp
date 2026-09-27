@@ -11,7 +11,8 @@
 namespace mediaproxy::runtime {
 namespace {
 
-[[nodiscard]] bool safe_header_component(std::string_view value) noexcept {
+[[nodiscard]] auto safe_header_component(std::string_view value) noexcept -> bool {
+
     return !value.empty() && value.find_first_of("\r\n") == std::string_view::npos;
 }
 
@@ -55,8 +56,7 @@ void append_json_string(std::string &output, std::string_view value) {
     output.push_back('"');
 }
 
-[[nodiscard]] std::string integration_metadata(
-    const http::HttpResponse &response) {
+[[nodiscard]] auto integration_metadata(const http::HttpResponse &response) -> std::string {
     std::string output = "{\"statusCode\":";
     output += std::to_string(response.status);
     output += ",\"headers\":{";
@@ -71,10 +71,11 @@ void append_json_string(std::string &output, std::string_view value) {
         append_json_string(output, header.value);
     }
     output += "}}";
+
     return output;
 }
 
-[[nodiscard]] std::string chunk_prefix(std::size_t size) {
+[[nodiscard]] auto chunk_prefix(std::size_t size) -> std::string {
     constexpr char hex[] = "0123456789abcdef";
     std::array<char, sizeof(std::size_t) * 2> reversed{};
     std::size_t count = 0;
@@ -89,56 +90,45 @@ void append_json_string(std::string &output, std::string_view value) {
         output.push_back(reversed[--count]);
     }
     output += "\r\n";
+
     return output;
 }
 
-[[nodiscard]] bool write_text(ByteSink &sink, std::string_view text) {
+[[nodiscard]] auto write_text(ByteSink &sink, std::string_view text) -> bool {
+
     return sink.write(std::as_bytes(std::span{text}));
 }
 
-[[nodiscard]] bool write_chunk(
-    ByteSink &sink,
-    std::span<const std::byte> bytes) {
+[[nodiscard]] auto write_chunk(ByteSink &sink, std::span<const std::byte> bytes) -> bool {
     if (bytes.empty()) {
         return true;
     }
     const std::string prefix = chunk_prefix(bytes.size());
+
     return write_text(sink, prefix) && sink.write(bytes) && write_text(sink, "\r\n");
 }
 
-[[nodiscard]] std::string base64(std::span<const std::byte> input) {
-    constexpr std::string_view alphabet =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+[[nodiscard]] auto base64(std::span<const std::byte> input) -> std::string {
+    constexpr std::string_view alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     std::string output;
     output.reserve(((input.size() + 2) / 3) * 4);
     for (std::size_t offset = 0; offset < input.size(); offset += 3) {
-        const std::uint32_t first =
-            std::to_integer<std::uint8_t>(input[offset]);
-        const std::uint32_t second = offset + 1 < input.size()
-                                         ? std::to_integer<std::uint8_t>(input[offset + 1])
-                                         : 0;
-        const std::uint32_t third = offset + 2 < input.size()
-                                        ? std::to_integer<std::uint8_t>(input[offset + 2])
-                                        : 0;
-        const std::uint32_t value =
-            (first << 16U) | (second << 8U) | third;
+        const std::uint32_t first = std::to_integer<std::uint8_t>(input[offset]);
+        const std::uint32_t second = offset + 1 < input.size() ? std::to_integer<std::uint8_t>(input[offset + 1]) : 0;
+        const std::uint32_t third = offset + 2 < input.size() ? std::to_integer<std::uint8_t>(input[offset + 2]) : 0;
+        const std::uint32_t value = (first << 16U) | (second << 8U) | third;
         output.push_back(alphabet[(value >> 18U) & 0x3fU]);
         output.push_back(alphabet[(value >> 12U) & 0x3fU]);
-        output.push_back(offset + 1 < input.size()
-                             ? alphabet[(value >> 6U) & 0x3fU]
-                             : '=');
-        output.push_back(offset + 2 < input.size()
-                             ? alphabet[value & 0x3fU]
-                             : '=');
+        output.push_back(offset + 1 < input.size() ? alphabet[(value >> 6U) & 0x3fU] : '=');
+        output.push_back(offset + 2 < input.size() ? alphabet[value & 0x3fU] : '=');
     }
+
     return output;
 }
 
 } // namespace
 
-std::string make_streaming_request_head(
-    std::string_view runtime_authority,
-    std::string_view request_id) {
+auto make_streaming_request_head(std::string_view runtime_authority, std::string_view request_id) -> std::string {
     if (!safe_header_component(runtime_authority) || !safe_header_component(request_id) || request_id.find_first_of("/ ?#\t\\") != std::string_view::npos) {
         return {};
     }
@@ -146,19 +136,17 @@ std::string make_streaming_request_head(
     output += request_id;
     output += "/response HTTP/1.1\r\nHost: ";
     output += runtime_authority;
-    output +=
-        "\r\nLambda-Runtime-Function-Response-Mode: streaming"
-        "\r\nTransfer-Encoding: chunked"
-        "\r\nContent-Type: application/vnd.awslambda.http-integration-response"
-        "\r\nTrailer: Lambda-Runtime-Function-Error-Type, "
-        "Lambda-Runtime-Function-Error-Body"
-        "\r\nConnection: close\r\n\r\n";
+    output += "\r\nLambda-Runtime-Function-Response-Mode: streaming"
+              "\r\nTransfer-Encoding: chunked"
+              "\r\nContent-Type: application/vnd.awslambda.http-integration-response"
+              "\r\nTrailer: Lambda-Runtime-Function-Error-Type, "
+              "Lambda-Runtime-Function-Error-Body"
+              "\r\nConnection: close\r\n\r\n";
+
     return output;
 }
 
-bool write_streaming_response(
-    ByteSink &sink,
-    const http::HttpResponse &response) {
+auto write_streaming_response(ByteSink &sink, const http::HttpResponse &response) -> bool {
     std::string metadata = integration_metadata(response);
     metadata.append(8, '\0');
     if (!write_chunk(sink, std::as_bytes(std::span{metadata}))) {
@@ -167,24 +155,22 @@ bool write_streaming_response(
 
     const std::span<const std::byte> body{response.body};
     for (std::size_t offset = 0; offset < body.size();) {
-        const std::size_t size =
-            std::min(response_chunk_bytes, body.size() - offset);
+        const std::size_t size = std::min(response_chunk_bytes, body.size() - offset);
         if (!write_chunk(sink, body.subspan(offset, size))) {
             return false;
         }
         offset += size;
     }
+
     return write_text(sink, "0\r\n\r\n");
 }
 
-bool write_streaming_error(
-    ByteSink &sink,
-    std::string_view error_type,
-    std::span<const std::byte> error_body) {
+auto write_streaming_error(ByteSink &sink, std::string_view error_type, std::span<const std::byte> error_body) -> bool {
     if (!safe_header_component(error_type)) {
         return false;
     }
     const std::string encoded = base64(error_body);
+
     return write_text(sink, "0\r\nLambda-Runtime-Function-Error-Type: ") && write_text(sink, error_type) && write_text(sink, "\r\nLambda-Runtime-Function-Error-Body: ") && write_text(sink, encoded) && write_text(sink, "\r\n\r\n");
 }
 

@@ -9,20 +9,16 @@
 
 namespace mediaproxy::runtime {
 
-std::uint64_t system_epoch_milliseconds(void *) noexcept {
+auto system_epoch_milliseconds(void * /*unused*/) noexcept -> std::uint64_t {
     const auto now = std::chrono::system_clock::now().time_since_epoch();
-    const auto milliseconds =
-        std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+    const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+
     return milliseconds > 0 ? static_cast<std::uint64_t>(milliseconds) : 0;
 }
 
-InvocationDeadline::InvocationDeadline(
-    std::uint64_t deadline_ms,
-    EpochClockApi clock) noexcept
-    : deadline_ms_(deadline_ms), clock_(clock) {
-}
+InvocationDeadline::InvocationDeadline(std::uint64_t deadline_ms, EpochClockApi clock) noexcept : deadline_ms_(deadline_ms), clock_(clock) {}
 
-long InvocationDeadline::remaining_origin_milliseconds() const noexcept {
+auto InvocationDeadline::remaining_origin_milliseconds() const noexcept -> long {
     if (clock_.now == nullptr) {
         return 0;
     }
@@ -30,25 +26,25 @@ long InvocationDeadline::remaining_origin_milliseconds() const noexcept {
     if (deadline_ms_ <= now || deadline_ms_ - now <= response_submission_reserve_ms) {
         return 0;
     }
-    const std::uint64_t remaining =
-        deadline_ms_ - now - response_submission_reserve_ms;
-    return static_cast<long>(std::min<std::uint64_t>(
-        remaining, static_cast<std::uint64_t>(std::numeric_limits<long>::max())));
+    const std::uint64_t remaining = deadline_ms_ - now - response_submission_reserve_ms;
+
+    return static_cast<long>(std::min<std::uint64_t>(remaining, static_cast<std::uint64_t>(std::numeric_limits<long>::max())));
 }
 
-http::OriginTimeoutApi InvocationDeadline::origin_timeout() noexcept {
+auto InvocationDeadline::origin_timeout() noexcept -> http::OriginTimeoutApi {
+
     return {
         .context = this,
         .remaining_milliseconds = &InvocationDeadline::remaining,
     };
 }
 
-long InvocationDeadline::remaining(void *context) noexcept {
+auto InvocationDeadline::remaining(void *context) noexcept -> long {
     if (context == nullptr) {
         return 0;
     }
-    return static_cast<InvocationDeadline *>(context)
-        ->remaining_origin_milliseconds();
+
+    return static_cast<InvocationDeadline *>(context)->remaining_origin_milliseconds();
 }
 
 } // namespace mediaproxy::runtime

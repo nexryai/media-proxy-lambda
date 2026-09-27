@@ -15,30 +15,28 @@
 namespace mediaproxy::http {
 namespace {
 
-CURL *create_system_easy(void *) {
+auto create_system_easy(void * /*unused*/) -> CURL * {
+
     return curl_easy_init();
 }
 
-void destroy_system_easy(CURL *easy, void *) {
+void destroy_system_easy(CURL *easy, void * /*unused*/) {
     curl_easy_cleanup(easy);
 }
 
-CURLcode perform_system_request(
-    CURL *easy,
-    OriginResponseAccumulator &,
-    void *) {
+auto perform_system_request(CURL *easy, OriginResponseAccumulator & /*unused*/, void * /*unused*/) -> CURLcode {
+
     return curl_easy_perform(easy);
 }
 
-CURLcode read_system_response_code(CURL *easy, long *status, void *) {
+auto read_system_response_code(CURL *easy, long *status, void * /*unused*/) -> CURLcode {
+
     return curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, status);
 }
 
 class EasyDeleter final {
   public:
-    explicit EasyDeleter(OriginTransportApi transport) noexcept
-        : transport_(transport) {
-    }
+    explicit EasyDeleter(OriginTransportApi transport) noexcept : transport_(transport) {}
 
     void operator()(CURL *easy) const noexcept {
         if (easy != nullptr && transport_.destroy != nullptr) {
@@ -52,24 +50,22 @@ class EasyDeleter final {
 
 using EasyHandle = std::unique_ptr<CURL, EasyDeleter>;
 
-[[nodiscard]] bool valid_transport(
-    const OriginTransportApi &transport) noexcept {
+[[nodiscard]] auto valid_transport(const OriginTransportApi &transport) noexcept -> bool {
+
     return transport.create != nullptr && transport.destroy != nullptr && transport.perform != nullptr && transport.response_code != nullptr;
 }
 
-[[nodiscard]] bool valid_timeout(const OriginTimeoutApi &timeout) noexcept {
+[[nodiscard]] auto valid_timeout(const OriginTimeoutApi &timeout) noexcept -> bool {
+
     return timeout.remaining_milliseconds != nullptr;
 }
 
-[[nodiscard]] bool is_redirect_status(long status) noexcept {
+[[nodiscard]] auto is_redirect_status(long status) noexcept -> bool {
+
     return status == 301 || status == 302 || status == 303 || status == 307 || status == 308;
 }
 
-[[nodiscard]] OriginDownloadResult perform_origin_request(
-    const OriginUrl &origin,
-    OriginTimeoutApi timeout,
-    AddressResolverApi resolver,
-    OriginTransportApi transport) {
+[[nodiscard]] auto perform_origin_request(const OriginUrl &origin, OriginTimeoutApi timeout, AddressResolverApi resolver, OriginTransportApi transport) -> OriginDownloadResult {
     OriginDownloadResult result;
     if (!valid_transport(transport) || !valid_timeout(timeout)) {
         result.error = OriginDownloadError::invalid_argument;
@@ -88,8 +84,7 @@ using EasyHandle = std::unique_ptr<CURL, EasyDeleter>;
         return result;
     }
 
-    CurlResolvePin pin =
-        CurlResolvePin::create(origin, result.resolution.addresses);
+    CurlResolvePin pin = CurlResolvePin::create(origin, result.resolution.addresses);
     result.pin_error = pin.error();
     if (!pin) {
         result.error = OriginDownloadError::resolve_pin;
@@ -98,41 +93,34 @@ using EasyHandle = std::unique_ptr<CURL, EasyDeleter>;
 
     // DNS can consume part of the invocation budget. Refresh the remaining
     // time before giving curl its connect and whole-transfer limits.
-    const long timeout_milliseconds =
-        timeout.remaining_milliseconds(timeout.context);
+    const long timeout_milliseconds = timeout.remaining_milliseconds(timeout.context);
     if (timeout_milliseconds <= 0) {
         result.error = OriginDownloadError::deadline;
         return result;
     }
 
-    EasyHandle easy{
-        transport.create(transport.context), EasyDeleter{transport}};
+    EasyHandle easy{transport.create(transport.context), EasyDeleter{transport}};
     if (!easy) {
         result.error = OriginDownloadError::easy_init;
         return result;
     }
 
-    result.config_error = configure_origin_curl(
-        easy.get(), origin, pin, result.response, timeout_milliseconds);
+    result.config_error = configure_origin_curl(easy.get(), origin, pin, result.response, timeout_milliseconds);
     if (result.config_error != OriginCurlConfigError::none) {
         result.error = OriginDownloadError::curl_config;
         return result;
     }
 
-    result.curl_error =
-        transport.perform(easy.get(), result.response, transport.context);
+    result.curl_error = transport.perform(easy.get(), result.response, transport.context);
     // The compatibility contract retains exactly 10 MiB without reading a
     // probe byte. curl reports the callback's intentional short write as an
     // error, but this one fully classified condition is a completed body.
     if (result.curl_error != CURLE_OK && !is_body_limit_completion(result.curl_error, result.response)) {
-        result.error = result.response.error() == OriginResponseError::none
-                           ? OriginDownloadError::transfer
-                           : OriginDownloadError::response_policy;
+        result.error = result.response.error() == OriginResponseError::none ? OriginDownloadError::transfer : OriginDownloadError::response_policy;
         return result;
     }
 
-    result.curl_error = transport.response_code(
-        easy.get(), &result.status, transport.context);
+    result.curl_error = transport.response_code(easy.get(), &result.status, transport.context);
     if (result.curl_error != CURLE_OK) {
         result.error = OriginDownloadError::response_info;
         return result;
@@ -140,6 +128,7 @@ using EasyHandle = std::unique_ptr<CURL, EasyDeleter>;
     if (result.response.error() != OriginResponseError::none) {
         result.error = OriginDownloadError::response_policy;
     }
+
     return result;
 }
 
@@ -147,13 +136,15 @@ struct FixedTimeout {
     long milliseconds = 0;
 };
 
-long fixed_remaining_time(void *context) {
+auto fixed_remaining_time(void *context) -> long {
+
     return static_cast<FixedTimeout *>(context)->milliseconds;
 }
 
 } // namespace
 
-OriginTransportApi system_origin_transport() noexcept {
+auto system_origin_transport() noexcept -> OriginTransportApi {
+
     return {
         .context = nullptr,
         .create = &create_system_easy,
@@ -163,36 +154,25 @@ OriginTransportApi system_origin_transport() noexcept {
     };
 }
 
-OriginDownloadResult download_origin_once(
-    const OriginUrl &origin,
-    long timeout_milliseconds,
-    AddressResolverApi resolver,
-    OriginTransportApi transport) {
+auto download_origin_once(const OriginUrl &origin, long timeout_milliseconds, AddressResolverApi resolver, OriginTransportApi transport) -> OriginDownloadResult {
     if (timeout_milliseconds <= 0) {
         OriginDownloadResult result;
         result.error = OriginDownloadError::invalid_argument;
         return result;
     }
     FixedTimeout fixed{.milliseconds = timeout_milliseconds};
-    OriginDownloadResult result = perform_origin_request(
-        origin,
-        {.context = &fixed, .remaining_milliseconds = &fixed_remaining_time},
-        resolver,
-        transport);
+    OriginDownloadResult result = perform_origin_request(origin, {.context = &fixed, .remaining_milliseconds = &fixed_remaining_time}, resolver, transport);
     if (!result) {
         return result;
     }
     if (!result.response.finish(result.status)) {
         result.error = OriginDownloadError::response_policy;
     }
+
     return result;
 }
 
-OriginDownloadResult download_origin(
-    const OriginUrl &initial,
-    OriginTimeoutApi timeout,
-    AddressResolverApi resolver,
-    OriginTransportApi transport) {
+auto download_origin(const OriginUrl &initial, OriginTimeoutApi timeout, AddressResolverApi resolver, OriginTransportApi transport) -> OriginDownloadResult {
     OriginDownloadResult result;
     if (!valid_transport(transport) || !valid_timeout(timeout)) {
         result.error = OriginDownloadError::invalid_argument;
@@ -209,8 +189,7 @@ OriginDownloadResult download_origin(
     while (true) {
         // A new handle and resolve pin are created for every hop so no prior
         // hostname's validated address set can leak into the next request.
-        result = perform_origin_request(
-            tracker->current(), timeout, resolver, transport);
+        result = perform_origin_request(tracker->current(), timeout, resolver, transport);
         result.redirect_count = tracker->redirect_count();
         if (!result) {
             return result;

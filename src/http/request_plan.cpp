@@ -5,7 +5,7 @@
 
 namespace mediaproxy::http {
 
-RequestPlan plan_request(const EventParseResult &event) {
+auto plan_request(const EventParseResult &event) -> RequestPlan {
     if (!event.request) {
         return make_error_response(ErrorResponse::bad_request);
     }
@@ -18,6 +18,7 @@ RequestPlan plan_request(const EventParseResult &event) {
     if (source_url.empty()) {
         return make_error_response(ErrorResponse::bad_request);
     }
+
     return MediaRequest{
         .method = request.method,
         .decoded_path = request.decoded_path,

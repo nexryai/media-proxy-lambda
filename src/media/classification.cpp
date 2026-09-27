@@ -8,20 +8,16 @@
 namespace mediaproxy::media {
 namespace {
 
-[[nodiscard]] std::uint32_t read_u32_be(
-    std::span<const std::byte> body,
-    std::size_t offset) noexcept {
+[[nodiscard]] auto read_u32_be(std::span<const std::byte> body, std::size_t offset) noexcept -> std::uint32_t {
     std::uint32_t value = 0;
     for (std::size_t index = 0; index < 4; ++index) {
         value = (value << 8U) | std::to_integer<std::uint8_t>(body[offset + index]);
     }
+
     return value;
 }
 
-[[nodiscard]] bool matches_ascii(
-    std::span<const std::byte> body,
-    std::size_t offset,
-    std::string_view value) noexcept {
+[[nodiscard]] auto matches_ascii(std::span<const std::byte> body, std::size_t offset, std::string_view value) noexcept -> bool {
     if (offset > body.size() || value.size() > body.size() - offset) {
         return false;
     }
@@ -30,11 +26,11 @@ namespace {
             return false;
         }
     }
+
     return true;
 }
 
-[[nodiscard]] bool is_animated_webp(
-    std::span<const std::byte> body) noexcept {
+[[nodiscard]] auto is_animated_webp(std::span<const std::byte> body) noexcept -> bool {
     constexpr std::size_t animation_tag_offset = 0x1e;
     constexpr std::size_t animation_tag_size = 4;
     if (body.size() < animation_tag_offset + animation_tag_size) {
@@ -47,12 +43,13 @@ namespace {
             return false;
         }
     }
+
     return true;
 }
 
 } // namespace
 
-bool is_animated_avif(std::span<const std::byte> body) noexcept {
+auto is_animated_avif(std::span<const std::byte> body) noexcept -> bool {
     constexpr std::size_t minimum_ftyp_size = 16;
     constexpr std::size_t brand_size = 4;
     if (body.size() < minimum_ftyp_size) {
@@ -68,16 +65,16 @@ bool is_animated_avif(std::span<const std::byte> body) noexcept {
         return true;
     }
 
-    for (std::size_t offset = minimum_ftyp_size;
-         offset <= box_size - brand_size; offset += brand_size) {
+    for (std::size_t offset = minimum_ftyp_size; offset <= box_size - brand_size; offset += brand_size) {
         if (matches_ascii(body, offset, "avis")) {
             return true;
         }
     }
+
     return false;
 }
 
-bool is_convertible_mime(MimeType mime) noexcept {
+auto is_convertible_mime(MimeType mime) noexcept -> bool {
     switch (mime) {
         case MimeType::image_avif:
         case MimeType::image_ico:
@@ -94,16 +91,13 @@ bool is_convertible_mime(MimeType mime) noexcept {
     }
 }
 
-std::optional<MediaPlan> classify_media(
-    MimeType mime,
-    std::span<const std::byte> body,
-    bool force_static,
-    OutputFormat preferred_output) noexcept {
+auto classify_media(MimeType mime, std::span<const std::byte> body, bool force_static, OutputFormat preferred_output) noexcept -> std::optional<MediaPlan> {
     if (!is_convertible_mime(mime)) {
         return std::nullopt;
     }
 
     const bool animated = !force_static && (mime == MimeType::image_gif || (mime == MimeType::image_avif && is_animated_avif(body)) || (mime == MimeType::image_webp && is_animated_webp(body)));
+
     return MediaPlan{
         .animated = animated,
         .output = animated ? OutputFormat::webp : preferred_output,

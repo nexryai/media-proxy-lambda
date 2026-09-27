@@ -23,17 +23,13 @@ void append_u32(std::vector<std::byte> &output, std::uint32_t value) {
 }
 
 void convert_ico(std::span<const std::byte> bytes) {
-    static_cast<void>(mediaproxy::media::convert_media(bytes,
-                                                       mediaproxy::media::MimeType::image_ico, false,
-                                                       mediaproxy::media::OutputFormat::webp,
-                                                       mediaproxy::media::ImageDimensions{.width = 64, .height = 64}));
+    static_cast<void>(mediaproxy::media::convert_media(bytes, mediaproxy::media::MimeType::image_ico, false, mediaproxy::media::OutputFormat::webp, mediaproxy::media::ImageDimensions{.width = 64, .height = 64}));
 }
 
 } // namespace
 
-extern "C" int LLVMFuzzerTestOneInput(
-    const std::uint8_t *data,
-    std::size_t size) {
+// NOLINTNEXTLINE(readability-identifier-naming): required by libFuzzer ABI.
+extern "C" auto LLVMFuzzerTestOneInput(const std::uint8_t *data, std::size_t size) -> int {
     const auto bytes = std::as_bytes(std::span{data, size});
     convert_ico(bytes);
 
@@ -50,5 +46,6 @@ extern "C" int LLVMFuzzerTestOneInput(
     append_u32(wrapped, 22);
     wrapped.insert(wrapped.end(), bytes.begin(), bytes.end());
     convert_ico(wrapped);
+
     return 0;
 }

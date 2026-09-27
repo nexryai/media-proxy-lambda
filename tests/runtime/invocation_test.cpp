@@ -19,27 +19,24 @@ using mediaproxy::runtime::InvocationResponder;
 
 class FakeResponder final : public InvocationResponder {
   public:
-    bool send_response(
-        std::string_view request_id,
-        const HttpResponse &response) const override {
+    auto send_response(std::string_view request_id, const HttpResponse &response) const -> bool override {
         if (throw_response) {
             throw std::runtime_error{"response stream failed"};
         }
         response_request_id = request_id;
         response_status = response.status;
+
         return response_result;
     }
 
-    bool send_invocation_error(
-        std::string_view request_id,
-        std::string_view error_type,
-        std::string_view error_message) const override {
+    auto send_invocation_error(std::string_view request_id, std::string_view error_type, std::string_view error_message) const -> bool override {
         if (throw_error) {
             throw std::runtime_error{"error endpoint failed"};
         }
         error_request_id = request_id;
         this->error_type = error_type;
         this->error_message = error_message;
+
         return error_result;
     }
 
@@ -54,23 +51,25 @@ class FakeResponder final : public InvocationResponder {
     mutable std::string error_message;
 };
 
-HttpResponse Success(const Invocation &, void *) {
+auto success(const Invocation & /*unused*/, void * /*unused*/) -> HttpResponse {
+
     return {.status = 204, .headers = {}, .body = {}};
 }
 
-HttpResponse OutOfMemory(const Invocation &, void *) {
+auto out_of_memory(const Invocation & /*unused*/, void * /*unused*/) -> HttpResponse {
     throw std::bad_alloc{};
 }
 
-HttpResponse StandardFailure(const Invocation &, void *) {
+auto standard_failure(const Invocation & /*unused*/, void * /*unused*/) -> HttpResponse {
     throw std::runtime_error{"private detail must not be reported"};
 }
 
-HttpResponse UnknownFailure(const Invocation &, void *) {
+auto unknown_failure(const Invocation & /*unused*/, void * /*unused*/) -> HttpResponse {
     throw 7;
 }
 
-Invocation TestInvocation() {
+auto test_invocation() -> Invocation {
+
     return {
         .request_id = "request-7",
         .deadline_ms = 123,
@@ -81,16 +80,14 @@ Invocation TestInvocation() {
 
 TEST(RuntimeInvocation, SendsSuccessfulResponseForMatchingRequest) {
     FakeResponder responder;
-    const Invocation invocation = TestInvocation();
-    EXPECT_EQ(execute_invocation(responder, invocation, &Success),
-              InvocationExecutionResult::response_sent);
+    const Invocation invocation = test_invocation();
+    EXPECT_EQ(execute_invocation(responder, invocation, &success), InvocationExecutionResult::response_sent);
     EXPECT_EQ(responder.response_request_id, invocation.request_id);
     EXPECT_EQ(responder.response_status, 204U);
     EXPECT_TRUE(responder.error_request_id.empty());
 
     responder.response_result = false;
-    EXPECT_EQ(execute_invocation(responder, invocation, &Success),
-              InvocationExecutionResult::response_failure);
+    EXPECT_EQ(execute_invocation(responder, invocation, &success), InvocationExecutionResult::response_failure);
 }
 
 struct FailureCase {
@@ -101,61 +98,40 @@ struct FailureCase {
     InvocationExecutionResult result;
 };
 
-class RuntimeInvocationFailureTest : public testing::TestWithParam<FailureCase> {
-};
+class RuntimeInvocationFailureTest : public testing::TestWithParam<FailureCase> {};
 
 TEST_P(RuntimeInvocationFailureTest, ReportsSanitizedPreResponseFailure) {
     const FailureCase &expected = GetParam();
     FakeResponder responder;
-    const Invocation invocation = TestInvocation();
-    EXPECT_EQ(execute_invocation(responder, invocation, expected.handler),
-              expected.result);
+    const Invocation invocation = test_invocation();
+    EXPECT_EQ(execute_invocation(responder, invocation, expected.handler), expected.result);
     EXPECT_EQ(responder.error_request_id, invocation.request_id);
     EXPECT_EQ(responder.error_type, expected.error_type);
     EXPECT_EQ(responder.error_message, expected.error_message);
-    EXPECT_EQ(responder.error_message.find("private detail"),
-              std::string::npos);
+    EXPECT_EQ(responder.error_message.find("private detail"), std::string::npos);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    RuntimeInvocation,
-    RuntimeInvocationFailureTest,
-    testing::Values(
-        FailureCase{"out_of_memory", &OutOfMemory, "RuntimeOutOfMemory",
-                    "Invocation allocation failed before response",
-                    InvocationExecutionResult::out_of_memory_reported},
-        FailureCase{"standard", &StandardFailure,
-                    "UnhandledInvocationError", "Invocation failed before response",
-                    InvocationExecutionResult::unhandled_error_reported},
-        FailureCase{"unknown", &UnknownFailure, "UnknownInvocationError",
-                    "Invocation failed before response",
-                    InvocationExecutionResult::unknown_error_reported},
-        FailureCase{"missing_handler", nullptr, "UnhandledInvocationError",
-                    "Invocation failed before response",
-                    InvocationExecutionResult::unhandled_error_reported}),
-    [](const testing::TestParamInfo<FailureCase> &info) {
-        return info.param.name;
-    });
+INSTANTIATE_TEST_SUITE_P(RuntimeInvocation, RuntimeInvocationFailureTest,
+                         testing::Values(FailureCase{"out_of_memory", &out_of_memory, "RuntimeOutOfMemory", "Invocation allocation failed before response", InvocationExecutionResult::out_of_memory_reported},
+                                         FailureCase{"standard", &standard_failure, "UnhandledInvocationError", "Invocation failed before response", InvocationExecutionResult::unhandled_error_reported},
+                                         FailureCase{"unknown", &unknown_failure, "UnknownInvocationError", "Invocation failed before response", InvocationExecutionResult::unknown_error_reported},
+                                         FailureCase{"missing_handler", nullptr, "UnhandledInvocationError", "Invocation failed before response", InvocationExecutionResult::unhandled_error_reported}),
+                         [](const testing::TestParamInfo<FailureCase> &info) -> const char * { return info.param.name; });
 
 TEST(RuntimeInvocation, StopsWhenInvocationErrorSubmissionFails) {
     FakeResponder responder;
     responder.error_result = false;
-    EXPECT_EQ(execute_invocation(
-                  responder, TestInvocation(), &StandardFailure),
-              InvocationExecutionResult::error_submission_failure);
+    EXPECT_EQ(execute_invocation(responder, test_invocation(), &standard_failure), InvocationExecutionResult::error_submission_failure);
 
     responder.error_result = true;
     responder.throw_error = true;
-    EXPECT_EQ(execute_invocation(
-                  responder, TestInvocation(), &StandardFailure),
-              InvocationExecutionResult::error_submission_failure);
+    EXPECT_EQ(execute_invocation(responder, test_invocation(), &standard_failure), InvocationExecutionResult::error_submission_failure);
 }
 
 TEST(RuntimeInvocation, DoesNotReportErrorAfterResponseSubmissionStarts) {
     FakeResponder responder;
     responder.throw_response = true;
-    EXPECT_EQ(execute_invocation(responder, TestInvocation(), &Success),
-              InvocationExecutionResult::response_failure);
+    EXPECT_EQ(execute_invocation(responder, test_invocation(), &success), InvocationExecutionResult::response_failure);
     EXPECT_TRUE(responder.error_request_id.empty());
 }
 

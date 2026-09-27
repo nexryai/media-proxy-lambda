@@ -38,11 +38,9 @@ using mediaproxy::media::EncodingQuality;
 using mediaproxy::media::initialize_apng_webp_config;
 using mediaproxy::media::initialize_vips;
 
-std::string Sha256(std::span<const std::byte> input) {
+auto sha256(std::span<const std::byte> input) -> std::string {
     std::array<std::uint8_t, SHA256_DIGEST_LENGTH> digest{};
-    EXPECT_EQ(::SHA256(reinterpret_cast<const std::uint8_t *>(input.data()),
-                       input.size(), digest.data()),
-              digest.data());
+    EXPECT_EQ(::SHA256(reinterpret_cast<const std::uint8_t *>(input.data()), input.size(), digest.data()), digest.data());
     constexpr char hex[] = "0123456789abcdef";
     std::string output;
     output.reserve(digest.size() * 2);
@@ -50,16 +48,17 @@ std::string Sha256(std::span<const std::byte> input) {
         output.push_back(hex[byte >> 4U]);
         output.push_back(hex[byte & 0x0fU]);
     }
+
     return output;
 }
 
-std::vector<std::byte> ReadFixture(const char *name) {
+auto read_fixture(const char *name) -> std::vector<std::byte> {
     const std::string path = std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/fixtures/media/apng/" + name;
     std::ifstream input(path, std::ios::binary);
     EXPECT_TRUE(input) << path;
-    const std::vector<char> bytes{
-        std::istreambuf_iterator<char>(input), {}};
+    const std::vector<char> bytes{std::istreambuf_iterator<char>(input), {}};
     const auto *begin = reinterpret_cast<const std::byte *>(bytes.data());
+
     return {begin, begin + bytes.size()};
 }
 
@@ -71,9 +70,7 @@ class ApngConversionTest : public testing::Test {
 };
 
 TEST_F(ApngConversionTest, UsesSharedQualityInLossyWebpConfig) {
-    for (const auto [quality, expected] : {
-             std::pair{EncodingQuality::standard, 65.0F},
-             std::pair{EncodingQuality::url_only, 70.0F}}) {
+    for (const auto [quality, expected] : {std::pair{EncodingQuality::standard, 65.0F}, std::pair{EncodingQuality::url_only, 70.0F}}) {
         WebPConfig config{};
         ASSERT_TRUE(initialize_apng_webp_config(config, quality));
         EXPECT_EQ(config.quality, expected);
@@ -83,30 +80,24 @@ TEST_F(ApngConversionTest, UsesSharedQualityInLossyWebpConfig) {
 }
 
 TEST_F(ApngConversionTest, EmitsEveryCallbackAndUsesTargetDimensions) {
-    const auto result =
-        convert_apng_to_webp(ReadFixture("over-none.png"), 8, 6);
+    const auto result = convert_apng_to_webp(read_fixture("over-none.png"), 8, 6);
     ASSERT_TRUE(result) << static_cast<int>(result.error);
-    ImagePtr decoded(vips_image_new_from_buffer(result.body.data(),
-                                                result.body.size(), "", "n", -1, nullptr));
+    ImagePtr decoded(vips_image_new_from_buffer(result.body.data(), result.body.size(), "", "n", -1, nullptr));
     ASSERT_NE(decoded, nullptr) << vips_error_buffer();
     EXPECT_EQ(vips_image_get_width(decoded.get()), 8);
     EXPECT_EQ(vips_image_get_height(decoded.get()), 18);
     int pages = 0;
     int page_height = 0;
     ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_N_PAGES, &pages), 0);
-    ASSERT_EQ(vips_image_get_int(
-                  decoded.get(), VIPS_META_PAGE_HEIGHT, &page_height),
-              0);
+    ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_PAGE_HEIGHT, &page_height), 0);
     EXPECT_EQ(pages, 3);
     EXPECT_EQ(page_height, 6);
 }
 
 TEST_F(ApngConversionTest, PreservesIssueOneFirstFrame) {
-    const auto result = convert_apng_to_webp(
-        ReadFixture("issue-1-first-frame.png"), 4, 4);
+    const auto result = convert_apng_to_webp(read_fixture("issue-1-first-frame.png"), 4, 4);
     ASSERT_TRUE(result) << static_cast<int>(result.error);
-    ImagePtr decoded(vips_image_new_from_buffer(result.body.data(),
-                                                result.body.size(), "", "n", -1, nullptr));
+    ImagePtr decoded(vips_image_new_from_buffer(result.body.data(), result.body.size(), "", "n", -1, nullptr));
     ASSERT_NE(decoded, nullptr) << vips_error_buffer();
     int pages = 0;
     ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_N_PAGES, &pages), 0);
@@ -116,10 +107,8 @@ TEST_F(ApngConversionTest, PreservesIssueOneFirstFrame) {
         .bytes = reinterpret_cast<const std::uint8_t *>(result.body.data()),
         .size = result.body.size(),
     };
-    using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
-                                       decltype(&WebPAnimDecoderDelete)>;
-    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
-                       &WebPAnimDecoderDelete);
+    using DecoderPtr = std::unique_ptr<WebPAnimDecoder, decltype(&WebPAnimDecoderDelete)>;
+    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr), &WebPAnimDecoderDelete);
     ASSERT_NE(decoder, nullptr);
     std::uint8_t *pixels = nullptr;
     int timestamp = -1;
@@ -134,21 +123,17 @@ TEST_F(ApngConversionTest, PreservesIssueOneFirstFrame) {
 }
 
 TEST_F(ApngConversionTest, EncodesIssueOneLayoutWithPinnedLossyBytes) {
-    const auto input = ReadFixture("issue-1-first-frame.png");
+    const auto input = read_fixture("issue-1-first-frame.png");
     const auto result = convert_apng_to_webp(input, 4, 4);
     ASSERT_TRUE(result) << static_cast<int>(result.error);
-    EXPECT_EQ(Sha256(result.body),
-              "baa3c6261a90cddf72889be4a14bdee61ad4102e6a08cd0b0388d8bfff8676f7");
-    const auto url_only = convert_apng_to_webp(
-        input, 4, 4, EncodingQuality::url_only);
+    EXPECT_EQ(sha256(result.body), "baa3c6261a90cddf72889be4a14bdee61ad4102e6a08cd0b0388d8bfff8676f7");
+    const auto url_only = convert_apng_to_webp(input, 4, 4, EncodingQuality::url_only);
     ASSERT_TRUE(url_only) << static_cast<int>(url_only.error);
-    EXPECT_EQ(Sha256(url_only.body),
-              "6d6e8467ebaa48b3f56715cc86825df9a4667bcdc5f8b10aec81c1ceae830691");
+    EXPECT_EQ(sha256(url_only.body), "6d6e8467ebaa48b3f56715cc86825df9a4667bcdc5f8b10aec81c1ceae830691");
     EXPECT_NE(result.body, url_only.body);
     const auto enlarged = convert_apng_to_webp(input, 128, 128);
     ASSERT_TRUE(enlarged) << static_cast<int>(enlarged.error);
-    EXPECT_EQ(Sha256(enlarged.body),
-              "6a9654e8af11dfffcf80266929264e66785dcce645746cfdeb418e4546476eb2");
+    EXPECT_EQ(sha256(enlarged.body), "6a9654e8af11dfffcf80266929264e66785dcce645746cfdeb418e4546476eb2");
 
     const auto decoded = mediaproxy::media::decode_apng_frames(input);
     ASSERT_TRUE(decoded);
@@ -157,63 +142,38 @@ TEST_F(ApngConversionTest, EncodesIssueOneLayoutWithPinnedLossyBytes) {
         .bytes = reinterpret_cast<const std::uint8_t *>(result.body.data()),
         .size = result.body.size(),
     };
-    using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
-                                       decltype(&WebPAnimDecoderDelete)>;
-    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
-                       &WebPAnimDecoderDelete);
+    using DecoderPtr = std::unique_ptr<WebPAnimDecoder, decltype(&WebPAnimDecoderDelete)>;
+    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr), &WebPAnimDecoderDelete);
     ASSERT_NE(decoder, nullptr);
-    constexpr std::array<std::string_view, 5> expected_frame_hashes{
-        "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
-        "fec0f57de0b19bc7dacb5b0fc3de7b56fc68dfdbeeebc8f9f4c506bf6e821c77",
-        "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e",
-        "f4e50f9c68e78511ed9c026c4c3a109c74171bc8faa0ee38a1bdd4da526b18dc",
-        "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052"};
-    constexpr std::array<std::string_view, 5> expected_lossy_hashes{
-        "40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6",
-        "e62048d7393271f0eb4aca65e602c5123f75eef7527f30c78ebfabfa4d041634",
-        "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e",
-        "56a8132482799498ba0c748a1982192e457bfd6e608f40fc5daad4f94f730988",
-        "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052"};
+    constexpr std::array<std::string_view, 5> expected_frame_hashes{"40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6", "fec0f57de0b19bc7dacb5b0fc3de7b56fc68dfdbeeebc8f9f4c506bf6e821c77", "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e",
+                                                                    "f4e50f9c68e78511ed9c026c4c3a109c74171bc8faa0ee38a1bdd4da526b18dc", "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052"};
+    constexpr std::array<std::string_view, 5> expected_lossy_hashes{"40ec232d5d5d799b4ef08c2459b1109491948123c89ebf704636d85aede601d6", "e62048d7393271f0eb4aca65e602c5123f75eef7527f30c78ebfabfa4d041634", "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e",
+                                                                    "56a8132482799498ba0c748a1982192e457bfd6e608f40fc5daad4f94f730988", "d0462ef3919b0811d24ec0e1f57f64ec30976722fb69f4b662c6928e65a9c052"};
     ASSERT_EQ(decoded.frames.size(), expected_frame_hashes.size());
-    for (std::size_t frame_index = 0; frame_index < decoded.frames.size();
-         ++frame_index) {
+    for (std::size_t frame_index = 0; frame_index < decoded.frames.size(); ++frame_index) {
         const auto &frame = decoded.frames[frame_index];
-        const auto composed = mediaproxy::media::compose_apng_frame(canvas,
-                                                                    decoded.canvas_width, decoded.canvas_height, frame.control,
-                                                                    frame.rgba);
+        const auto composed = mediaproxy::media::compose_apng_frame(canvas, decoded.canvas_width, decoded.canvas_height, frame.control, frame.rgba);
         ASSERT_TRUE(composed);
         std::uint8_t *pixels = nullptr;
         int timestamp = 0;
         ASSERT_EQ(WebPAnimDecoderGetNext(decoder.get(), &pixels, &timestamp), 1);
         ASSERT_NE(pixels, nullptr);
-        EXPECT_EQ(Sha256(composed.displayed_rgba),
-                  expected_frame_hashes[frame_index]);
-        EXPECT_EQ(Sha256(std::as_bytes(std::span{pixels,
-                                                 composed.displayed_rgba.size()})),
-                  expected_lossy_hashes[frame_index]);
+        EXPECT_EQ(sha256(composed.displayed_rgba), expected_frame_hashes[frame_index]);
+        EXPECT_EQ(sha256(std::as_bytes(std::span{pixels, composed.displayed_rgba.size()})), expected_lossy_hashes[frame_index]);
     }
     EXPECT_EQ(WebPAnimDecoderHasMoreFrames(decoder.get()), 0);
 }
 
 TEST_F(ApngConversionTest, PreservesIssueTwoColorsAndTiming) {
-    const auto input = ReadFixture("issue-2-color-timing.png");
+    const auto input = read_fixture("issue-2-color-timing.png");
     const auto source = mediaproxy::media::decode_apng_frames(input);
     ASSERT_TRUE(source);
     ASSERT_EQ(source.frames.size(), 3U);
-    constexpr std::array<std::string_view, 3> expected_frame_hashes{
-        "5b7080fbbbcf73befa36932de9bcfec0023ce2ac59635fde3f804023a430243f",
-        "5c0517effd8e1c3aa0c656bff757c02abb9269158a84ceb215605c8bf223b83d",
-        "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"};
-    constexpr std::array<std::array<std::string_view, 3>, 2>
-        expected_lossy_hashes{{{"baac833456646ab51172893b5c7e10ccfdd71430e9ee9657f1f27fbb0f0aca25",
-                                "c61ac2cf77fa536419c5cecfc05a5b80f30066299f850fc295b4ce1a1f185909",
-                                "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"},
-                               {"fee84b983690446c421327585579fc0d4c19c016ea59b88376d85efbf612b28b",
-                                "5aed10f5b7402ebebf792e8987e2a59f976792855237074b5e2bcd5ba4ffdb9e",
-                                "44570e89bf3ef273a7145bff5bfeafb307ce57932ec9bd6f95622f2f9ab282b2"}}};
+    constexpr std::array<std::string_view, 3> expected_frame_hashes{"5b7080fbbbcf73befa36932de9bcfec0023ce2ac59635fde3f804023a430243f", "5c0517effd8e1c3aa0c656bff757c02abb9269158a84ceb215605c8bf223b83d", "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"};
+    constexpr std::array<std::array<std::string_view, 3>, 2> expected_lossy_hashes{{{"baac833456646ab51172893b5c7e10ccfdd71430e9ee9657f1f27fbb0f0aca25", "c61ac2cf77fa536419c5cecfc05a5b80f30066299f850fc295b4ce1a1f185909", "83fd42e005dae0b86d822aca42841f845589041c4031397f06f631b814991e1e"},
+                                                                                    {"fee84b983690446c421327585579fc0d4c19c016ea59b88376d85efbf612b28b", "5aed10f5b7402ebebf792e8987e2a59f976792855237074b5e2bcd5ba4ffdb9e", "44570e89bf3ef273a7145bff5bfeafb307ce57932ec9bd6f95622f2f9ab282b2"}}};
     std::size_t quality_index = 0;
-    for (const auto quality : {
-             EncodingQuality::standard, EncodingQuality::url_only}) {
+    for (const auto quality : {EncodingQuality::standard, EncodingQuality::url_only}) {
         SCOPED_TRACE(static_cast<int>(quality));
         const auto result = convert_apng_to_webp(input, 4, 4, quality);
         ASSERT_TRUE(result) << static_cast<int>(result.error);
@@ -221,29 +181,20 @@ TEST_F(ApngConversionTest, PreservesIssueTwoColorsAndTiming) {
             .bytes = reinterpret_cast<const std::uint8_t *>(result.body.data()),
             .size = result.body.size(),
         };
-        using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
-                                           decltype(&WebPAnimDecoderDelete)>;
-        DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
-                           &WebPAnimDecoderDelete);
+        using DecoderPtr = std::unique_ptr<WebPAnimDecoder, decltype(&WebPAnimDecoderDelete)>;
+        DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr), &WebPAnimDecoderDelete);
         ASSERT_NE(decoder, nullptr);
         std::vector<std::byte> canvas(4U * 4U * 4U, std::byte{0});
         for (std::size_t index = 0; index < source.frames.size(); ++index) {
             const auto &frame = source.frames[index];
-            const auto composed = mediaproxy::media::compose_apng_frame(canvas,
-                                                                        source.canvas_width, source.canvas_height, frame.control,
-                                                                        frame.rgba);
+            const auto composed = mediaproxy::media::compose_apng_frame(canvas, source.canvas_width, source.canvas_height, frame.control, frame.rgba);
             ASSERT_TRUE(composed);
-            EXPECT_EQ(Sha256(composed.displayed_rgba),
-                      expected_frame_hashes[index]);
+            EXPECT_EQ(sha256(composed.displayed_rgba), expected_frame_hashes[index]);
             std::uint8_t *pixels = nullptr;
             int timestamp = 0;
-            ASSERT_EQ(WebPAnimDecoderGetNext(
-                          decoder.get(), &pixels, &timestamp),
-                      1);
+            ASSERT_EQ(WebPAnimDecoderGetNext(decoder.get(), &pixels, &timestamp), 1);
             ASSERT_NE(pixels, nullptr);
-            EXPECT_EQ(Sha256(std::as_bytes(std::span{pixels,
-                                                     composed.displayed_rgba.size()})),
-                      expected_lossy_hashes[quality_index][index]);
+            EXPECT_EQ(sha256(std::as_bytes(std::span{pixels, composed.displayed_rgba.size()})), expected_lossy_hashes[quality_index][index]);
             if (index < 2U) {
                 EXPECT_EQ(timestamp, index == 0U ? 5000 : 6000);
             }
@@ -254,21 +205,18 @@ TEST_F(ApngConversionTest, PreservesIssueTwoColorsAndTiming) {
 }
 
 TEST_F(ApngConversionTest, Preserves16BitMidtonesAcrossLossyEncoding) {
-    const auto input = ReadFixture("16bit-srgb-midtones.png");
+    const auto input = read_fixture("16bit-srgb-midtones.png");
     const auto source = mediaproxy::media::decode_apng_frames(input);
     ASSERT_TRUE(source);
     ASSERT_EQ(source.frames.size(), 2U);
     constexpr std::array<std::array<std::uint8_t, 4>, 2> colors{{{188, 195, 216, 255}, {43, 55, 94, 255}}};
     for (std::size_t frame = 0; frame < colors.size(); ++frame) {
         for (std::size_t channel = 0; channel < 4; ++channel) {
-            EXPECT_EQ(std::to_integer<std::uint8_t>(
-                          source.frames[frame].rgba[channel]),
-                      colors[frame][channel]);
+            EXPECT_EQ(std::to_integer<std::uint8_t>(source.frames[frame].rgba[channel]), colors[frame][channel]);
         }
     }
 
-    for (const auto quality : {
-             EncodingQuality::standard, EncodingQuality::url_only}) {
+    for (const auto quality : {EncodingQuality::standard, EncodingQuality::url_only}) {
         SCOPED_TRACE(static_cast<int>(quality));
         const auto result = convert_apng_to_webp(input, 4, 4, quality);
         ASSERT_TRUE(result) << static_cast<int>(result.error);
@@ -276,16 +224,13 @@ TEST_F(ApngConversionTest, Preserves16BitMidtonesAcrossLossyEncoding) {
             .bytes = reinterpret_cast<const std::uint8_t *>(result.body.data()),
             .size = result.body.size(),
         };
-        using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
-                                           decltype(&WebPAnimDecoderDelete)>;
-        DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
-                           &WebPAnimDecoderDelete);
+        using DecoderPtr = std::unique_ptr<WebPAnimDecoder, decltype(&WebPAnimDecoderDelete)>;
+        DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr), &WebPAnimDecoderDelete);
         ASSERT_NE(decoder, nullptr);
         for (const auto &expected : colors) {
             std::uint8_t *pixels = nullptr;
             int timestamp = 0;
-            ASSERT_EQ(WebPAnimDecoderGetNext(decoder.get(), &pixels, &timestamp),
-                      1);
+            ASSERT_EQ(WebPAnimDecoderGetNext(decoder.get(), &pixels, &timestamp), 1);
             ASSERT_NE(pixels, nullptr);
             for (std::size_t channel = 0; channel < 3; ++channel) {
                 EXPECT_NEAR(pixels[channel], expected[channel], 10);
@@ -297,17 +242,14 @@ TEST_F(ApngConversionTest, Preserves16BitMidtonesAcrossLossyEncoding) {
 }
 
 TEST_F(ApngConversionTest, PaletteAlphaSurvivesWebpEncoding) {
-    const auto result = convert_apng_to_webp(
-        ReadFixture("palette-alpha.png"), 2, 2);
+    const auto result = convert_apng_to_webp(read_fixture("palette-alpha.png"), 2, 2);
     ASSERT_TRUE(result) << static_cast<int>(result.error);
     const WebPData webp{
         .bytes = reinterpret_cast<const std::uint8_t *>(result.body.data()),
         .size = result.body.size(),
     };
-    using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
-                                       decltype(&WebPAnimDecoderDelete)>;
-    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
-                       &WebPAnimDecoderDelete);
+    using DecoderPtr = std::unique_ptr<WebPAnimDecoder, decltype(&WebPAnimDecoderDelete)>;
+    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr), &WebPAnimDecoderDelete);
     ASSERT_NE(decoder, nullptr);
     std::uint8_t *pixels = nullptr;
     int timestamp = 0;
@@ -319,17 +261,14 @@ TEST_F(ApngConversionTest, PaletteAlphaSurvivesWebpEncoding) {
 }
 
 TEST_F(ApngConversionTest, UsesPrecedingFrameDelays) {
-    const auto result = convert_apng_to_webp(
-        ReadFixture("varying-delays-loop.png"), 4, 4);
+    const auto result = convert_apng_to_webp(read_fixture("varying-delays-loop.png"), 4, 4);
     ASSERT_TRUE(result) << static_cast<int>(result.error);
     const WebPData webp{
         .bytes = reinterpret_cast<const std::uint8_t *>(result.body.data()),
         .size = result.body.size(),
     };
-    using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
-                                       decltype(&WebPAnimDecoderDelete)>;
-    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
-                       &WebPAnimDecoderDelete);
+    using DecoderPtr = std::unique_ptr<WebPAnimDecoder, decltype(&WebPAnimDecoderDelete)>;
+    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr), &WebPAnimDecoderDelete);
     ASSERT_NE(decoder, nullptr);
     WebPAnimInfo info{};
     ASSERT_EQ(WebPAnimDecoderGetInfo(decoder.get(), &info), 1);
@@ -356,31 +295,23 @@ TEST_F(ApngConversionTest, ConvertsReportedImageWhenAvailable) {
     ASSERT_FALSE(raw.empty());
     const auto *begin = reinterpret_cast<const std::byte *>(raw.data());
     const std::vector<std::byte> body(begin, begin + raw.size());
-    const auto result = mediaproxy::media::convert_media(body,
-                                                         mediaproxy::media::MimeType::image_png, false,
-                                                         mediaproxy::media::OutputFormat::webp,
-                                                         mediaproxy::media::ImageDimensions{3200, 3200});
+    const auto result = mediaproxy::media::convert_media(body, mediaproxy::media::MimeType::image_png, false, mediaproxy::media::OutputFormat::webp, mediaproxy::media::ImageDimensions{.width = 3200, .height = 3200});
     ASSERT_TRUE(result) << static_cast<int>(result.error);
     EXPECT_EQ(result.encoded_format, mediaproxy::media::OutputFormat::webp);
-    ImagePtr decoded(vips_image_new_from_buffer(result.body.data(),
-                                                result.body.size(), "", "n", -1, nullptr));
+    ImagePtr decoded(vips_image_new_from_buffer(result.body.data(), result.body.size(), "", "n", -1, nullptr));
     ASSERT_NE(decoded, nullptr) << vips_error_buffer();
     int pages = 0;
     ASSERT_EQ(vips_image_get_int(decoded.get(), VIPS_META_N_PAGES, &pages), 0);
     EXPECT_EQ(pages, 5);
     const auto source = mediaproxy::media::decode_apng_frames(body);
     ASSERT_TRUE(source);
-    std::vector<std::byte> canvas(
-        static_cast<std::size_t>(source.canvas_width) * source.canvas_height * 4U,
-        std::byte{0});
+    std::vector<std::byte> canvas(static_cast<std::size_t>(source.canvas_width) * source.canvas_height * 4U, std::byte{0});
     const WebPData webp{
         .bytes = reinterpret_cast<const std::uint8_t *>(result.body.data()),
         .size = result.body.size(),
     };
-    using DecoderPtr = std::unique_ptr<WebPAnimDecoder,
-                                       decltype(&WebPAnimDecoderDelete)>;
-    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr),
-                       &WebPAnimDecoderDelete);
+    using DecoderPtr = std::unique_ptr<WebPAnimDecoder, decltype(&WebPAnimDecoderDelete)>;
+    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr), &WebPAnimDecoderDelete);
     ASSERT_NE(decoder, nullptr);
     ASSERT_EQ(source.frames.size(), 5U);
     for (std::size_t index = 0; index < source.frames.size(); ++index) {
@@ -390,9 +321,7 @@ TEST_F(ApngConversionTest, ConvertsReportedImageWhenAvailable) {
         if (index + 1U < source.frames.size()) {
             EXPECT_EQ(timestamp, static_cast<int>(index + 1U) * 5000);
         }
-        const auto composed = mediaproxy::media::compose_apng_frame(canvas,
-                                                                    source.canvas_width, source.canvas_height,
-                                                                    source.frames[index].control, source.frames[index].rgba);
+        const auto composed = mediaproxy::media::compose_apng_frame(canvas, source.canvas_width, source.canvas_height, source.frames[index].control, source.frames[index].rgba);
         ASSERT_TRUE(composed);
         EXPECT_NE(pixels, nullptr);
     }
@@ -400,10 +329,8 @@ TEST_F(ApngConversionTest, ConvertsReportedImageWhenAvailable) {
 }
 
 TEST_F(ApngConversionTest, RejectsMalformedAndZeroTarget) {
-    EXPECT_FALSE(convert_apng_to_webp(
-        ReadFixture("invalid-crc.png"), 4, 4));
-    EXPECT_FALSE(convert_apng_to_webp(
-        ReadFixture("over-none.png"), 0, 4));
+    EXPECT_FALSE(convert_apng_to_webp(read_fixture("invalid-crc.png"), 4, 4));
+    EXPECT_FALSE(convert_apng_to_webp(read_fixture("over-none.png"), 0, 4));
 }
 
 } // namespace

@@ -14,15 +14,11 @@ namespace {
 
 using AddressBytes = std::array<std::uint8_t, 16>;
 
-[[nodiscard]] AddressPolicyResult fail(AddressError error) {
+[[nodiscard]] auto fail(AddressError error) -> AddressPolicyResult {
     return {.address = {}, .error = error};
 }
 
-template <std::size_t Size>
-[[nodiscard]] bool has_prefix(
-    const AddressBytes &address,
-    const std::array<std::uint8_t, Size> &prefix,
-    unsigned int prefix_bits) noexcept {
+template <std::size_t Size> [[nodiscard]] auto has_prefix(const AddressBytes &address, const std::array<std::uint8_t, Size> &prefix, unsigned int prefix_bits) noexcept -> bool {
     const std::size_t full_bytes = prefix_bits / 8U;
     const unsigned int remaining_bits = prefix_bits % 8U;
     if (!std::equal(prefix.begin(), prefix.begin() + full_bytes, address.begin())) {
@@ -32,24 +28,19 @@ template <std::size_t Size>
         return true;
     }
     const auto mask = static_cast<std::uint8_t>(0xffU << (8U - remaining_bits));
+
     return (address[full_bytes] & mask) == (prefix[full_bytes] & mask);
 }
 
-[[nodiscard]] bool ipv4_prefix(
-    const AddressBytes &address,
-    std::array<std::uint8_t, 4> prefix,
-    unsigned int prefix_bits) noexcept {
+[[nodiscard]] auto ipv4_prefix(const AddressBytes &address, std::array<std::uint8_t, 4> prefix, unsigned int prefix_bits) noexcept -> bool {
     return has_prefix(address, prefix, prefix_bits);
 }
 
-[[nodiscard]] bool ipv6_prefix(
-    const AddressBytes &address,
-    std::array<std::uint8_t, 16> prefix,
-    unsigned int prefix_bits) noexcept {
+[[nodiscard]] auto ipv6_prefix(const AddressBytes &address, std::array<std::uint8_t, 16> prefix, unsigned int prefix_bits) noexcept -> bool {
     return has_prefix(address, prefix, prefix_bits);
 }
 
-[[nodiscard]] AddressError classify_ipv4(const AddressBytes &address) noexcept {
+[[nodiscard]] auto classify_ipv4(const AddressBytes &address) noexcept -> AddressError {
     if (ipv4_prefix(address, {0, 0, 0, 0}, 32)) {
         return AddressError::unspecified;
     }
@@ -69,13 +60,15 @@ template <std::size_t Size>
         return AddressError::denied_range;
     }
 
-    if (ipv4_prefix(address, {192, 0, 0, 0}, 24) || ipv4_prefix(address, {192, 0, 2, 0}, 24) || ipv4_prefix(address, {192, 88, 99, 0}, 24) || ipv4_prefix(address, {198, 18, 0, 0}, 15) || ipv4_prefix(address, {198, 51, 100, 0}, 24) || ipv4_prefix(address, {203, 0, 113, 0}, 24) || ipv4_prefix(address, {240, 0, 0, 0}, 4)) {
+    if (ipv4_prefix(address, {192, 0, 0, 0}, 24) || ipv4_prefix(address, {192, 0, 2, 0}, 24) || ipv4_prefix(address, {192, 88, 99, 0}, 24) || ipv4_prefix(address, {198, 18, 0, 0}, 15) || ipv4_prefix(address, {198, 51, 100, 0}, 24) || ipv4_prefix(address, {203, 0, 113, 0}, 24) ||
+        ipv4_prefix(address, {240, 0, 0, 0}, 4)) {
         return AddressError::not_global_unicast;
     }
+
     return AddressError::none;
 }
 
-[[nodiscard]] AddressError classify_ipv6(const AddressBytes &address) noexcept {
+[[nodiscard]] auto classify_ipv6(const AddressBytes &address) noexcept -> AddressError {
     constexpr std::array<std::uint8_t, 16> zero{};
     if (address == zero) {
         return AddressError::unspecified;
@@ -105,12 +98,13 @@ template <std::size_t Size>
     if (ipv6_prefix(address, {0x01, 0x00}, 64) || ipv6_prefix(address, {0x20, 0x01}, 23) || ipv6_prefix(address, {0x20, 0x02}, 16) || ipv6_prefix(address, {0x3f, 0xff}, 20) || !ipv6_prefix(address, {0x20}, 3)) {
         return AddressError::not_global_unicast;
     }
+
     return AddressError::none;
 }
 
 } // namespace
 
-AddressPolicyResult validate_public_address(std::string_view text) {
+auto validate_public_address(std::string_view text) -> AddressPolicyResult {
     if (text.empty() || text.size() >= INET6_ADDRSTRLEN || text.find('\0') != std::string_view::npos) {
         return fail(AddressError::parse_failure);
     }
@@ -122,22 +116,15 @@ AddressPolicyResult validate_public_address(std::string_view text) {
     AddressBytes bytes{};
     if (inet_pton(AF_INET, terminated.c_str(), bytes.data()) == 1) {
         const AddressError error = classify_ipv4(bytes);
-        return error == AddressError::none
-                   ? AddressPolicyResult{
-                         .address = {.family = AddressFamily::ipv4, .bytes = bytes},
-                         .error = AddressError::none}
-                   : fail(error);
+        return error == AddressError::none ? AddressPolicyResult{.address = {.family = AddressFamily::ipv4, .bytes = bytes}, .error = AddressError::none} : fail(error);
     }
 
     bytes = {};
     if (inet_pton(AF_INET6, terminated.c_str(), bytes.data()) == 1) {
         const AddressError error = classify_ipv6(bytes);
-        return error == AddressError::none
-                   ? AddressPolicyResult{
-                         .address = {.family = AddressFamily::ipv6, .bytes = bytes},
-                         .error = AddressError::none}
-                   : fail(error);
+        return error == AddressError::none ? AddressPolicyResult{.address = {.family = AddressFamily::ipv6, .bytes = bytes}, .error = AddressError::none} : fail(error);
     }
+
     return fail(AddressError::parse_failure);
 }
 

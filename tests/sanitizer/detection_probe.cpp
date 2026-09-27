@@ -6,8 +6,7 @@
 namespace {
 
 int trigger_address_error() {
-    volatile char *const memory =
-        static_cast<volatile char *>(std::malloc(4));
+    volatile char *const memory = static_cast<volatile char *>(std::malloc(4));
     if (memory == nullptr) {
         return 2;
     }

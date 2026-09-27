@@ -34,8 +34,7 @@ void write_json_string(std::FILE *output, std::string_view value) noexcept {
                 break;
             default:
                 if (character < 0x20U) {
-                    const char escape[] = {'\\', 'u', '0', '0',
-                                           hex[character >> 4U], hex[character & 0x0fU], '\0'};
+                    const char escape[] = {'\\', 'u', '0', '0', hex[character >> 4U], hex[character & 0x0fU], '\0'};
                     std::fputs(escape, output);
                 } else {
                     std::fputc(character, output);
@@ -46,7 +45,7 @@ void write_json_string(std::FILE *output, std::string_view value) noexcept {
     std::fputc('"', output);
 }
 
-[[nodiscard]] std::string_view outcome_name(HandlerOutcome outcome) noexcept {
+[[nodiscard]] auto outcome_name(HandlerOutcome outcome) noexcept -> std::string_view {
     switch (outcome) {
         case HandlerOutcome::status:
             return "status";
@@ -64,8 +63,7 @@ void write_json_string(std::FILE *output, std::string_view value) noexcept {
     __builtin_unreachable();
 }
 
-[[nodiscard]] std::string_view origin_error_name(
-    http::OriginDownloadError error) noexcept {
+[[nodiscard]] auto origin_error_name(http::OriginDownloadError error) noexcept -> std::string_view {
     switch (error) {
         case http::OriginDownloadError::none:
             return "none";
@@ -93,8 +91,7 @@ void write_json_string(std::FILE *output, std::string_view value) noexcept {
     __builtin_unreachable();
 }
 
-[[nodiscard]] std::string_view media_error_name(
-    media::MediaConversionError error) noexcept {
+[[nodiscard]] auto media_error_name(media::MediaConversionError error) noexcept -> std::string_view {
     switch (error) {
         case media::MediaConversionError::none:
             return "none";
@@ -110,18 +107,11 @@ void write_json_string(std::FILE *output, std::string_view value) noexcept {
 
 } // namespace
 
-void log_invocation(
-    std::FILE *output,
-    std::string_view request_id,
-    const HandlerDiagnostics &diagnostics,
-    std::uint16_t status,
-    std::size_t event_bytes,
-    std::size_t response_bytes,
-    std::uint64_t handler_microseconds) noexcept {
+void log_invocation(std::FILE *output, std::string_view request_id, const HandlerDiagnostics &diagnostics, std::uint16_t status, std::size_t event_bytes, std::size_t response_bytes, std::uint64_t handler_microseconds) noexcept {
     if (output == nullptr) {
         return;
     }
-    std::fputs("{\"category\":\"invocation\",\"requestId\":", output);
+    std::fputs(R"({"category":"invocation","requestId":)", output);
     write_json_string(output, request_id);
     std::fputs(",\"outcome\":", output);
     write_json_string(output, outcome_name(diagnostics.outcome));
@@ -133,17 +123,10 @@ void log_invocation(
                  ",\"status\":%u,\"eventBytes\":%zu,\"originBytes\":%zu"
                  ",\"responseBytes\":%zu,\"fetchMicros\":%llu"
                  ",\"mediaMicros\":%llu,\"handlerMicros\":%llu}\n",
-                 static_cast<unsigned int>(status), event_bytes,
-                 diagnostics.origin_bytes, response_bytes,
-                 static_cast<unsigned long long>(diagnostics.fetch_microseconds),
-                 static_cast<unsigned long long>(diagnostics.media_microseconds),
-                 static_cast<unsigned long long>(handler_microseconds));
+                 static_cast<unsigned int>(status), event_bytes, diagnostics.origin_bytes, response_bytes, static_cast<unsigned long long>(diagnostics.fetch_microseconds), static_cast<unsigned long long>(diagnostics.media_microseconds), static_cast<unsigned long long>(handler_microseconds));
 }
 
-void log_runtime_failure(
-    std::FILE *output,
-    std::string_view request_id,
-    std::string_view category) noexcept {
+void log_runtime_failure(std::FILE *output, std::string_view request_id, std::string_view category) noexcept {
     if (output == nullptr) {
         return;
     }

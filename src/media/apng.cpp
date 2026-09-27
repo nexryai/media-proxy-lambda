@@ -12,32 +12,21 @@
 namespace mediaproxy::media {
 namespace {
 
-constexpr std::array<std::byte, 8> png_signature{
-    std::byte{0x89}, std::byte{0x50}, std::byte{0x4e}, std::byte{0x47},
-    std::byte{0x0d}, std::byte{0x0a}, std::byte{0x1a}, std::byte{0x0a}};
+constexpr std::array<std::byte, 8> png_signature{std::byte{0x89}, std::byte{0x50}, std::byte{0x4e}, std::byte{0x47}, std::byte{0x0d}, std::byte{0x0a}, std::byte{0x1a}, std::byte{0x0a}};
 constexpr std::size_t maximum_chunk_length = 10U * 1024U * 1024U;
 
-[[nodiscard]] std::uint32_t read_u32(
-    std::span<const std::byte> body,
-    std::size_t offset) noexcept {
-    const auto byte = [&body](std::size_t index) {
-        return static_cast<std::uint32_t>(
-            std::to_integer<std::uint8_t>(body[index]));
-    };
+[[nodiscard]] auto read_u32(std::span<const std::byte> body, std::size_t offset) noexcept -> std::uint32_t {
+    const auto byte = [&body](std::size_t index) -> std::uint32_t { return static_cast<std::uint32_t>(std::to_integer<std::uint8_t>(body[index])); };
+
     return (byte(offset) << 24U) | (byte(offset + 1) << 16U) | (byte(offset + 2) << 8U) | byte(offset + 3);
 }
 
-[[nodiscard]] std::uint16_t read_u16(
-    std::span<const std::byte> body,
-    std::size_t offset) noexcept {
-    return static_cast<std::uint16_t>(
-        (std::to_integer<std::uint8_t>(body[offset]) << 8U) | std::to_integer<std::uint8_t>(body[offset + 1]));
+[[nodiscard]] auto read_u16(std::span<const std::byte> body, std::size_t offset) noexcept -> std::uint16_t {
+
+    return static_cast<std::uint16_t>((std::to_integer<std::uint8_t>(body[offset]) << 8U) | std::to_integer<std::uint8_t>(body[offset + 1]));
 }
 
-[[nodiscard]] bool tag_at(
-    std::span<const std::byte> body,
-    std::size_t offset,
-    std::string_view tag) noexcept {
+[[nodiscard]] auto tag_at(std::span<const std::byte> body, std::size_t offset, std::string_view tag) noexcept -> bool {
     if (offset > body.size() || tag.size() > body.size() - offset) {
         return false;
     }
@@ -46,24 +35,25 @@ constexpr std::size_t maximum_chunk_length = 10U * 1024U * 1024U;
             return false;
         }
     }
+
     return true;
 }
 
-[[nodiscard]] ApngDescription fail(ApngParseError error) {
+[[nodiscard]] auto fail(ApngParseError error) -> ApngDescription {
     ApngDescription result;
     result.error = error;
+
     return result;
 }
 
-[[nodiscard]] bool has_png_signature(
-    std::span<const std::byte> body) noexcept {
+[[nodiscard]] auto has_png_signature(std::span<const std::byte> body) noexcept -> bool {
+
     return body.size() >= png_signature.size() && std::equal(png_signature.begin(), png_signature.end(), body.begin());
 }
 
 } // namespace
 
-ApngClassification classify_apng(
-    std::span<const std::byte> body) noexcept {
+auto classify_apng(std::span<const std::byte> body) noexcept -> ApngClassification {
     if (body.size() <= 41 || !has_png_signature(body)) {
         return ApngClassification::not_apng;
     }
@@ -102,12 +92,11 @@ ApngClassification classify_apng(
     if (!saw_end || !has_animation_control) {
         return ApngClassification::not_apng;
     }
-    return has_palette
-               ? ApngClassification::palette
-               : ApngClassification::animated;
+
+    return has_palette ? ApngClassification::palette : ApngClassification::animated;
 }
 
-ApngDescription parse_apng(std::span<const std::byte> body) {
+auto parse_apng(std::span<const std::byte> body) -> ApngDescription {
     if (!has_png_signature(body)) {
         return fail(ApngParseError::signature);
     }
@@ -138,10 +127,8 @@ ApngDescription parse_apng(std::span<const std::byte> body) {
         const std::size_t type_offset = offset + 4;
         const std::size_t data_offset = offset + 8;
         const std::size_t crc_offset = data_offset + length;
-        const auto *crc_bytes = reinterpret_cast<const Bytef *>(
-            body.data() + type_offset);
-        const auto computed_crc = static_cast<std::uint32_t>(
-            crc32(0, crc_bytes, static_cast<uInt>(length + 4)));
+        const auto *crc_bytes = reinterpret_cast<const Bytef *>(body.data() + type_offset);
+        const auto computed_crc = static_cast<std::uint32_t>(crc32(0, crc_bytes, static_cast<uInt>(length + 4)));
         if (computed_crc != read_u32(body, crc_offset)) {
             return fail(ApngParseError::crc);
         }
@@ -228,6 +215,7 @@ ApngDescription parse_apng(std::span<const std::byte> body) {
     if (!have_ihdr || !have_actl || !frame_has_data || result.frames.size() != result.declared_frames) {
         return fail(ApngParseError::animation_control);
     }
+
     return result;
 }
 

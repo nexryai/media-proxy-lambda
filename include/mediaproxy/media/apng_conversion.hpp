@@ -25,18 +25,13 @@ struct ApngConversionResult {
     std::vector<std::byte> body;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == ApngConversionError::none;
     }
 };
 
-[[nodiscard]] bool initialize_apng_webp_config(
-    WebPConfig &config,
-    EncodingQuality quality) noexcept;
+[[nodiscard]] auto initialize_apng_webp_config(WebPConfig &config, EncodingQuality quality) noexcept -> bool;
 
-[[nodiscard]] ApngConversionResult convert_apng_to_webp(
-    std::span<const std::byte> body,
-    std::uint32_t target_width,
-    std::uint32_t target_height,
-    EncodingQuality quality = EncodingQuality::standard);
+[[nodiscard]] auto convert_apng_to_webp(std::span<const std::byte> body, std::uint32_t target_width, std::uint32_t target_height, EncodingQuality quality = EncodingQuality::standard) -> ApngConversionResult;
 
 } // namespace mediaproxy::media

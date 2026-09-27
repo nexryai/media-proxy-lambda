@@ -63,26 +63,22 @@ using BufferPtr = std::unique_ptr<void, GFree>;
 using HeifContextPtr = std::unique_ptr<heif_context, HeifContextFree>;
 using HeifTrackPtr = std::unique_ptr<heif_track, HeifTrackRelease>;
 using HeifImagePtr = std::unique_ptr<heif_image, HeifImageRelease>;
-using HeifDecodingOptionsPtr =
-    std::unique_ptr<heif_decoding_options, HeifDecodingOptionsFree>;
-using JxlDecoderPtr =
-    std::unique_ptr<JxlDecoder, decltype(&JxlDecoderDestroy)>;
-using ResvgTreePtr =
-    std::unique_ptr<MpResvgTree, decltype(&mp_resvg_tree_destroy)>;
+using HeifDecodingOptionsPtr = std::unique_ptr<heif_decoding_options, HeifDecodingOptionsFree>;
+using JxlDecoderPtr = std::unique_ptr<JxlDecoder, decltype(&JxlDecoderDestroy)>;
+using ResvgTreePtr = std::unique_ptr<MpResvgTree, decltype(&mp_resvg_tree_destroy)>;
 
-constexpr char heif_image_owner_key[] =
-    "mediaproxy-avif-sequence-image";
+constexpr char heif_image_owner_key[] = "mediaproxy-avif-sequence-image";
 
 void release_heif_image(void *image) noexcept {
     heif_image_release(static_cast<heif_image *>(image));
 }
 
-[[nodiscard]] bool heif_ok(heif_error error) noexcept {
+[[nodiscard]] auto heif_ok(heif_error error) noexcept -> bool {
+
     return error.code == heif_error_Ok;
 }
 
-[[nodiscard]] ImagePtr load_avif_sequence_first_frame(
-    std::span<const std::byte> body) {
+[[nodiscard]] auto load_avif_sequence_first_frame(std::span<const std::byte> body) -> ImagePtr {
     HeifContextPtr context(heif_context_alloc());
     if (!context || !heif_ok(heif_context_read_from_memory_without_copy(context.get(), body.data(), body.size(), nullptr)) || heif_context_has_sequence(context.get()) == 0) {
         return {};
@@ -94,9 +90,7 @@ void release_heif_image(void *image) noexcept {
     }
     std::uint16_t track_width = 0;
     std::uint16_t track_height = 0;
-    if (!heif_ok(heif_track_get_image_resolution(
-            track.get(), &track_width, &track_height)) ||
-        !validate_dimensions(track_width, track_height, 1, false)) {
+    if (!heif_ok(heif_track_get_image_resolution(track.get(), &track_width, &track_height)) || !validate_dimensions(track_width, track_height, 1, false)) {
         return {};
     }
 
@@ -106,37 +100,29 @@ void release_heif_image(void *image) noexcept {
     }
     options->ignore_sequence_editlist = 1;
     heif_image *raw_decoded = nullptr;
-    if (!heif_ok(heif_track_decode_next_image(track.get(), &raw_decoded,
-                                              heif_colorspace_RGB, heif_chroma_interleaved_RGBA,
-                                              options.get()))) {
+    if (!heif_ok(heif_track_decode_next_image(track.get(), &raw_decoded, heif_colorspace_RGB, heif_chroma_interleaved_RGBA, options.get()))) {
         return {};
     }
     HeifImagePtr decoded(raw_decoded);
 
-    const int width =
-        heif_image_get_width(decoded.get(), heif_channel_interleaved);
-    const int height =
-        heif_image_get_height(decoded.get(), heif_channel_interleaved);
+    const int width = heif_image_get_width(decoded.get(), heif_channel_interleaved);
+    const int height = heif_image_get_height(decoded.get(), heif_channel_interleaved);
     if (!validate_dimensions(width, height, 1, false)) {
         return {};
     }
     std::size_t stride = 0;
-    const std::uint8_t *pixels = heif_image_get_plane_readonly2(
-        decoded.get(), heif_channel_interleaved, &stride);
+    const std::uint8_t *pixels = heif_image_get_plane_readonly2(decoded.get(), heif_channel_interleaved, &stride);
     constexpr std::size_t bands = 4;
     const std::size_t packed_width = static_cast<std::size_t>(width) * bands;
     if (pixels == nullptr || stride < packed_width || stride % bands != 0 || stride / bands > static_cast<std::size_t>(std::numeric_limits<int>::max()) || static_cast<std::size_t>(height) > std::numeric_limits<std::size_t>::max() / stride) {
         return {};
     }
 
-    ImagePtr memory(vips_image_new_from_memory(pixels,
-                                               stride * static_cast<std::size_t>(height),
-                                               static_cast<int>(stride / bands), height, bands, VIPS_FORMAT_UCHAR));
+    ImagePtr memory(vips_image_new_from_memory(pixels, stride * static_cast<std::size_t>(height), static_cast<int>(stride / bands), height, bands, VIPS_FORMAT_UCHAR));
     if (!memory) {
         return {};
     }
-    g_object_set_data_full(G_OBJECT(memory.get()), heif_image_owner_key,
-                           decoded.release(), release_heif_image);
+    g_object_set_data_full(G_OBJECT(memory.get()), heif_image_owner_key, decoded.release(), release_heif_image);
     if (stride == packed_width) {
         return memory;
     }
@@ -146,26 +132,22 @@ void release_heif_image(void *image) noexcept {
         return {};
     }
     ImagePtr cropped(raw_cropped);
-    void *owner =
-        g_object_steal_data(G_OBJECT(memory.get()), heif_image_owner_key);
-    g_object_set_data_full(G_OBJECT(cropped.get()), heif_image_owner_key,
-                           owner, release_heif_image);
+    void *owner = g_object_steal_data(G_OBJECT(memory.get()), heif_image_owner_key);
+    g_object_set_data_full(G_OBJECT(cropped.get()), heif_image_owner_key, owner, release_heif_image);
+
     return cropped;
 }
 
-[[nodiscard]] ImagePtr load_jxl_first_frame(
-    std::span<const std::byte> body) {
+[[nodiscard]] auto load_jxl_first_frame(std::span<const std::byte> body) -> ImagePtr {
     JxlDecoderPtr decoder(JxlDecoderCreate(nullptr), &JxlDecoderDestroy);
     if (!decoder || JxlDecoderSubscribeEvents(decoder.get(), JXL_DEC_BASIC_INFO | JXL_DEC_COLOR_ENCODING | JXL_DEC_FULL_IMAGE) != JXL_DEC_SUCCESS || JxlDecoderSetUnpremultiplyAlpha(decoder.get(), JXL_TRUE) != JXL_DEC_SUCCESS) {
         return {};
     }
 
-    JxlDecoderSetInput(decoder.get(),
-                       reinterpret_cast<const std::uint8_t *>(body.data()), body.size());
+    JxlDecoderSetInput(decoder.get(), reinterpret_cast<const std::uint8_t *>(body.data()), body.size());
     JxlDecoderCloseInput(decoder.get());
 
-    constexpr JxlPixelFormat format{
-        4, JXL_TYPE_UINT8, JXL_NATIVE_ENDIAN, 0};
+    constexpr JxlPixelFormat format{.num_channels = 4, .data_type = JXL_TYPE_UINT8, .endianness = JXL_NATIVE_ENDIAN, .align = 0};
     constexpr std::size_t maximum_icc_bytes = 10U * 1024U * 1024U;
     int width = 0;
     int height = 0;
@@ -173,27 +155,24 @@ void release_heif_image(void *image) noexcept {
     std::vector<std::uint8_t> icc_profile;
 
     for (;;) {
-        const JxlDecoderStatus status =
-            JxlDecoderProcessInput(decoder.get());
+        const JxlDecoderStatus status = JxlDecoderProcessInput(decoder.get());
         if (status == JXL_DEC_BASIC_INFO) {
             JxlBasicInfo info{};
-            if (JxlDecoderGetBasicInfo(decoder.get(), &info) != JXL_DEC_SUCCESS || info.xsize > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) || info.ysize > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) || !validate_dimensions(static_cast<int>(info.xsize), static_cast<int>(info.ysize), 1, false)) {
+            if (JxlDecoderGetBasicInfo(decoder.get(), &info) != JXL_DEC_SUCCESS || info.xsize > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) || info.ysize > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) ||
+                !validate_dimensions(static_cast<int>(info.xsize), static_cast<int>(info.ysize), 1, false)) {
                 return {};
             }
             width = static_cast<int>(info.xsize);
             height = static_cast<int>(info.ysize);
         } else if (status == JXL_DEC_COLOR_ENCODING) {
             std::size_t icc_size = 0;
-            if (JxlDecoderGetICCProfileSize(decoder.get(),
-                                            JXL_COLOR_PROFILE_TARGET_DATA, &icc_size) == JXL_DEC_SUCCESS) {
+            if (JxlDecoderGetICCProfileSize(decoder.get(), JXL_COLOR_PROFILE_TARGET_DATA, &icc_size) == JXL_DEC_SUCCESS) {
                 if (icc_size > maximum_icc_bytes) {
                     return {};
                 }
                 if (icc_size != 0) {
                     icc_profile.resize(icc_size);
-                    if (JxlDecoderGetColorAsICCProfile(decoder.get(),
-                                                       JXL_COLOR_PROFILE_TARGET_DATA,
-                                                       icc_profile.data(), icc_profile.size()) != JXL_DEC_SUCCESS) {
+                    if (JxlDecoderGetColorAsICCProfile(decoder.get(), JXL_COLOR_PROFILE_TARGET_DATA, icc_profile.data(), icc_profile.size()) != JXL_DEC_SUCCESS) {
                         return {};
                     }
                 }
@@ -204,30 +183,24 @@ void release_heif_image(void *image) noexcept {
             }
             std::size_t output_size = 0;
             constexpr std::size_t bands = 4;
-            const std::size_t expected_size =
-                static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * bands;
-            if (JxlDecoderImageOutBufferSize(
-                    decoder.get(), &format, &output_size) != JXL_DEC_SUCCESS ||
-                output_size != expected_size) {
+            const std::size_t expected_size = static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * bands;
+            if (JxlDecoderImageOutBufferSize(decoder.get(), &format, &output_size) != JXL_DEC_SUCCESS || output_size != expected_size) {
                 return {};
             }
             pixels.resize(output_size);
-            if (JxlDecoderSetImageOutBuffer(decoder.get(), &format,
-                                            pixels.data(), pixels.size()) != JXL_DEC_SUCCESS) {
+            if (JxlDecoderSetImageOutBuffer(decoder.get(), &format, pixels.data(), pixels.size()) != JXL_DEC_SUCCESS) {
                 return {};
             }
         } else if (status == JXL_DEC_FULL_IMAGE) {
             if (pixels.empty()) {
                 return {};
             }
-            ImagePtr image(vips_image_new_from_memory_copy(pixels.data(),
-                                                           pixels.size(), width, height, 4, VIPS_FORMAT_UCHAR));
+            ImagePtr image(vips_image_new_from_memory_copy(pixels.data(), pixels.size(), width, height, 4, VIPS_FORMAT_UCHAR));
             if (!image) {
                 return {};
             }
             if (!icc_profile.empty()) {
-                vips_image_set_blob_copy(image.get(), VIPS_META_ICC_NAME,
-                                         icc_profile.data(), icc_profile.size());
+                vips_image_set_blob_copy(image.get(), VIPS_META_ICC_NAME, icc_profile.data(), icc_profile.size());
             }
             return image;
         } else if (status == JXL_DEC_SUCCESS || status == JXL_DEC_ERROR || status == JXL_DEC_NEED_MORE_INPUT) {
@@ -236,15 +209,12 @@ void release_heif_image(void *image) noexcept {
     }
 }
 
-[[nodiscard]] ImagePtr load_svg(std::span<const std::byte> body) {
+[[nodiscard]] auto load_svg(std::span<const std::byte> body) -> ImagePtr {
     const auto font = embedded_svg_font();
     MpResvgTree *raw_tree = nullptr;
     MpResvgSize size{};
-    if (mp_resvg_parse(
-            reinterpret_cast<const std::uint8_t *>(body.data()), body.size(),
-            reinterpret_cast<const std::uint8_t *>(font.data()), font.size(),
-            &raw_tree, &size) != 0 ||
-        raw_tree == nullptr || size.width > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) || size.height > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) || !validate_dimensions(static_cast<int>(size.width), static_cast<int>(size.height), 1, false)) {
+    if (mp_resvg_parse(reinterpret_cast<const std::uint8_t *>(body.data()), body.size(), reinterpret_cast<const std::uint8_t *>(font.data()), font.size(), &raw_tree, &size) != 0 || raw_tree == nullptr || size.width > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) ||
+        size.height > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) || !validate_dimensions(static_cast<int>(size.width), static_cast<int>(size.height), 1, false)) {
         if (raw_tree != nullptr) {
             mp_resvg_tree_destroy(raw_tree);
         }
@@ -259,8 +229,7 @@ void release_heif_image(void *image) noexcept {
         return {};
     }
     std::vector<std::uint8_t> pixels(width * height * bands);
-    if (mp_resvg_render(tree.get(), size.width, size.height, pixels.data(),
-                        pixels.size()) != 0) {
+    if (mp_resvg_render(tree.get(), size.width, size.height, pixels.data(), pixels.size()) != 0) {
         return {};
     }
 
@@ -274,60 +243,47 @@ void release_heif_image(void *image) noexcept {
         }
         for (std::size_t channel = 0; channel < 3; ++channel) {
             const std::uint32_t premultiplied = pixels[offset + channel];
-            pixels[offset + channel] = static_cast<std::uint8_t>(
-                std::min(255U,
-                         (premultiplied * 255U + alpha / 2U) / alpha));
+            pixels[offset + channel] = static_cast<std::uint8_t>(std::min(255U, ((premultiplied * 255U) + (alpha / 2U)) / alpha));
         }
     }
-    return ImagePtr(vips_image_new_from_memory_copy(pixels.data(),
-                                                    pixels.size(), static_cast<int>(size.width),
-                                                    static_cast<int>(size.height), bands, VIPS_FORMAT_UCHAR));
+
+    return ImagePtr(vips_image_new_from_memory_copy(pixels.data(), pixels.size(), static_cast<int>(size.width), static_cast<int>(size.height), bands, VIPS_FORMAT_UCHAR));
 }
 
-[[nodiscard]] ImagePtr load_image(
-    std::span<const std::byte> body,
-    MimeType mime) {
+[[nodiscard]] auto load_image(std::span<const std::byte> body, MimeType mime) -> ImagePtr {
     if (mime == MimeType::image_svg_xml) {
         return load_svg(body);
     }
     if (mime == MimeType::image_jxl) {
         return load_jxl_first_frame(body);
     }
-    ImagePtr loaded(vips_image_new_from_buffer(
-        body.data(), body.size(), "", "n", -1, nullptr));
+    ImagePtr loaded(vips_image_new_from_buffer(body.data(), body.size(), "", "n", -1, nullptr));
     if (loaded) {
         return loaded;
     }
     // Static loaders such as PNG expose no page-count option.
     vips_error_clear();
-    ImagePtr loaded_without_pages(vips_image_new_from_buffer(
-        body.data(), body.size(), "", nullptr));
+    ImagePtr loaded_without_pages(vips_image_new_from_buffer(body.data(), body.size(), "", nullptr));
     if (loaded_without_pages || mime != MimeType::image_avif) {
         return loaded_without_pages;
     }
     vips_error_clear();
+
     return load_avif_sequence_first_frame(body);
 }
 
-[[nodiscard]] std::uint16_t read_u16(
-    std::span<const std::byte> body,
-    std::size_t offset) noexcept {
-    return static_cast<std::uint16_t>(
-        std::to_integer<std::uint8_t>(body[offset]) | (std::to_integer<std::uint8_t>(body[offset + 1]) << 8U));
+[[nodiscard]] auto read_u16(std::span<const std::byte> body, std::size_t offset) noexcept -> std::uint16_t {
+
+    return static_cast<std::uint16_t>(std::to_integer<std::uint8_t>(body[offset]) | (std::to_integer<std::uint8_t>(body[offset + 1]) << 8U));
 }
 
-[[nodiscard]] std::uint32_t read_u32(
-    std::span<const std::byte> body,
-    std::size_t offset) noexcept {
-    const auto byte = [&body](std::size_t index) {
-        return static_cast<std::uint32_t>(
-            std::to_integer<std::uint8_t>(body[index]));
-    };
+[[nodiscard]] auto read_u32(std::span<const std::byte> body, std::size_t offset) noexcept -> std::uint32_t {
+    const auto byte = [&body](std::size_t index) -> std::uint32_t { return static_cast<std::uint32_t>(std::to_integer<std::uint8_t>(body[index])); };
+
     return byte(offset) | (byte(offset + 1) << 8U) | (byte(offset + 2) << 16U) | (byte(offset + 3) << 24U);
 }
 
-[[nodiscard]] ImagePtr load_ico_fallback(
-    std::span<const std::byte> body) {
+[[nodiscard]] auto load_ico_fallback(std::span<const std::byte> body) -> ImagePtr {
     constexpr std::size_t header_size = 6;
     constexpr std::size_t entry_size = 16;
     if (body.size() < header_size || read_u16(body, 0) != 0 || read_u16(body, 2) != 1) {
@@ -339,15 +295,14 @@ void release_heif_image(void *image) noexcept {
     }
 
     for (std::size_t index = 0; index < count; ++index) {
-        const std::size_t directory_offset = header_size + index * entry_size;
+        const std::size_t directory_offset = header_size + (index * entry_size);
         const std::size_t payload_size = read_u32(body, directory_offset + 8);
         const std::size_t payload_offset = read_u32(body, directory_offset + 12);
         if (payload_size == 0 || payload_offset > body.size() || payload_size > body.size() - payload_offset) {
             continue;
         }
         const auto payload = body.subspan(payload_offset, payload_size);
-        ImagePtr decoded(vips_image_new_from_buffer(
-            payload.data(), payload.size(), "", nullptr));
+        ImagePtr decoded(vips_image_new_from_buffer(payload.data(), payload.size(), "", nullptr));
         if (decoded) {
             // The request body outlives the complete synchronous conversion,
             // so this lazy image can safely retain its entry payload.
@@ -355,35 +310,29 @@ void release_heif_image(void *image) noexcept {
         }
         vips_error_clear();
     }
+
     return {};
 }
 
-[[nodiscard]] StaticConversionResult fail(
-    StaticConversionError error) noexcept {
+[[nodiscard]] auto fail(StaticConversionError error) noexcept -> StaticConversionResult {
     vips_error_clear();
+
     return {.error = error, .body = {}};
 }
 
-[[nodiscard]] int image_metadata_int(
-    VipsImage *image,
-    const char *name,
-    int fallback) noexcept {
+[[nodiscard]] auto image_metadata_int(VipsImage *image, const char *name, int fallback) noexcept -> int {
     int value = fallback;
     if (vips_image_get_typeof(image, name) != 0 && vips_image_get_int(image, name, &value) != 0) {
         vips_error_clear();
         return fallback;
     }
+
     return value;
 }
 
 } // namespace
 
-StaticConversionResult convert_static_image(
-    std::span<const std::byte> body,
-    MimeType mime,
-    OutputFormat output,
-    ImageDimensions limits,
-    EncodingQuality quality) {
+auto convert_static_image(std::span<const std::byte> body, MimeType mime, OutputFormat output, ImageDimensions limits, EncodingQuality quality) -> StaticConversionResult {
     if (!initialize_vips()) {
         return fail(StaticConversionError::initialization);
     }
@@ -402,15 +351,12 @@ StaticConversionResult convert_static_image(
 
     const int loaded_width = vips_image_get_width(loaded.get());
     const int loaded_height = vips_image_get_height(loaded.get());
-    const int page_count =
-        image_metadata_int(loaded.get(), VIPS_META_N_PAGES, 1);
-    const int page_height = image_metadata_int(
-        loaded.get(), VIPS_META_PAGE_HEIGHT, loaded_height);
+    const int page_count = image_metadata_int(loaded.get(), VIPS_META_N_PAGES, 1);
+    const int page_height = image_metadata_int(loaded.get(), VIPS_META_PAGE_HEIGHT, loaded_height);
     if (page_count <= 0 || page_height <= 0 || loaded_height % page_height != 0 || loaded_height / page_height != page_count) {
         return fail(StaticConversionError::dimensions);
     }
-    const auto dimensions =
-        validate_dimensions(loaded_width, page_height, 1, false);
+    const auto dimensions = validate_dimensions(loaded_width, page_height, 1, false);
     if (!dimensions.has_value()) {
         return fail(StaticConversionError::dimensions);
     }
@@ -419,8 +365,7 @@ StaticConversionResult convert_static_image(
     VipsImage *current = loaded.get();
     if (loaded_height != page_height) {
         VipsImage *cropped = nullptr;
-        if (vips_crop(loaded.get(), &cropped, 0, 0, loaded_width,
-                      page_height, nullptr) != 0) {
+        if (vips_crop(loaded.get(), &cropped, 0, 0, loaded_width, page_height, nullptr) != 0) {
             return fail(StaticConversionError::decode);
         }
         first_page.reset(cropped);
@@ -442,23 +387,15 @@ StaticConversionResult convert_static_image(
     void *encoded_memory = nullptr;
     std::size_t encoded_size = 0;
     const int vips_quality = encoding_quality_value(quality);
-    const int encode_result = output == OutputFormat::avif
-                                  ? vips_heifsave_buffer(current, &encoded_memory, &encoded_size,
-                                                         "Q", vips_quality,
-                                                         "effort", 1,
-                                                         "lossless", false,
-                                                         "compression", VIPS_FOREIGN_HEIF_COMPRESSION_AV1,
-                                                         nullptr)
-                                  : vips_webpsave_buffer(current, &encoded_memory, &encoded_size,
-                                                         "Q", vips_quality,
-                                                         "lossless", false,
-                                                         nullptr);
+    const int encode_result = output == OutputFormat::avif ? vips_heifsave_buffer(current, &encoded_memory, &encoded_size, "Q", vips_quality, "effort", 1, "lossless", 0, "compression", VIPS_FOREIGN_HEIF_COMPRESSION_AV1, nullptr)
+                                                           : vips_webpsave_buffer(current, &encoded_memory, &encoded_size, "Q", vips_quality, "lossless", 0, nullptr);
     BufferPtr encoded(encoded_memory);
     if (encode_result != 0 || !encoded || encoded_size == 0) {
         return fail(StaticConversionError::encode);
     }
 
     const auto *bytes = static_cast<const std::byte *>(encoded.get());
+
     return {
         .error = StaticConversionError::none,
         .body = std::vector<std::byte>(bytes, bytes + encoded_size),

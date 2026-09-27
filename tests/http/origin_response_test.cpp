@@ -23,14 +23,12 @@ struct ContentLengthCase {
     std::int64_t expected;
 };
 
-class ContentLengthTest : public testing::TestWithParam<ContentLengthCase> {
-};
+class ContentLengthTest : public testing::TestWithParam<ContentLengthCase> {};
 
 TEST_P(ContentLengthTest, ParsesSignedBaseTenWithinRetainedLimit) {
     const auto &parameter = GetParam();
     OriginResponseAccumulator response;
-    const std::string header =
-        std::string{"Content-Length: "} + parameter.value + "\r\n";
+    const std::string header = std::string{"Content-Length: "} + parameter.value + "\r\n";
     response.consume_header_line(header);
     EXPECT_EQ(response.error(), parameter.error);
     if (parameter.error == OriginResponseError::none) {
@@ -41,35 +39,11 @@ TEST_P(ContentLengthTest, ParsesSignedBaseTenWithinRetainedLimit) {
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    Specification,
-    ContentLengthTest,
-    testing::Values(
-        ContentLengthCase{"zero", "0", OriginResponseError::none, 0},
-        ContentLengthCase{"explicit_plus", "+1", OriginResponseError::none, 1},
-        ContentLengthCase{
-            "exact_limit",
-            "10485760",
-            OriginResponseError::none,
-            10485760},
-        ContentLengthCase{
-            "above_limit",
-            "10485761",
-            OriginResponseError::content_length_too_large,
-            0},
-        ContentLengthCase{
-            "invalid",
-            "not-a-number",
-            OriginResponseError::invalid_content_length,
-            0},
-        ContentLengthCase{
-            "overflow",
-            "9223372036854775808",
-            OriginResponseError::invalid_content_length,
-            0}),
-    [](const testing::TestParamInfo<ContentLengthCase> &info) {
-        return info.param.name;
-    });
+INSTANTIATE_TEST_SUITE_P(Specification, ContentLengthTest,
+                         testing::Values(ContentLengthCase{"zero", "0", OriginResponseError::none, 0}, ContentLengthCase{"explicit_plus", "+1", OriginResponseError::none, 1}, ContentLengthCase{"exact_limit", "10485760", OriginResponseError::none, 10485760},
+                                         ContentLengthCase{"above_limit", "10485761", OriginResponseError::content_length_too_large, 0}, ContentLengthCase{"invalid", "not-a-number", OriginResponseError::invalid_content_length, 0},
+                                         ContentLengthCase{"overflow", "9223372036854775808", OriginResponseError::invalid_content_length, 0}),
+                         [](const testing::TestParamInfo<ContentLengthCase> &info) -> const char * { return info.param.name; });
 
 TEST(OriginResponse, TreatsContentLengthNameCaseInsensitivelyAndTrimsOws) {
     OriginResponseAccumulator response;
@@ -109,8 +83,7 @@ TEST(OriginResponse, RetainsAtMostTenMibWithoutProbeByte) {
     OriginResponseAccumulator response;
     const std::vector<std::byte> chunk(64U * 1024U, std::byte{0x5a});
     while (response.body().size() < maximum_origin_body_bytes) {
-        const std::size_t remaining =
-            maximum_origin_body_bytes - response.body().size();
+        const std::size_t remaining = maximum_origin_body_bytes - response.body().size();
         const std::size_t offered = std::min(remaining, chunk.size());
         EXPECT_EQ(response.append_body(std::span{chunk}.first(offered)), offered);
     }
@@ -126,19 +99,10 @@ TEST(OriginResponse, RetainsAtMostTenMibWithoutProbeByte) {
 
 TEST(OriginResponse, TruncatesCrossingCallbackAtExactLimit) {
     OriginResponseAccumulator response;
-    const std::vector<std::byte> prefix(
-        maximum_origin_body_bytes - 3U,
-        std::byte{0x11});
+    const std::vector<std::byte> prefix(maximum_origin_body_bytes - 3U, std::byte{0x11});
     ASSERT_EQ(response.append_body(prefix), prefix.size());
     constexpr std::array<std::byte, 8> crossing{
-        std::byte{1},
-        std::byte{2},
-        std::byte{3},
-        std::byte{4},
-        std::byte{5},
-        std::byte{6},
-        std::byte{7},
-        std::byte{8},
+        std::byte{1}, std::byte{2}, std::byte{3}, std::byte{4}, std::byte{5}, std::byte{6}, std::byte{7}, std::byte{8},
     };
     EXPECT_EQ(response.append_body(crossing), 3U);
     ASSERT_EQ(response.body().size(), maximum_origin_body_bytes);
@@ -147,8 +111,7 @@ TEST(OriginResponse, TruncatesCrossingCallbackAtExactLimit) {
 
 TEST(OriginResponse, EvaluatesStatusOnlyAfterBodyHasBeenRetained) {
     OriginResponseAccumulator response;
-    constexpr std::array<std::byte, 3> body{
-        std::byte{0x62}, std::byte{0x61}, std::byte{0x64}};
+    constexpr std::array<std::byte, 3> body{std::byte{0x62}, std::byte{0x61}, std::byte{0x64}};
     ASSERT_EQ(response.append_body(body), body.size());
     EXPECT_FALSE(response.finish(404));
     EXPECT_EQ(response.error(), OriginResponseError::non_200_status);

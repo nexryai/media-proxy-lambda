@@ -21,15 +21,13 @@ TEST(BuildSmoke, ExposesOnlyPinnedLibheifAv1Codecs) {
     ASSERT_NE(context, nullptr);
 
     heif_encoder *av1_encoder = nullptr;
-    const heif_error av1_error = heif_context_get_encoder_for_format(
-        context, heif_compression_AV1, &av1_encoder);
+    const heif_error av1_error = heif_context_get_encoder_for_format(context, heif_compression_AV1, &av1_encoder);
     EXPECT_EQ(av1_error.code, heif_error_Ok) << av1_error.message;
     ASSERT_NE(av1_encoder, nullptr);
     heif_encoder_release(av1_encoder);
 
     heif_encoder *hevc_encoder = nullptr;
-    const heif_error hevc_error = heif_context_get_encoder_for_format(
-        context, heif_compression_HEVC, &hevc_encoder);
+    const heif_error hevc_error = heif_context_get_encoder_for_format(context, heif_compression_HEVC, &hevc_encoder);
     EXPECT_NE(hevc_error.code, heif_error_Ok);
     EXPECT_EQ(hevc_encoder, nullptr);
 

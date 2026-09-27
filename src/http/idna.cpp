@@ -15,17 +15,19 @@ constexpr std::size_t max_dns_label_bytes = 63;
 constexpr std::size_t max_dns_hostname_bytes = 253;
 constexpr std::size_t max_dns_hostname_with_trailing_dot_bytes = 254;
 
-[[nodiscard]] bool is_ascii_letter_or_digit(char value) noexcept {
+[[nodiscard]] auto is_ascii_letter_or_digit(char value) noexcept -> bool {
+
     return (value >= 'a' && value <= 'z') || (value >= '0' && value <= '9');
 }
 
-[[nodiscard]] HostnameNormalization fail(HostnameError error) {
+[[nodiscard]] auto fail(HostnameError error) -> HostnameNormalization {
+
     return {.ascii = {}, .error = error};
 }
 
 } // namespace
 
-HostnameNormalization normalize_hostname(std::string_view hostname) {
+auto normalize_hostname(std::string_view hostname) -> HostnameNormalization {
     if (hostname.empty()) {
         return fail(HostnameError::empty);
     }
@@ -42,15 +44,12 @@ HostnameNormalization normalize_hostname(std::string_view hostname) {
     }
 
     const bool has_trailing_dot = ascii.ends_with('.');
-    const std::size_t maximum_size = has_trailing_dot
-                                         ? max_dns_hostname_with_trailing_dot_bytes
-                                         : max_dns_hostname_bytes;
+    const std::size_t maximum_size = has_trailing_dot ? max_dns_hostname_with_trailing_dot_bytes : max_dns_hostname_bytes;
     if (ascii.size() > maximum_size) {
         return fail(HostnameError::hostname_too_long);
     }
 
-    const std::size_t labels_end =
-        has_trailing_dot ? ascii.size() - 1 : ascii.size();
+    const std::size_t labels_end = has_trailing_dot ? ascii.size() - 1 : ascii.size();
     if (labels_end == 0) {
         return fail(HostnameError::empty_label);
     }
@@ -68,8 +67,7 @@ HostnameNormalization normalize_hostname(std::string_view hostname) {
             return fail(HostnameError::empty_label);
         }
 
-        const std::string_view label{
-            ascii.data() + label_start, label_end - label_start};
+        const std::string_view label{ascii.data() + label_start, label_end - label_start};
         if (label.size() > max_dns_label_bytes) {
             return fail(HostnameError::label_too_long);
         }

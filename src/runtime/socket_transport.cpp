@@ -18,7 +18,7 @@
 namespace mediaproxy::runtime {
 namespace {
 
-[[nodiscard]] bool valid_service(std::string_view service) noexcept {
+[[nodiscard]] auto valid_service(std::string_view service) noexcept -> bool {
     if (service.empty()) {
         return false;
     }
@@ -27,18 +27,18 @@ namespace {
         if (character < '0' || character > '9') {
             return false;
         }
-        port = port * 10U + static_cast<std::uint32_t>(character - '0');
+        port = (port * 10U) + static_cast<std::uint32_t>(character - '0');
         if (port > 65535U) {
             return false;
         }
     }
+
     return port != 0;
 }
 
 } // namespace
 
-std::optional<RuntimeAuthority> parse_runtime_authority(
-    std::string_view authority) {
+auto parse_runtime_authority(std::string_view authority) -> std::optional<RuntimeAuthority> {
     std::string_view host;
     std::string_view service;
     if (authority.starts_with('[')) {
@@ -59,34 +59,31 @@ std::optional<RuntimeAuthority> parse_runtime_authority(
     if (host.find_first_of("\r\n \t/\\") != std::string_view::npos || !valid_service(service)) {
         return std::nullopt;
     }
+
     return RuntimeAuthority{
         .host = std::string{host},
         .service = std::string{service},
     };
 }
 
-SocketTransport::SocketTransport(int fd) noexcept
-    : fd_(fd) {
-}
+SocketTransport::SocketTransport(int fd) noexcept : fd_(fd) {}
 
 SocketTransport::~SocketTransport() {
     close();
 }
 
-SocketTransport::SocketTransport(SocketTransport &&other) noexcept
-    : fd_(std::exchange(other.fd_, -1)) {
-}
+SocketTransport::SocketTransport(SocketTransport &&other) noexcept : fd_(std::exchange(other.fd_, -1)) {}
 
-SocketTransport &SocketTransport::operator=(SocketTransport &&other) noexcept {
+auto SocketTransport::operator=(SocketTransport &&other) noexcept -> SocketTransport & {
     if (this != &other) {
         close();
         fd_ = std::exchange(other.fd_, -1);
     }
+
     return *this;
 }
 
-std::optional<SocketTransport> SocketTransport::connect(
-    std::string_view authority) {
+auto SocketTransport::connect(std::string_view authority) -> std::optional<SocketTransport> {
     const auto parsed = parse_runtime_authority(authority);
     if (!parsed.has_value()) {
         return std::nullopt;
@@ -97,8 +94,7 @@ std::optional<SocketTransport> SocketTransport::connect(
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_NUMERICSERV;
     addrinfo *raw_addresses = nullptr;
-    if (getaddrinfo(parsed->host.c_str(), parsed->service.c_str(),
-                    &hints, &raw_addresses) != 0) {
+    if (getaddrinfo(parsed->host.c_str(), parsed->service.c_str(), &hints, &raw_addresses) != 0) {
         return std::nullopt;
     }
     struct AddressCleanup {
@@ -108,10 +104,8 @@ std::optional<SocketTransport> SocketTransport::connect(
         }
     } cleanup{raw_addresses};
 
-    for (const addrinfo *address = raw_addresses; address != nullptr;
-         address = address->ai_next) {
-        const int fd = socket(address->ai_family,
-                              address->ai_socktype | SOCK_CLOEXEC, address->ai_protocol);
+    for (const addrinfo *address = raw_addresses; address != nullptr; address = address->ai_next) {
+        const int fd = socket(address->ai_family, address->ai_socktype | SOCK_CLOEXEC, address->ai_protocol);
         if (fd < 0) {
             continue;
         }
@@ -120,20 +114,19 @@ std::optional<SocketTransport> SocketTransport::connect(
         }
         ::close(fd);
     }
+
     return std::nullopt;
 }
 
-bool SocketTransport::write(std::span<const std::byte> bytes) {
+auto SocketTransport::write(std::span<const std::byte> bytes) -> bool {
     if (fd_ < 0) {
         return false;
     }
     std::size_t offset = 0;
     while (offset < bytes.size()) {
         const std::size_t remaining = bytes.size() - offset;
-        const std::size_t request = std::min(remaining,
-                                             static_cast<std::size_t>(std::numeric_limits<ssize_t>::max()));
-        const ssize_t written = send(fd_, bytes.data() + offset, request,
-                                     MSG_NOSIGNAL);
+        const std::size_t request = std::min(remaining, static_cast<std::size_t>(std::numeric_limits<ssize_t>::max()));
+        const ssize_t written = send(fd_, bytes.data() + offset, request, MSG_NOSIGNAL);
         if (written > 0) {
             offset += static_cast<std::size_t>(written);
             continue;
@@ -143,17 +136,16 @@ bool SocketTransport::write(std::span<const std::byte> bytes) {
         }
         return false;
     }
+
     return true;
 }
 
-std::ptrdiff_t SocketTransport::read_some(
-    std::span<std::byte> output) noexcept {
+auto SocketTransport::read_some(std::span<std::byte> output) const noexcept -> std::ptrdiff_t {
     if (fd_ < 0 || output.empty()) {
         return -1;
     }
     while (true) {
-        const std::size_t request = std::min(output.size(),
-                                             static_cast<std::size_t>(std::numeric_limits<ssize_t>::max()));
+        const std::size_t request = std::min(output.size(), static_cast<std::size_t>(std::numeric_limits<ssize_t>::max()));
         const ssize_t received = recv(fd_, output.data(), request, 0);
         if (received >= 0) {
             return static_cast<std::ptrdiff_t>(received);
@@ -164,7 +156,8 @@ std::ptrdiff_t SocketTransport::read_some(
     }
 }
 
-bool SocketTransport::shutdown_write() noexcept {
+auto SocketTransport::shutdown_write() const noexcept -> bool {
+
     return fd_ >= 0 && shutdown(fd_, SHUT_WR) == 0;
 }
 

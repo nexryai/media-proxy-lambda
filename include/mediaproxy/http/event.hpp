@@ -32,11 +32,11 @@ struct EventParseResult {
     EventError error = EventError::none;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return request.has_value();
     }
 };
 
-[[nodiscard]] EventParseResult parse_function_url_event(
-    std::string_view payload);
+[[nodiscard]] auto parse_function_url_event(std::string_view payload) -> EventParseResult;
 
 } // namespace mediaproxy::http

@@ -23,11 +23,11 @@ struct ResolutionPolicyResult {
     AddressError address_error = AddressError::none;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == ResolutionError::none;
     }
 };
 
-[[nodiscard]] ResolutionPolicyResult validate_resolved_addresses(
-    std::span<const std::string_view> candidates);
+[[nodiscard]] auto validate_resolved_addresses(std::span<const std::string_view> candidates) -> ResolutionPolicyResult;
 
 } // namespace mediaproxy::http

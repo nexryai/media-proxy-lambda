@@ -19,7 +19,7 @@ struct Bitmap {
 
 static_assert(sizeof(Bitmap) % alignof(std::uint32_t) == 0);
 
-nsgif_bitmap_t *CreateBitmap(int width, int height) noexcept {
+auto create_bitmap(int width, int height) noexcept -> nsgif_bitmap_t * {
     if (width <= 0 || height <= 0) {
         return nullptr;
     }
@@ -29,32 +29,31 @@ nsgif_bitmap_t *CreateBitmap(int width, int height) noexcept {
     if (pixel_width > std::numeric_limits<std::size_t>::max() / pixel_height / bytes_per_pixel) {
         return nullptr;
     }
-    const std::size_t pixel_bytes =
-        pixel_width * pixel_height * bytes_per_pixel;
+    const std::size_t pixel_bytes = pixel_width * pixel_height * bytes_per_pixel;
     if (pixel_bytes > std::numeric_limits<std::size_t>::max() - sizeof(Bitmap)) {
         return nullptr;
     }
-    auto *const bitmap = static_cast<Bitmap *>(
-        std::calloc(1, sizeof(Bitmap) + pixel_bytes));
+    auto *const bitmap = static_cast<Bitmap *>(std::calloc(1, sizeof(Bitmap) + pixel_bytes));
     if (bitmap != nullptr) {
         bitmap->pixel_bytes = pixel_bytes;
     }
+
     return bitmap;
 }
 
-void DestroyBitmap(nsgif_bitmap_t *bitmap) noexcept {
+void destroy_bitmap(nsgif_bitmap_t *bitmap) noexcept {
     std::free(bitmap);
 }
 
-std::uint8_t *GetBitmapBuffer(nsgif_bitmap_t *bitmap) noexcept {
-    return reinterpret_cast<std::uint8_t *>(
-        static_cast<Bitmap *>(bitmap) + 1);
+auto get_bitmap_buffer(nsgif_bitmap_t *bitmap) noexcept -> std::uint8_t * {
+
+    return reinterpret_cast<std::uint8_t *>(static_cast<Bitmap *>(bitmap) + 1);
 }
 
 constexpr nsgif_bitmap_cb_vt bitmap_callbacks = {
-    .create = &CreateBitmap,
-    .destroy = &DestroyBitmap,
-    .get_buffer = &GetBitmapBuffer,
+    .create = &create_bitmap,
+    .destroy = &destroy_bitmap,
+    .get_buffer = &get_bitmap_buffer,
     .set_opaque = nullptr,
     .test_opaque = nullptr,
     .modified = nullptr,
@@ -65,53 +64,14 @@ constexpr nsgif_bitmap_cb_vt bitmap_callbacks = {
 
 TEST(BuildSmoke, DecodesPinnedLibNsgifInMemory) {
     constexpr std::array<std::uint8_t, 35> encoded = {
-        'G',
-        'I',
-        'F',
-        '8',
-        '9',
-        'a',
-        0x01,
-        0x00,
-        0x01,
-        0x00,
-        0x80,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0xff,
-        0xff,
-        0xff,
-        0x2c,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x01,
-        0x00,
-        0x01,
-        0x00,
-        0x00,
-        0x02,
-        0x02,
-        0x44,
-        0x01,
-        0x00,
-        0x3b,
+        'G', 'I', 'F', '8', '9', 'a', 0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b,
     };
 
     nsgif_t *raw_gif = nullptr;
-    ASSERT_EQ(
-        nsgif_create(
-            &bitmap_callbacks, NSGIF_BITMAP_FMT_R8G8B8A8, &raw_gif),
-        NSGIF_OK);
-    std::unique_ptr<nsgif_t, decltype(&nsgif_destroy)> gif(
-        raw_gif, &nsgif_destroy);
+    ASSERT_EQ(nsgif_create(&bitmap_callbacks, NSGIF_BITMAP_FMT_R8G8B8A8, &raw_gif), NSGIF_OK);
+    std::unique_ptr<nsgif_t, decltype(&nsgif_destroy)> gif(raw_gif, &nsgif_destroy);
     ASSERT_NE(gif, nullptr);
-    ASSERT_EQ(nsgif_data_scan(gif.get(), encoded.size(), encoded.data()),
-              NSGIF_OK);
+    ASSERT_EQ(nsgif_data_scan(gif.get(), encoded.size(), encoded.data()), NSGIF_OK);
     nsgif_data_complete(gif.get());
 
     const nsgif_info_t *const info = nsgif_get_info(gif.get());
@@ -123,8 +83,7 @@ TEST(BuildSmoke, DecodesPinnedLibNsgifInMemory) {
     nsgif_rect_t area{};
     std::uint32_t delay = 0;
     std::uint32_t frame = 1;
-    ASSERT_EQ(
-        nsgif_frame_prepare(gif.get(), &area, &delay, &frame), NSGIF_OK);
+    ASSERT_EQ(nsgif_frame_prepare(gif.get(), &area, &delay, &frame), NSGIF_OK);
     EXPECT_EQ(frame, 0U);
     EXPECT_EQ(delay, NSGIF_INFINITE);
     EXPECT_EQ(area.x0, 0U);
@@ -135,7 +94,7 @@ TEST(BuildSmoke, DecodesPinnedLibNsgifInMemory) {
     nsgif_bitmap_t *decoded = nullptr;
     ASSERT_EQ(nsgif_frame_decode(gif.get(), frame, &decoded), NSGIF_OK);
     ASSERT_NE(decoded, nullptr);
-    const auto *const pixels = GetBitmapBuffer(decoded);
+    const auto *const pixels = get_bitmap_buffer(decoded);
     EXPECT_EQ(pixels[0], 0U);
     EXPECT_EQ(pixels[1], 0U);
     EXPECT_EQ(pixels[2], 0U);

@@ -47,25 +47,18 @@ TEST(LibvipsBuild, ProvidesAvifWithoutOptionalForeignLoaders) {
     EXPECT_EQ(vips_type_find("VipsOperation", "text"), 0U);
 
     VipsImage *raw_image = nullptr;
-    ASSERT_EQ(vips_black(&raw_image, 2, 3, nullptr), 0)
-        << vips_error_buffer();
+    ASSERT_EQ(vips_black(&raw_image, 2, 3, nullptr), 0) << vips_error_buffer();
     ImagePtr image(raw_image);
 
     void *raw_buffer = nullptr;
     std::size_t encoded_size = 0;
-    ASSERT_EQ(vips_heifsave_buffer(image.get(), &raw_buffer, &encoded_size,
-                                   "compression", VIPS_FOREIGN_HEIF_COMPRESSION_AV1, nullptr),
-              0)
-        << vips_error_buffer();
+    ASSERT_EQ(vips_heifsave_buffer(image.get(), &raw_buffer, &encoded_size, "compression", VIPS_FOREIGN_HEIF_COMPRESSION_AV1, nullptr), 0) << vips_error_buffer();
     BufferPtr encoded(raw_buffer);
     ASSERT_NE(encoded.get(), nullptr);
     ASSERT_GT(encoded_size, 0U);
 
     VipsImage *raw_decoded = nullptr;
-    ASSERT_EQ(vips_heifload_buffer(
-                  encoded.get(), encoded_size, &raw_decoded, nullptr),
-              0)
-        << vips_error_buffer();
+    ASSERT_EQ(vips_heifload_buffer(encoded.get(), encoded_size, &raw_decoded, nullptr), 0) << vips_error_buffer();
     ImagePtr decoded(raw_decoded);
     EXPECT_EQ(vips_image_get_width(decoded.get()), 2);
     EXPECT_EQ(vips_image_get_height(decoded.get()), 3);

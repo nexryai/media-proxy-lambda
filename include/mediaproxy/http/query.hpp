@@ -16,15 +16,15 @@ class QueryParameters {
   public:
     explicit QueryParameters(std::vector<QueryParameter> parameters);
 
-    [[nodiscard]] const std::vector<QueryParameter> &entries() const noexcept;
-    [[nodiscard]] std::string_view first(std::string_view key) const noexcept;
-    [[nodiscard]] bool boolean(std::string_view key) const noexcept;
+    [[nodiscard]] auto entries() const noexcept -> const std::vector<QueryParameter> &;
+    [[nodiscard]] auto first(std::string_view key) const noexcept -> std::string_view;
+    [[nodiscard]] auto boolean(std::string_view key) const noexcept -> bool;
 
   private:
     std::vector<QueryParameter> parameters_;
 };
 
-[[nodiscard]] QueryParameters parse_query(std::string_view raw_query);
+[[nodiscard]] auto parse_query(std::string_view raw_query) -> QueryParameters;
 
 enum class MediaSelector {
     avatar,
@@ -50,7 +50,6 @@ struct MediaOptions {
     bool url_only = false;
 };
 
-[[nodiscard]] MediaOptions select_media_options(
-    const QueryParameters &parameters) noexcept;
+[[nodiscard]] auto select_media_options(const QueryParameters &parameters) noexcept -> MediaOptions;
 
 } // namespace mediaproxy::http

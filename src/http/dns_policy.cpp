@@ -10,8 +10,7 @@
 
 namespace mediaproxy::http {
 
-ResolutionPolicyResult validate_resolved_addresses(
-    std::span<const std::string_view> candidates) {
+auto validate_resolved_addresses(std::span<const std::string_view> candidates) -> ResolutionPolicyResult {
     if (candidates.empty()) {
         return {
             .addresses = {},
@@ -35,6 +34,7 @@ ResolutionPolicyResult validate_resolved_addresses(
         }
         validated.push_back(result.address);
     }
+
     return {
         .addresses = std::move(validated),
         .error = ResolutionError::none,

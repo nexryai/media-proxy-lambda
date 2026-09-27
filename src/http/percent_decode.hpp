@@ -7,9 +7,7 @@
 
 namespace mediaproxy::http::detail {
 
-[[nodiscard]] inline std::optional<unsigned char> decode_hex_pair(
-    char high,
-    char low) noexcept {
+[[nodiscard]] inline auto decode_hex_pair(char high, char low) noexcept -> std::optional<unsigned char> {
     const auto decode_nibble = [](char value) -> std::optional<unsigned char> {
         if (value >= '0' && value <= '9') {
             return static_cast<unsigned char>(value - '0');
@@ -20,6 +18,7 @@ namespace mediaproxy::http::detail {
         if (value >= 'A' && value <= 'F') {
             return static_cast<unsigned char>(value - 'A' + 10);
         }
+
         return std::nullopt;
     };
 
@@ -28,12 +27,11 @@ namespace mediaproxy::http::detail {
     if (!high_nibble || !low_nibble) {
         return std::nullopt;
     }
+
     return static_cast<unsigned char>((*high_nibble << 4U) | *low_nibble);
 }
 
-[[nodiscard]] inline std::optional<std::string> percent_decode(
-    std::string_view encoded,
-    bool plus_as_space) {
+[[nodiscard]] inline auto percent_decode(std::string_view encoded, bool plus_as_space) -> std::optional<std::string> {
     std::string decoded;
     decoded.reserve(encoded.size());
     for (std::size_t index = 0; index < encoded.size(); ++index) {
@@ -56,6 +54,7 @@ namespace mediaproxy::http::detail {
         decoded.push_back(static_cast<char>(*byte));
         index += 2;
     }
+
     return decoded;
 }
 

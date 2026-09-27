@@ -10,54 +10,49 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 
 namespace mediaproxy::http {
 namespace {
 
-[[nodiscard]] std::string_view remove_line_ending(
-    std::string_view line) noexcept {
+[[nodiscard]] auto remove_line_ending(std::string_view line) noexcept -> std::string_view {
     if (line.ends_with("\r\n")) {
         line.remove_suffix(2);
     } else if (line.ends_with('\n')) {
         line.remove_suffix(1);
     }
+
     return line;
 }
 
-[[nodiscard]] bool ascii_iequals(
-    std::string_view left,
-    std::string_view right) noexcept {
+[[nodiscard]] auto ascii_iequals(std::string_view left, std::string_view right) noexcept -> bool {
     if (left.size() != right.size()) {
         return false;
     }
     for (std::size_t index = 0; index < left.size(); ++index) {
-        const auto lowercase = [](char value) noexcept {
-            return value >= 'A' && value <= 'Z'
-                       ? static_cast<char>(value - 'A' + 'a')
-                       : value;
-        };
+        const auto lowercase = [](char value) noexcept -> char { return value >= 'A' && value <= 'Z' ? static_cast<char>(value - 'A' + 'a') : value; };
         if (lowercase(left[index]) != lowercase(right[index])) {
             return false;
         }
     }
+
     return true;
 }
 
-[[nodiscard]] std::string_view trim_optional_whitespace(
-    std::string_view value) noexcept {
+[[nodiscard]] auto trim_optional_whitespace(std::string_view value) noexcept -> std::string_view {
     while (!value.empty() && (value.front() == ' ' || value.front() == '\t')) {
         value.remove_prefix(1);
     }
     while (!value.empty() && (value.back() == ' ' || value.back() == '\t')) {
         value.remove_suffix(1);
     }
+
     return value;
 }
 
 } // namespace
 
-void OriginResponseAccumulator::consume_header_line(
-    std::string_view line) noexcept {
+void OriginResponseAccumulator::consume_header_line(std::string_view line) noexcept {
     if (error_ != OriginResponseError::none) {
         return;
     }
@@ -72,8 +67,7 @@ void OriginResponseAccumulator::consume_header_line(
         return;
     }
     const std::string_view name = line.substr(0, separator);
-    const std::string_view value =
-        trim_optional_whitespace(line.substr(separator + 1));
+    const std::string_view value = trim_optional_whitespace(line.substr(separator + 1));
     if (ascii_iequals(name, "Content-Length")) {
         set_content_length(value);
     } else if (ascii_iequals(name, "Location")) {
@@ -89,8 +83,7 @@ void OriginResponseAccumulator::consume_header_line(
     }
 }
 
-void OriginResponseAccumulator::set_content_length(
-    std::string_view value) noexcept {
+void OriginResponseAccumulator::set_content_length(std::string_view value) noexcept {
     if (value.empty()) {
         error_ = OriginResponseError::invalid_content_length;
         return;
@@ -104,13 +97,12 @@ void OriginResponseAccumulator::set_content_length(
         }
     }
     std::int64_t parsed = 0;
-    const auto result = std::from_chars(
-        value.data(), value.data() + value.size(), parsed, 10);
+    const auto result = std::from_chars(value.data(), value.data() + value.size(), parsed, 10);
     if (result.ec != std::errc{} || result.ptr != value.data() + value.size()) {
         error_ = OriginResponseError::invalid_content_length;
         return;
     }
-    if (parsed > static_cast<std::int64_t>(maximum_origin_body_bytes)) {
+    if (std::cmp_greater(parsed, maximum_origin_body_bytes)) {
         error_ = OriginResponseError::content_length_too_large;
         return;
     }
@@ -127,8 +119,7 @@ void OriginResponseAccumulator::set_content_length(
     }
 }
 
-std::size_t OriginResponseAccumulator::append_body(
-    std::span<const std::byte> bytes) noexcept {
+auto OriginResponseAccumulator::append_body(std::span<const std::byte> bytes) noexcept -> std::size_t {
     if (error_ != OriginResponseError::none || bytes.empty() || body_.size() == maximum_origin_body_bytes) {
         return 0;
     }
@@ -143,10 +134,11 @@ std::size_t OriginResponseAccumulator::append_body(
         error_ = OriginResponseError::allocation;
         return 0;
     }
+
     return accepted;
 }
 
-bool OriginResponseAccumulator::finish(long status) noexcept {
+auto OriginResponseAccumulator::finish(long status) noexcept -> bool {
     if (error_ != OriginResponseError::none) {
         return false;
     }
@@ -154,28 +146,32 @@ bool OriginResponseAccumulator::finish(long status) noexcept {
         error_ = OriginResponseError::non_200_status;
         return false;
     }
+
     return true;
 }
 
-OriginResponseError OriginResponseAccumulator::error() const noexcept {
+auto OriginResponseAccumulator::error() const noexcept -> OriginResponseError {
+
     return error_;
 }
 
-std::optional<std::int64_t> OriginResponseAccumulator::content_length()
-    const noexcept {
+auto OriginResponseAccumulator::content_length() const noexcept -> std::optional<std::int64_t> {
+
     return content_length_;
 }
 
-const std::optional<std::string> &OriginResponseAccumulator::location()
-    const noexcept {
+auto OriginResponseAccumulator::location() const noexcept -> const std::optional<std::string> & {
+
     return location_;
 }
 
-const std::vector<std::byte> &OriginResponseAccumulator::body() const noexcept {
+auto OriginResponseAccumulator::body() const noexcept -> const std::vector<std::byte> & {
+
     return body_;
 }
 
-bool OriginResponseAccumulator::at_body_limit() const noexcept {
+auto OriginResponseAccumulator::at_body_limit() const noexcept -> bool {
+
     return body_.size() == maximum_origin_body_bytes;
 }
 

@@ -53,9 +53,7 @@ namespace {
 
 class CurlGlobal final {
   public:
-    CurlGlobal() noexcept
-        : result_(curl_global_init(CURL_GLOBAL_DEFAULT)) {
-    }
+    CurlGlobal() noexcept : result_(curl_global_init(CURL_GLOBAL_DEFAULT)) {}
 
     ~CurlGlobal() {
         if (ok()) {
@@ -64,9 +62,10 @@ class CurlGlobal final {
     }
 
     CurlGlobal(const CurlGlobal &) = delete;
-    CurlGlobal &operator=(const CurlGlobal &) = delete;
+    auto operator=(const CurlGlobal &) -> CurlGlobal & = delete;
 
-    [[nodiscard]] bool ok() const noexcept {
+    [[nodiscard]] auto ok() const noexcept -> bool {
+
         return result_ == CURLE_OK;
     }
 
@@ -74,52 +73,36 @@ class CurlGlobal final {
     CURLcode result_;
 };
 
-[[nodiscard]] mediaproxy::http::HttpResponse ProcessInvocation(
-    const mediaproxy::runtime::Invocation &invocation,
-    void *) {
+[[nodiscard]] auto process_invocation(const mediaproxy::runtime::Invocation &invocation, void * /*unused*/) -> mediaproxy::http::HttpResponse {
     const auto handler_start = std::chrono::steady_clock::now();
     mediaproxy::runtime::InvocationDeadline deadline{invocation.deadline_ms};
     mediaproxy::HandlerDiagnostics diagnostics;
-    mediaproxy::http::HttpResponse response =
-        mediaproxy::handle_function_url_event(invocation.event,
-                                              deadline.origin_timeout(), {},
-                                              mediaproxy::http::system_origin_transport(), &diagnostics);
-    const auto handler_microseconds =
-        std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::steady_clock::now() - handler_start)
-            .count();
-    mediaproxy::log_invocation(stderr, invocation.request_id, diagnostics,
-                               response.status, invocation.event.size(), response.body.size(),
-                               handler_microseconds > 0
-                                   ? static_cast<std::uint64_t>(handler_microseconds)
-                                   : 0);
+    mediaproxy::http::HttpResponse response = mediaproxy::handle_function_url_event(invocation.event, deadline.origin_timeout(), {}, mediaproxy::http::system_origin_transport(), &diagnostics);
+    const auto handler_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - handler_start).count();
+    mediaproxy::log_invocation(stderr, invocation.request_id, diagnostics, response.status, invocation.event.size(), response.body.size(), handler_microseconds > 0 ? static_cast<std::uint64_t>(handler_microseconds) : 0);
+
     return response;
 }
 
 } // namespace
 
-int main() {
+auto main() -> int {
     const auto process_start = std::chrono::steady_clock::now();
     const char *const runtime_api = std::getenv("AWS_LAMBDA_RUNTIME_API");
     if (runtime_api == nullptr || !mediaproxy::runtime::parse_runtime_authority(runtime_api)) {
         return 1;
     }
     constexpr std::string_view runtime_name = "mediaproxy-lambda";
-    const auto idna_hostname =
-        mediaproxy::http::normalize_hostname("bücher.example");
+    const auto idna_hostname = mediaproxy::http::normalize_hostname("bücher.example");
     const auto ca_bundle = mediaproxy::http::embedded_ca_bundle();
     const CurlGlobal curl_global;
-    std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> tls_context(
-        SSL_CTX_new(TLS_method()),
-        &SSL_CTX_free);
+    std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> tls_context(SSL_CTX_new(TLS_method()), &SSL_CTX_free);
     if (runtime_name.empty() || !idna_hostname || idna_hostname.ascii != "xn--bcher-kva.example" || ca_bundle.empty() || !curl_global.ok() || tls_context == nullptr) {
         return 1;
     }
     auto *volatile curl_version_function = &curl_version_info;
-    const curl_version_info_data *const curl_version =
-        curl_version_function(CURLVERSION_NOW);
-    constexpr int required_curl_features =
-        CURL_VERSION_SSL | CURL_VERSION_LIBZ | CURL_VERSION_HTTP2;
+    const curl_version_info_data *const curl_version = curl_version_function(CURLVERSION_NOW);
+    constexpr int required_curl_features = CURL_VERSION_SSL | CURL_VERSION_LIBZ | CURL_VERSION_HTTP2;
     if (curl_version == nullptr || curl_version->version_num != LIBCURL_VERSION_NUM || (curl_version->features & required_curl_features) != required_curl_features || curl_version->ssl_version == nullptr || !std::string_view{curl_version->ssl_version}.starts_with("BoringSSL")) {
         return 1;
     }
@@ -129,8 +112,7 @@ int main() {
     }
     jpeg_error_mgr jpeg_errors{};
     auto *volatile jpeg_error_function = &jpeg_std_error;
-    constexpr std::string_view required_jpeg_version =
-        MEDIAPROXY_STRINGIFY(LIBJPEG_TURBO_VERSION);
+    constexpr std::string_view required_jpeg_version = MEDIAPROXY_STRINGIFY(LIBJPEG_TURBO_VERSION);
     if (jpeg_error_function(&jpeg_errors) != &jpeg_errors || required_jpeg_version != "3.2.0") {
         return 1;
     }
@@ -143,8 +125,7 @@ int main() {
         return 1;
     }
     auto *volatile exif_tag_name_function = &exif_tag_get_name;
-    const char *const orientation_tag_name =
-        exif_tag_name_function(EXIF_TAG_ORIENTATION);
+    const char *const orientation_tag_name = exif_tag_name_function(EXIF_TAG_ORIENTATION);
     if (orientation_tag_name == nullptr || std::string_view{orientation_tag_name} != "Orientation") {
         return 1;
     }
@@ -159,18 +140,14 @@ int main() {
         &ffi_type_sint32,
     };
     auto *volatile ffi_prepare_function = &ffi_prep_cif;
-    if (std::string_view{FFI_VERSION_STRING} != "3.8.0" || ffi_prepare_function(&ffi_call_interface, FFI_DEFAULT_ABI,
-                                                                                2, &ffi_type_sint32, ffi_argument_types) != FFI_OK) {
+    if (std::string_view{FFI_VERSION_STRING} != "3.8.0" || ffi_prepare_function(&ffi_call_interface, FFI_DEFAULT_ABI, 2, &ffi_type_sint32, ffi_argument_types) != FFI_OK) {
         return 1;
     }
-    if (glib_major_version != GLIB_MAJOR_VERSION || glib_minor_version != GLIB_MINOR_VERSION || glib_micro_version != GLIB_MICRO_VERSION || g_module_supported()) {
+    if (glib_major_version != GLIB_MAJOR_VERSION || glib_minor_version != GLIB_MINOR_VERSION || glib_micro_version != GLIB_MICRO_VERSION || (g_module_supported() != 0)) {
         return 1;
     }
     constexpr std::string_view glib_probe = "gio";
-    std::unique_ptr<GInputStream, decltype(&g_object_unref)> glib_stream(
-        g_memory_input_stream_new_from_data(
-            glib_probe.data(), glib_probe.size(), nullptr),
-        &g_object_unref);
+    std::unique_ptr<GInputStream, decltype(&g_object_unref)> glib_stream(g_memory_input_stream_new_from_data(glib_probe.data(), glib_probe.size(), nullptr), &g_object_unref);
     char glib_buffer[3]{};
     if (glib_stream == nullptr || g_input_stream_read(glib_stream.get(), glib_buffer, sizeof(glib_buffer), nullptr, nullptr) != static_cast<gssize>(sizeof(glib_buffer)) || std::string_view{glib_buffer, sizeof(glib_buffer)} != glib_probe) {
         return 1;
@@ -179,8 +156,7 @@ int main() {
     auto *volatile aom_encoder_interface_function = &aom_codec_av1_cx;
     auto *volatile aom_decoder_interface_function = &aom_codec_av1_dx;
     auto *volatile aom_encoder_config_function = &aom_codec_enc_config_default;
-    aom_codec_iface_t *const aom_encoder_interface =
-        aom_encoder_interface_function();
+    aom_codec_iface_t *const aom_encoder_interface = aom_encoder_interface_function();
     aom_codec_enc_cfg_t aom_encoder_config{};
     if (aom_version_function() != ((3 << 16) | (14 << 8) | 1) || aom_encoder_interface == nullptr || aom_decoder_interface_function() == nullptr || aom_encoder_config_function(aom_encoder_interface, &aom_encoder_config, AOM_USAGE_ALL_INTRA) != AOM_CODEC_OK) {
         return 1;
@@ -190,7 +166,8 @@ int main() {
     auto *volatile heif_deinit_function = &heif_deinit;
     auto *volatile heif_decoder_function = &heif_have_decoder_for_format;
     auto *volatile heif_encoder_function = &heif_have_encoder_for_format;
-    if (heif_version_function() != LIBHEIF_NUMERIC_VERSION || heif_init_function(nullptr).code != heif_error_Ok || heif_decoder_function(heif_compression_AV1) == 0 || heif_encoder_function(heif_compression_AV1) == 0 || heif_decoder_function(heif_compression_HEVC) != 0 || heif_encoder_function(heif_compression_HEVC) != 0) {
+    if (heif_version_function() != LIBHEIF_NUMERIC_VERSION || heif_init_function(nullptr).code != heif_error_Ok || heif_decoder_function(heif_compression_AV1) == 0 || heif_encoder_function(heif_compression_AV1) == 0 || heif_decoder_function(heif_compression_HEVC) != 0 ||
+        heif_encoder_function(heif_compression_HEVC) != 0) {
         return 1;
     }
     heif_deinit_function();
@@ -202,8 +179,7 @@ int main() {
     }
     auto *volatile pcre2_config_function = &pcre2_config;
     PCRE2_UCHAR pcre2_version[32] = {};
-    if (pcre2_config_function(PCRE2_CONFIG_VERSION, pcre2_version) < 0 || !std::string_view{reinterpret_cast<const char *>(pcre2_version)}
-                                                                               .starts_with("10.48 ")) {
+    if (pcre2_config_function(PCRE2_CONFIG_VERSION, pcre2_version) < 0 || !std::string_view{reinterpret_cast<const char *>(pcre2_version)}.starts_with("10.48 ")) {
         return 1;
     }
     constexpr int required_webp_version = 0x010600;
@@ -221,25 +197,17 @@ int main() {
         return 1;
     }
     auto *volatile nghttp2_version_function = &nghttp2_version;
-    const nghttp2_info *const http2_version_info =
-        nghttp2_version_function(0);
+    const nghttp2_info *const http2_version_info = nghttp2_version_function(0);
     if (http2_version_info == nullptr || http2_version_info->version_num != NGHTTP2_VERSION_NUM) {
         return 1;
     }
-    if (SSL_CTX_set_min_proto_version(tls_context.get(), TLS1_2_VERSION) != 1 || SSL_CTX_set_max_proto_version(
-                                                                                     tls_context.get(), TLS1_3_VERSION) != 1) {
+    if (SSL_CTX_set_min_proto_version(tls_context.get(), TLS1_2_VERSION) != 1 || SSL_CTX_set_max_proto_version(tls_context.get(), TLS1_3_VERSION) != 1) {
         return 1;
     }
 
-    const mediaproxy::runtime::RuntimeClient runtime_client{
-        std::string{runtime_api}};
-    const auto cold_start_microseconds =
-        std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::steady_clock::now() - process_start)
-            .count();
-    std::fprintf(stderr,
-                 "{\"category\":\"cold_start\",\"durationMicros\":%llu}\n",
-                 static_cast<unsigned long long>(cold_start_microseconds));
+    const mediaproxy::runtime::RuntimeClient runtime_client{std::string{runtime_api}};
+    const auto cold_start_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - process_start).count();
+    std::fprintf(stderr, "{\"category\":\"cold_start\",\"durationMicros\":%llu}\n", static_cast<unsigned long long>(cold_start_microseconds));
     while (true) {
         auto invocation = runtime_client.poll_next();
         if (!invocation) {
@@ -247,41 +215,32 @@ int main() {
             return 1;
         }
         if (::setenv("_X_AMZN_TRACE_ID", invocation->trace_id.c_str(), 1) != 0) {
-            mediaproxy::log_runtime_failure(stderr, invocation->request_id,
-                                            "runtime_environment_error");
-            if (!runtime_client.send_invocation_error(invocation->request_id,
-                                                      "RuntimeEnvironmentError",
-                                                      "Failed to set invocation trace context")) {
+            mediaproxy::log_runtime_failure(stderr, invocation->request_id, "runtime_environment_error");
+            if (!runtime_client.send_invocation_error(invocation->request_id, "RuntimeEnvironmentError", "Failed to set invocation trace context")) {
                 return 1;
             }
             continue;
         }
 
-        const auto result = mediaproxy::runtime::execute_invocation(
-            runtime_client, *invocation, &ProcessInvocation);
+        const auto result = mediaproxy::runtime::execute_invocation(runtime_client, *invocation, &process_invocation);
         using Result = mediaproxy::runtime::InvocationExecutionResult;
         switch (result) {
             case Result::response_sent:
                 break;
             case Result::out_of_memory_reported:
-                mediaproxy::log_runtime_failure(
-                    stderr, invocation->request_id, "runtime_out_of_memory");
+                mediaproxy::log_runtime_failure(stderr, invocation->request_id, "runtime_out_of_memory");
                 break;
             case Result::unhandled_error_reported:
-                mediaproxy::log_runtime_failure(stderr, invocation->request_id,
-                                                "unhandled_invocation_error");
+                mediaproxy::log_runtime_failure(stderr, invocation->request_id, "unhandled_invocation_error");
                 break;
             case Result::unknown_error_reported:
-                mediaproxy::log_runtime_failure(stderr, invocation->request_id,
-                                                "unknown_invocation_error");
+                mediaproxy::log_runtime_failure(stderr, invocation->request_id, "unknown_invocation_error");
                 break;
             case Result::response_failure:
-                mediaproxy::log_runtime_failure(stderr, invocation->request_id,
-                                                "runtime_response_failure");
+                mediaproxy::log_runtime_failure(stderr, invocation->request_id, "runtime_response_failure");
                 return 1;
             case Result::error_submission_failure:
-                mediaproxy::log_runtime_failure(stderr, invocation->request_id,
-                                                "runtime_error_submission_failure");
+                mediaproxy::log_runtime_failure(stderr, invocation->request_id, "runtime_error_submission_failure");
                 return 1;
         }
     }

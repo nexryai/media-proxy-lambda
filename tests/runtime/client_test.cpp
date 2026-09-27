@@ -20,25 +20,23 @@ using mediaproxy::runtime::send_invocation_error_on;
 using mediaproxy::runtime::send_response_on;
 using mediaproxy::runtime::SocketTransport;
 
-std::array<int, 2> SocketPair() {
+auto socket_pair() -> std::array<int, 2> {
     std::array<int, 2> sockets{};
-    EXPECT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0,
-                         sockets.data()),
-              0);
+    EXPECT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets.data()), 0);
+
     return sockets;
 }
 
-void SendAll(int fd, std::string_view bytes) {
+void send_all(int fd, std::string_view bytes) {
     std::size_t offset = 0;
     while (offset < bytes.size()) {
-        const ssize_t written = send(fd, bytes.data() + offset,
-                                     bytes.size() - offset, MSG_NOSIGNAL);
+        const ssize_t written = send(fd, bytes.data() + offset, bytes.size() - offset, MSG_NOSIGNAL);
         ASSERT_GT(written, 0);
         offset += static_cast<std::size_t>(written);
     }
 }
 
-std::string ReadToEnd(int fd) {
+auto read_to_end(int fd) -> std::string {
     std::string output;
     std::array<char, 4096> buffer{};
     while (true) {
@@ -52,13 +50,12 @@ std::string ReadToEnd(int fd) {
 }
 
 TEST(RuntimeClient, PollsInvocationAndPreservesRuntimeHeaders) {
-    auto sockets = SocketPair();
+    auto sockets = socket_pair();
     SocketTransport transport{sockets[0]};
-    SendAll(sockets[1],
-            "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n"
-            "Lambda-Runtime-Aws-Request-Id: invocation-1\r\n"
-            "Lambda-Runtime-Deadline-Ms: 987654321\r\n"
-            "Lambda-Runtime-Trace-Id: Root=trace-1\r\n\r\n{}");
+    send_all(sockets[1], "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n"
+                         "Lambda-Runtime-Aws-Request-Id: invocation-1\r\n"
+                         "Lambda-Runtime-Deadline-Ms: 987654321\r\n"
+                         "Lambda-Runtime-Trace-Id: Root=trace-1\r\n\r\n{}");
 
     const auto invocation = poll_next_on(transport, "127.0.0.1:9001");
     ASSERT_TRUE(invocation.has_value());
@@ -68,63 +65,48 @@ TEST(RuntimeClient, PollsInvocationAndPreservesRuntimeHeaders) {
     EXPECT_EQ(invocation->event, std::vector<std::byte>({std::byte{'{'}, std::byte{'}'}}));
 
     std::array<char, 256> request{};
-    const ssize_t received =
-        recv(sockets[1], request.data(), request.size(), 0);
+    const ssize_t received = recv(sockets[1], request.data(), request.size(), 0);
     ASSERT_GT(received, 0);
-    EXPECT_EQ(std::string_view(request.data(), static_cast<std::size_t>(received)),
-              "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\n"
-              "Host: 127.0.0.1:9001\r\nConnection: close\r\n\r\n");
+    EXPECT_EQ(std::string_view(request.data(), static_cast<std::size_t>(received)), "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\n"
+                                                                                    "Host: 127.0.0.1:9001\r\nConnection: close\r\n\r\n");
     ::close(sockets[1]);
 }
 
 TEST(RuntimeClient, SendsStreamingResponseAndWaitsForAcknowledgement) {
-    auto sockets = SocketPair();
+    auto sockets = socket_pair();
     SocketTransport transport{sockets[0]};
-    SendAll(sockets[1],
-            "HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\n\r\n");
+    send_all(sockets[1], "HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\n\r\n");
     const HttpResponse response{
         .status = 200,
-        .headers = {HttpHeader{"Content-Type", "application/json"}},
+        .headers = {HttpHeader{.name = "Content-Type", .value = "application/json"}},
         .body = {std::byte{'{'}, std::byte{'}'}},
     };
-    ASSERT_TRUE(send_response_on(
-        transport, "127.0.0.1:9001", "invocation-1", response));
-    const std::string request = ReadToEnd(sockets[1]);
-    EXPECT_TRUE(request.starts_with(
-        "POST /2018-06-01/runtime/invocation/invocation-1/response HTTP/1.1\r\n"));
-    EXPECT_NE(request.find(
-                  "Lambda-Runtime-Function-Response-Mode: streaming\r\n"),
-              std::string::npos);
+    ASSERT_TRUE(send_response_on(transport, "127.0.0.1:9001", "invocation-1", response));
+    const std::string request = read_to_end(sockets[1]);
+    EXPECT_TRUE(request.starts_with("POST /2018-06-01/runtime/invocation/invocation-1/response HTTP/1.1\r\n"));
+    EXPECT_NE(request.find("Lambda-Runtime-Function-Response-Mode: streaming\r\n"), std::string::npos);
     EXPECT_TRUE(request.ends_with("2\r\n{}\r\n0\r\n\r\n"));
     ::close(sockets[1]);
 }
 
 TEST(RuntimeClient, RejectsNonAcceptedRuntimeResponse) {
-    auto sockets = SocketPair();
+    auto sockets = socket_pair();
     SocketTransport transport{sockets[0]};
-    SendAll(sockets[1],
-            "HTTP/1.1 500 Error\r\nContent-Length: 0\r\n\r\n");
-    EXPECT_FALSE(send_response_on(transport, "127.0.0.1:9001", "id",
-                                  HttpResponse{.status = 500, .headers = {}, .body = {std::byte{'e'}, std::byte{'r'}, std::byte{'r'}, std::byte{'o'}, std::byte{'r'}}}));
+    send_all(sockets[1], "HTTP/1.1 500 Error\r\nContent-Length: 0\r\n\r\n");
+    EXPECT_FALSE(send_response_on(transport, "127.0.0.1:9001", "id", HttpResponse{.status = 500, .headers = {}, .body = {std::byte{'e'}, std::byte{'r'}, std::byte{'r'}, std::byte{'o'}, std::byte{'r'}}}));
     ::close(sockets[1]);
 }
 
 TEST(RuntimeClient, ReportsPreResponseFailureToMatchingErrorEndpoint) {
-    auto sockets = SocketPair();
+    auto sockets = socket_pair();
     SocketTransport transport{sockets[0]};
-    SendAll(sockets[1],
-            "HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\n\r\n");
-    ASSERT_TRUE(send_invocation_error_on(transport, "127.0.0.1:9001",
-                                         "invocation-7", "MediaError", "decode \"failed\""));
-    const std::string request = ReadToEnd(sockets[1]);
-    EXPECT_TRUE(request.starts_with(
-        "POST /2018-06-01/runtime/invocation/invocation-7/error HTTP/1.1\r\n"));
-    EXPECT_NE(request.find(
-                  "Lambda-Runtime-Function-Error-Type: MediaError\r\n"),
-              std::string::npos);
-    EXPECT_TRUE(request.ends_with(
-        "{\"errorMessage\":\"decode \\\"failed\\\"\","
-        "\"errorType\":\"MediaError\"}"));
+    send_all(sockets[1], "HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\n\r\n");
+    ASSERT_TRUE(send_invocation_error_on(transport, "127.0.0.1:9001", "invocation-7", "MediaError", "decode \"failed\""));
+    const std::string request = read_to_end(sockets[1]);
+    EXPECT_TRUE(request.starts_with("POST /2018-06-01/runtime/invocation/invocation-7/error HTTP/1.1\r\n"));
+    EXPECT_NE(request.find("Lambda-Runtime-Function-Error-Type: MediaError\r\n"), std::string::npos);
+    EXPECT_TRUE(request.ends_with("{\"errorMessage\":\"decode \\\"failed\\\"\","
+                                  "\"errorType\":\"MediaError\"}"));
     ::close(sockets[1]);
 }
 

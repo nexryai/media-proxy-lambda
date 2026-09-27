@@ -34,11 +34,11 @@ struct AddressPolicyResult {
     AddressError error = AddressError::none;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == AddressError::none;
     }
 };
 
-[[nodiscard]] AddressPolicyResult validate_public_address(
-    std::string_view text);
+[[nodiscard]] auto validate_public_address(std::string_view text) -> AddressPolicyResult;
 
 } // namespace mediaproxy::http

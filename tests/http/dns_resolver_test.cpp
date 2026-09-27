@@ -35,11 +35,7 @@ struct FakeResolverState {
 
 FakeResolverState *active_state = nullptr;
 
-int FakeLookup(
-    const char *hostname,
-    const char *service,
-    const addrinfo *hints,
-    addrinfo **result) {
+auto fake_lookup(const char *hostname, const char *service, const addrinfo *hints, addrinfo **result) -> int {
     if (active_state == nullptr || hostname == nullptr || service == nullptr || hints == nullptr || result == nullptr) {
         return EAI_FAIL;
     }
@@ -47,11 +43,12 @@ int FakeLookup(
     active_state->hostname = hostname;
     active_state->service = service;
     active_state->hints = *hints;
+
     *result = active_state->result;
     return active_state->error;
 }
 
-void FakeRelease(addrinfo *) {
+void fake_release(addrinfo * /*unused*/) {
     if (active_state != nullptr) {
         ++active_state->release_calls;
     }
@@ -69,7 +66,7 @@ class FakeResolverScope final {
     }
 
     FakeResolverScope(const FakeResolverScope &) = delete;
-    FakeResolverScope &operator=(const FakeResolverScope &) = delete;
+    auto operator=(const FakeResolverScope &) -> FakeResolverScope & = delete;
 };
 
 struct Candidate {
@@ -77,7 +74,7 @@ struct Candidate {
     addrinfo info{};
 };
 
-void SetIpv4(Candidate &candidate, const char *text) {
+void set_ipv4(Candidate &candidate, const char *text) {
     candidate = {};
     auto *address = reinterpret_cast<sockaddr_in *>(&candidate.storage);
     address->sin_family = AF_INET;
@@ -89,7 +86,7 @@ void SetIpv4(Candidate &candidate, const char *text) {
     candidate.info.ai_addr = reinterpret_cast<sockaddr *>(address);
 }
 
-void SetIpv6(Candidate &candidate, const char *text) {
+void set_ipv6(Candidate &candidate, const char *text) {
     candidate = {};
     auto *address = reinterpret_cast<sockaddr_in6 *>(&candidate.storage);
     address->sin6_family = AF_INET6;
@@ -101,10 +98,11 @@ void SetIpv6(Candidate &candidate, const char *text) {
     candidate.info.ai_addr = reinterpret_cast<sockaddr *>(address);
 }
 
-AddressResolverApi FakeApi() {
+auto fake_api() -> AddressResolverApi {
+
     return {
-        .lookup = &FakeLookup,
-        .release = &FakeRelease,
+        .lookup = &fake_lookup,
+        .release = &fake_release,
     };
 }
 
@@ -112,19 +110,18 @@ TEST(DnsResolver, ResolvesCanonicalHostOnceAndPreservesAnswerOrder) {
     Candidate first;
     Candidate second;
     Candidate third;
-    SetIpv4(first, "1.1.1.1");
-    SetIpv6(second, "2606:4700:4700::1111");
-    SetIpv4(third, "8.8.8.8");
+    set_ipv4(first, "1.1.1.1");
+    set_ipv6(second, "2606:4700:4700::1111");
+    set_ipv4(third, "8.8.8.8");
     first.info.ai_next = &second.info;
     second.info.ai_next = &third.info;
     FakeResolverState state;
     state.result = &first.info;
     const FakeResolverScope scope{state};
 
-    const auto origin =
-        validate_origin_url("https://bücher.example:80/image");
+    const auto origin = validate_origin_url("https://bücher.example:80/image");
     ASSERT_TRUE(origin);
-    const auto result = resolve_origin_addresses(*origin.url, FakeApi());
+    const auto result = resolve_origin_addresses(*origin.url, fake_api());
     ASSERT_TRUE(result);
     ASSERT_EQ(result.addresses.size(), 3U);
     EXPECT_EQ(result.addresses[0].family, AddressFamily::ipv4);
@@ -143,8 +140,8 @@ TEST(DnsResolver, ResolvesCanonicalHostOnceAndPreservesAnswerOrder) {
 TEST(DnsResolver, RejectsWholeMixedAnswerAndReleasesIt) {
     Candidate public_address;
     Candidate private_address;
-    SetIpv4(public_address, "1.1.1.1");
-    SetIpv4(private_address, "192.168.1.1");
+    set_ipv4(public_address, "1.1.1.1");
+    set_ipv4(private_address, "192.168.1.1");
     public_address.info.ai_next = &private_address.info;
     FakeResolverState state;
     state.result = &public_address.info;
@@ -152,7 +149,7 @@ TEST(DnsResolver, RejectsWholeMixedAnswerAndReleasesIt) {
 
     const auto origin = validate_origin_url("https://origin.example/");
     ASSERT_TRUE(origin);
-    const auto result = resolve_origin_addresses(*origin.url, FakeApi());
+    const auto result = resolve_origin_addresses(*origin.url, fake_api());
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error, OriginResolutionError::address_policy);
     EXPECT_EQ(result.policy_error, ResolutionError::forbidden_address);
@@ -168,13 +165,13 @@ TEST(DnsResolver, ReportsLookupEmptyAndMalformedAnswers) {
     ASSERT_TRUE(origin);
 
     Candidate unexpected_failure_result;
-    SetIpv4(unexpected_failure_result, "1.1.1.1");
+    set_ipv4(unexpected_failure_result, "1.1.1.1");
     FakeResolverState failed;
     failed.result = &unexpected_failure_result.info;
     failed.error = EAI_AGAIN;
     {
         const FakeResolverScope scope{failed};
-        const auto result = resolve_origin_addresses(*origin.url, FakeApi());
+        const auto result = resolve_origin_addresses(*origin.url, fake_api());
         EXPECT_FALSE(result);
         EXPECT_EQ(result.error, OriginResolutionError::lookup_failure);
         EXPECT_EQ(result.native_error, EAI_AGAIN);
@@ -184,19 +181,19 @@ TEST(DnsResolver, ReportsLookupEmptyAndMalformedAnswers) {
     FakeResolverState empty;
     {
         const FakeResolverScope scope{empty};
-        const auto result = resolve_origin_addresses(*origin.url, FakeApi());
+        const auto result = resolve_origin_addresses(*origin.url, fake_api());
         EXPECT_FALSE(result);
         EXPECT_EQ(result.error, OriginResolutionError::empty_answer);
     }
 
     Candidate malformed;
-    SetIpv4(malformed, "1.1.1.1");
+    set_ipv4(malformed, "1.1.1.1");
     malformed.info.ai_addrlen = sizeof(sockaddr_in) - 1;
     FakeResolverState malformed_state;
     malformed_state.result = &malformed.info;
     {
         const FakeResolverScope scope{malformed_state};
-        const auto result = resolve_origin_addresses(*origin.url, FakeApi());
+        const auto result = resolve_origin_addresses(*origin.url, fake_api());
         EXPECT_FALSE(result);
         EXPECT_EQ(result.error, OriginResolutionError::malformed_answer);
         EXPECT_EQ(malformed_state.release_calls, 1);
@@ -206,7 +203,7 @@ TEST(DnsResolver, ReportsLookupEmptyAndMalformedAnswers) {
 TEST(DnsResolver, BoundsCandidateTraversal) {
     std::array<Candidate, maximum_dns_candidates + 1> candidates{};
     for (std::size_t index = 0; index < candidates.size(); ++index) {
-        SetIpv4(candidates[index], "1.1.1.1");
+        set_ipv4(candidates[index], "1.1.1.1");
         if (index + 1 < candidates.size()) {
             candidates[index].info.ai_next = &candidates[index + 1].info;
         }
@@ -217,7 +214,7 @@ TEST(DnsResolver, BoundsCandidateTraversal) {
     const auto origin = validate_origin_url("https://origin.example/");
     ASSERT_TRUE(origin);
 
-    const auto result = resolve_origin_addresses(*origin.url, FakeApi());
+    const auto result = resolve_origin_addresses(*origin.url, fake_api());
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error, OriginResolutionError::too_many_answers);
     EXPECT_TRUE(result.addresses.empty());
@@ -231,7 +228,7 @@ TEST(DnsResolver, BypassesLookupForValidatedLiteralAndRejectsForgery) {
     const auto literal = validate_origin_url("https://1.1.1.1/image");
     ASSERT_TRUE(literal);
 
-    const auto result = resolve_origin_addresses(*literal.url, FakeApi());
+    const auto result = resolve_origin_addresses(*literal.url, fake_api());
     ASSERT_TRUE(result);
     ASSERT_EQ(result.addresses.size(), 1U);
     EXPECT_EQ(result.addresses[0].family, AddressFamily::ipv4);
@@ -240,7 +237,7 @@ TEST(DnsResolver, BypassesLookupForValidatedLiteralAndRejectsForgery) {
 
     auto forged = *literal.url;
     forged.hostname = "8.8.8.8";
-    const auto rejected = resolve_origin_addresses(forged, FakeApi());
+    const auto rejected = resolve_origin_addresses(forged, fake_api());
     EXPECT_FALSE(rejected);
     EXPECT_EQ(rejected.error, OriginResolutionError::invalid_origin);
     EXPECT_EQ(state.lookup_calls, 0);

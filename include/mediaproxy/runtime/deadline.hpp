@@ -15,22 +15,20 @@ struct EpochClockApi {
     EpochMillisecondsFunction now = nullptr;
 };
 
-[[nodiscard]] std::uint64_t system_epoch_milliseconds(void *) noexcept;
+[[nodiscard]] auto system_epoch_milliseconds(void * /*unused*/) noexcept -> std::uint64_t;
 
 class InvocationDeadline final {
   public:
-    explicit InvocationDeadline(
-        std::uint64_t deadline_ms,
-        EpochClockApi clock = {
-            .context = nullptr,
-            .now = &system_epoch_milliseconds,
-        }) noexcept;
+    explicit InvocationDeadline(std::uint64_t deadline_ms, EpochClockApi clock = {
+                                                               .context = nullptr,
+                                                               .now = &system_epoch_milliseconds,
+                                                           }) noexcept;
 
-    [[nodiscard]] long remaining_origin_milliseconds() const noexcept;
-    [[nodiscard]] http::OriginTimeoutApi origin_timeout() noexcept;
+    [[nodiscard]] auto remaining_origin_milliseconds() const noexcept -> long;
+    [[nodiscard]] auto origin_timeout() noexcept -> http::OriginTimeoutApi;
 
   private:
-    static long remaining(void *context) noexcept;
+    static auto remaining(void *context) noexcept -> long;
 
     std::uint64_t deadline_ms_ = 0;
     EpochClockApi clock_;

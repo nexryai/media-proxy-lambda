@@ -13,11 +13,11 @@
 namespace mediaproxy::runtime {
 namespace {
 
-[[nodiscard]] bool safe_line(std::string_view value) noexcept {
+[[nodiscard]] auto safe_line(std::string_view value) noexcept -> bool {
     return !value.empty() && value.find_first_of("\r\n") == std::string_view::npos;
 }
 
-[[nodiscard]] bool safe_request_id(std::string_view value) noexcept {
+[[nodiscard]] auto safe_request_id(std::string_view value) noexcept -> bool {
     return safe_line(value) && value.find_first_of("/?# \t\\") == std::string_view::npos;
 }
 
@@ -55,13 +55,11 @@ void append_json_string(std::string &output, std::string_view value) {
     output.push_back('"');
 }
 
-[[nodiscard]] bool write_text(
-    SocketTransport &transport,
-    std::string_view text) {
+[[nodiscard]] auto write_text(SocketTransport &transport, std::string_view text) -> bool {
     return transport.write(std::as_bytes(std::span{text}));
 }
 
-[[nodiscard]] bool read_response_ack(SocketTransport &transport) {
+[[nodiscard]] auto read_response_ack(SocketTransport &transport) -> bool {
     std::string headers;
     headers.reserve(1024);
     std::array<std::byte, 1024> buffer{};
@@ -70,22 +68,20 @@ void append_json_string(std::string &output, std::string_view value) {
         if (received <= 0) {
             return false;
         }
-        const auto *characters =
-            reinterpret_cast<const char *>(buffer.data());
+        const auto *characters = reinterpret_cast<const char *>(buffer.data());
         headers.append(characters, static_cast<std::size_t>(received));
         const std::size_t header_end = headers.find("\r\n\r\n");
         if (header_end != std::string::npos) {
             return headers.substr(0, headers.find("\r\n")) == "HTTP/1.1 202 Accepted";
         }
     }
+
     return false;
 }
 
 } // namespace
 
-std::optional<Invocation> poll_next_on(
-    SocketTransport &transport,
-    std::string_view runtime_authority) {
+auto poll_next_on(SocketTransport &transport, std::string_view runtime_authority) -> std::optional<Invocation> {
     const std::string request = make_next_request_head(runtime_authority);
     if (request.empty() || !write_text(transport, request)) {
         return std::nullopt;
@@ -98,34 +94,25 @@ std::optional<Invocation> poll_next_on(
         if (received <= 0) {
             return std::nullopt;
         }
-        const auto status = parser.feed(std::span{
-            buffer.data(), static_cast<std::size_t>(received)});
+        const auto status = parser.feed(std::span{buffer.data(), static_cast<std::size_t>(received)});
         if (status == NextParseStatus::error) {
             return std::nullopt;
         }
     }
+
     return parser.take_invocation();
 }
 
-bool send_response_on(
-    SocketTransport &transport,
-    std::string_view runtime_authority,
-    std::string_view request_id,
-    const http::HttpResponse &response) {
-    const std::string head =
-        make_streaming_request_head(runtime_authority, request_id);
+auto send_response_on(SocketTransport &transport, std::string_view runtime_authority, std::string_view request_id, const http::HttpResponse &response) -> bool {
+    const std::string head = make_streaming_request_head(runtime_authority, request_id);
     if (head.empty() || !write_text(transport, head) || !write_streaming_response(transport, response) || !transport.shutdown_write()) {
         return false;
     }
+
     return read_response_ack(transport);
 }
 
-bool send_invocation_error_on(
-    SocketTransport &transport,
-    std::string_view runtime_authority,
-    std::string_view request_id,
-    std::string_view error_type,
-    std::string_view error_message) {
+auto send_invocation_error_on(SocketTransport &transport, std::string_view runtime_authority, std::string_view request_id, std::string_view error_type, std::string_view error_message) -> bool {
     if (!parse_runtime_authority(runtime_authority).has_value() || !safe_request_id(request_id) || !safe_line(error_type)) {
         return false;
     }
@@ -141,41 +128,36 @@ bool send_invocation_error_on(
     request += runtime_authority;
     request += "\r\nLambda-Runtime-Function-Error-Type: ";
     request += error_type;
-    request +=
-        "\r\nContent-Type: application/vnd.aws.lambda.error+json"
-        "\r\nContent-Length: ";
+    request += "\r\nContent-Type: application/vnd.aws.lambda.error+json"
+               "\r\nContent-Length: ";
     request += std::to_string(body.size());
     request += "\r\nConnection: close\r\n\r\n";
     request += body;
+
     return write_text(transport, request) && transport.shutdown_write() && read_response_ack(transport);
 }
 
-RuntimeClient::RuntimeClient(std::string authority)
-    : authority_(std::move(authority)) {
-}
+RuntimeClient::RuntimeClient(std::string authority) : authority_(std::move(authority)) {}
 
-std::optional<Invocation> RuntimeClient::poll_next() const {
+auto RuntimeClient::poll_next() const -> std::optional<Invocation> {
     auto transport = SocketTransport::connect(authority_);
     if (!transport.has_value()) {
         return std::nullopt;
     }
+
     return poll_next_on(*transport, authority_);
 }
 
-bool RuntimeClient::send_response(
-    std::string_view request_id,
-    const http::HttpResponse &response) const {
+auto RuntimeClient::send_response(std::string_view request_id, const http::HttpResponse &response) const -> bool {
     auto transport = SocketTransport::connect(authority_);
+
     return transport.has_value() && send_response_on(*transport, authority_, request_id, response);
 }
 
-bool RuntimeClient::send_invocation_error(
-    std::string_view request_id,
-    std::string_view error_type,
-    std::string_view error_message) const {
+auto RuntimeClient::send_invocation_error(std::string_view request_id, std::string_view error_type, std::string_view error_message) const -> bool {
     auto transport = SocketTransport::connect(authority_);
-    return transport.has_value() && send_invocation_error_on(*transport, authority_, request_id,
-                                                             error_type, error_message);
+
+    return transport.has_value() && send_invocation_error_on(*transport, authority_, request_id, error_type, error_message);
 }
 
 } // namespace mediaproxy::runtime

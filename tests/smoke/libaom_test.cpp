@@ -19,22 +19,17 @@ TEST(BuildSmoke, InitializesPinnedLibaomAv1Codecs) {
     ASSERT_NE(decoder_interface, nullptr);
 
     aom_codec_enc_cfg_t encoder_config{};
-    ASSERT_EQ(aom_codec_enc_config_default(encoder_interface,
-                                           &encoder_config, AOM_USAGE_ALL_INTRA),
-              AOM_CODEC_OK);
+    ASSERT_EQ(aom_codec_enc_config_default(encoder_interface, &encoder_config, AOM_USAGE_ALL_INTRA), AOM_CODEC_OK);
     encoder_config.g_w = 16;
     encoder_config.g_h = 16;
     encoder_config.g_threads = 1;
     encoder_config.g_lag_in_frames = 0;
 
     aom_codec_ctx_t encoder{};
-    ASSERT_EQ(aom_codec_enc_init(&encoder, encoder_interface,
-                                 &encoder_config, 0),
-              AOM_CODEC_OK);
+    ASSERT_EQ(aom_codec_enc_init(&encoder, encoder_interface, &encoder_config, 0), AOM_CODEC_OK);
     EXPECT_EQ(aom_codec_destroy(&encoder), AOM_CODEC_OK);
 
     aom_codec_ctx_t decoder{};
-    ASSERT_EQ(aom_codec_dec_init(&decoder, decoder_interface, nullptr, 0),
-              AOM_CODEC_OK);
+    ASSERT_EQ(aom_codec_dec_init(&decoder, decoder_interface, nullptr, 0), AOM_CODEC_OK);
     EXPECT_EQ(aom_codec_destroy(&decoder), AOM_CODEC_OK);
 }

@@ -16,25 +16,20 @@ using mediaproxy::http::parse_query;
 using mediaproxy::http::PreferredOutput;
 using mediaproxy::http::select_media_options;
 
-std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadSelectorVectors() {
-    const std::string path =
-        std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/vectors/selectors.json";
+auto load_selector_vectors() -> std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> {
+    const std::string path = std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/vectors/selectors.json";
     std::ifstream input(path, std::ios::binary);
     EXPECT_TRUE(input.is_open()) << path;
-    std::string json{
-        std::istreambuf_iterator<char>{input},
-        std::istreambuf_iterator<char>{}};
+    std::string json{std::istreambuf_iterator<char>{input}, std::istreambuf_iterator<char>{}};
 
     yyjson_read_err error{};
-    std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> document(
-        yyjson_read_opts(
-            json.data(), json.size(), YYJSON_READ_NOFLAG, nullptr, &error),
-        &yyjson_doc_free);
+    std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> document(yyjson_read_opts(json.data(), json.size(), YYJSON_READ_NOFLAG, nullptr, &error), &yyjson_doc_free);
     EXPECT_NE(document, nullptr) << error.msg;
+
     return document;
 }
 
-MediaSelector ParseSelector(std::string_view value) {
+auto parse_selector(std::string_view value) -> MediaSelector {
     if (value == "avatar") {
         return MediaSelector::avatar;
     }
@@ -54,21 +49,23 @@ MediaSelector ParseSelector(std::string_view value) {
         return MediaSelector::ticker;
     }
     EXPECT_EQ(value, "default");
+
     return MediaSelector::default_media;
 }
 
-PreferredOutput ParseOutput(std::string_view value) {
+auto parse_output(std::string_view value) -> PreferredOutput {
     if (value == "avif") {
         return PreferredOutput::avif;
     }
     EXPECT_EQ(value, "webp");
+
     return PreferredOutput::webp;
 }
 
 } // namespace
 
 TEST(Selectors, MatchesCheckedInPrecedenceVectors) {
-    const auto document = LoadSelectorVectors();
+    const auto document = load_selector_vectors();
     ASSERT_NE(document, nullptr);
     yyjson_val *const root = yyjson_doc_get_root(document.get());
     ASSERT_TRUE(yyjson_is_obj(root));
@@ -81,12 +78,9 @@ TEST(Selectors, MatchesCheckedInPrecedenceVectors) {
     yyjson_arr_foreach(cases, index, maximum, vector) {
         ASSERT_TRUE(yyjson_is_obj(vector));
         const char *const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
-        const char *const raw_query =
-            yyjson_get_str(yyjson_obj_get(vector, "rawQuery"));
-        const char *const selector =
-            yyjson_get_str(yyjson_obj_get(vector, "selector"));
-        const char *const output =
-            yyjson_get_str(yyjson_obj_get(vector, "output"));
+        const char *const raw_query = yyjson_get_str(yyjson_obj_get(vector, "rawQuery"));
+        const char *const selector = yyjson_get_str(yyjson_obj_get(vector, "selector"));
+        const char *const output = yyjson_get_str(yyjson_obj_get(vector, "output"));
         ASSERT_NE(id, nullptr);
         ASSERT_NE(raw_query, nullptr);
         ASSERT_NE(selector, nullptr);
@@ -94,16 +88,10 @@ TEST(Selectors, MatchesCheckedInPrecedenceVectors) {
         SCOPED_TRACE(id);
 
         const auto options = select_media_options(parse_query(raw_query));
-        EXPECT_EQ(options.selector, ParseSelector(selector));
-        EXPECT_EQ(
-            options.width_limit,
-            yyjson_get_uint(yyjson_obj_get(vector, "width")));
-        EXPECT_EQ(
-            options.height_limit,
-            yyjson_get_uint(yyjson_obj_get(vector, "height")));
-        EXPECT_EQ(options.preferred_output, ParseOutput(output));
-        EXPECT_EQ(
-            options.force_static,
-            yyjson_get_bool(yyjson_obj_get(vector, "static")));
+        EXPECT_EQ(options.selector, parse_selector(selector));
+        EXPECT_EQ(options.width_limit, yyjson_get_uint(yyjson_obj_get(vector, "width")));
+        EXPECT_EQ(options.height_limit, yyjson_get_uint(yyjson_obj_get(vector, "height")));
+        EXPECT_EQ(options.preferred_output, parse_output(output));
+        EXPECT_EQ(options.force_static, yyjson_get_bool(yyjson_obj_get(vector, "static")));
     }
 }

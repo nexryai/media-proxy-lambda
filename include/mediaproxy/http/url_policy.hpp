@@ -32,10 +32,11 @@ struct UrlPolicyResult {
     UrlError error = UrlError::none;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return url.has_value();
     }
 };
 
-[[nodiscard]] UrlPolicyResult validate_origin_url(std::string_view source);
+[[nodiscard]] auto validate_origin_url(std::string_view source) -> UrlPolicyResult;
 
 } // namespace mediaproxy::http

@@ -11,19 +11,19 @@
 namespace mediaproxy::http {
 namespace {
 
-[[nodiscard]] std::vector<std::byte> response_bytes(std::string_view text) {
+[[nodiscard]] auto response_bytes(std::string_view text) -> std::vector<std::byte> {
     const auto bytes = std::as_bytes(std::span{text});
+
     return {bytes.begin(), bytes.end()};
 }
 
-[[nodiscard]] HttpResponse text_response(
-    std::uint16_t status,
-    std::string_view body) {
+[[nodiscard]] auto text_response(std::uint16_t status, std::string_view body) -> HttpResponse {
     std::vector<HttpHeader> headers;
     headers.push_back({
         .name = "Content-Type",
         .value = "text/plain; charset=utf-8",
     });
+
     return {
         .status = status,
         .headers = std::move(headers),
@@ -33,9 +33,10 @@ namespace {
 
 } // namespace
 
-HttpResponse make_status_response() {
+auto make_status_response() -> HttpResponse {
     std::vector<HttpHeader> headers;
     headers.push_back({.name = "Content-Type", .value = "application/json"});
+
     return {
         .status = 200,
         .headers = std::move(headers),
@@ -43,7 +44,7 @@ HttpResponse make_status_response() {
     };
 }
 
-HttpResponse make_error_response(ErrorResponse error) {
+auto make_error_response(ErrorResponse error) -> HttpResponse {
     switch (error) {
         case ErrorResponse::bad_request:
             return text_response(400, "Bad request\n");
@@ -57,9 +58,7 @@ HttpResponse make_error_response(ErrorResponse error) {
     __builtin_unreachable();
 }
 
-HttpResponse make_media_response(
-    PreferredOutput output,
-    std::vector<std::byte> body) {
+auto make_media_response(PreferredOutput output, std::vector<std::byte> body) -> HttpResponse {
     std::vector<HttpHeader> headers;
     headers.reserve(3);
     headers.push_back({
@@ -74,6 +73,7 @@ HttpResponse make_media_response(
         .name = "Cache-Control",
         .value = "max-age=432000",
     });
+
     return {
         .status = 200,
         .headers = std::move(headers),

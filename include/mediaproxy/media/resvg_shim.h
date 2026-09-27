@@ -7,18 +7,15 @@
 extern "C" {
 #endif
 
-typedef struct MpResvgTree MpResvgTree;
+using MpResvgTree = struct MpResvgTree;
 
-typedef struct MpResvgSize {
+using MpResvgSize = struct MpResvgSize {
     uint32_t width;
     uint32_t height;
-} MpResvgSize;
+};
 
-int32_t mp_resvg_parse(const uint8_t *data, size_t data_len,
-                       const uint8_t *font, size_t font_len, MpResvgTree **output_tree,
-                       MpResvgSize *output_size);
-int32_t mp_resvg_render(const MpResvgTree *tree, uint32_t width,
-                        uint32_t height, uint8_t *pixels, size_t pixels_len);
+auto mp_resvg_parse(const uint8_t *data, size_t data_len, const uint8_t *font, size_t font_len, MpResvgTree **output_tree, MpResvgSize *output_size) -> int32_t;
+auto mp_resvg_render(const MpResvgTree *tree, uint32_t width, uint32_t height, uint8_t *pixels, size_t pixels_len) -> int32_t;
 void mp_resvg_tree_destroy(MpResvgTree *tree);
 
 #ifdef __cplusplus

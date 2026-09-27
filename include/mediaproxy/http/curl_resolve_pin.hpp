@@ -7,6 +7,7 @@
 #include <mediaproxy/http/address_policy.hpp>
 #include <mediaproxy/http/url_policy.hpp>
 
+// NOLINTNEXTLINE(readability-identifier-naming): preserve libcurl's C API type name.
 struct curl_slist;
 
 namespace mediaproxy::http {
@@ -25,19 +26,17 @@ class CurlResolvePin final {
     ~CurlResolvePin();
 
     CurlResolvePin(const CurlResolvePin &) = delete;
-    CurlResolvePin &operator=(const CurlResolvePin &) = delete;
+    auto operator=(const CurlResolvePin &) -> CurlResolvePin & = delete;
     CurlResolvePin(CurlResolvePin &&other) noexcept;
-    CurlResolvePin &operator=(CurlResolvePin &&other) noexcept;
+    auto operator=(CurlResolvePin &&other) noexcept -> CurlResolvePin &;
 
-    [[nodiscard]] static CurlResolvePin create(
-        const OriginUrl &origin,
-        std::span<const ValidatedAddress> addresses);
+    [[nodiscard]] static auto create(const OriginUrl &origin, std::span<const ValidatedAddress> addresses) -> CurlResolvePin;
 
     [[nodiscard]] explicit operator bool() const noexcept;
-    [[nodiscard]] ResolvePinError error() const noexcept;
-    [[nodiscard]] const std::string &entry() const noexcept;
-    [[nodiscard]] curl_slist *native_handle() const noexcept;
-    [[nodiscard]] bool matches(const OriginUrl &origin) const noexcept;
+    [[nodiscard]] auto error() const noexcept -> ResolvePinError;
+    [[nodiscard]] auto entry() const noexcept -> const std::string &;
+    [[nodiscard]] auto native_handle() const noexcept -> curl_slist *;
+    [[nodiscard]] auto matches(const OriginUrl &origin) const noexcept -> bool;
 
   private:
     explicit CurlResolvePin(ResolvePinError error) noexcept;

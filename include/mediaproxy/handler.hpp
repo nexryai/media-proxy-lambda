@@ -23,18 +23,12 @@ enum class HandlerOutcome {
 struct HandlerDiagnostics {
     HandlerOutcome outcome = HandlerOutcome::bad_request;
     http::OriginDownloadError origin_error = http::OriginDownloadError::none;
-    media::MediaConversionError media_error =
-        media::MediaConversionError::none;
+    media::MediaConversionError media_error = media::MediaConversionError::none;
     std::size_t origin_bytes = 0;
     std::uint64_t fetch_microseconds = 0;
     std::uint64_t media_microseconds = 0;
 };
 
-[[nodiscard]] http::HttpResponse handle_function_url_event(
-    std::span<const std::byte> event,
-    http::OriginTimeoutApi timeout,
-    http::AddressResolverApi resolver = {},
-    http::OriginTransportApi transport = http::system_origin_transport(),
-    HandlerDiagnostics *diagnostics = nullptr);
+[[nodiscard]] auto handle_function_url_event(std::span<const std::byte> event, http::OriginTimeoutApi timeout, http::AddressResolverApi resolver = {}, http::OriginTransportApi transport = http::system_origin_transport(), HandlerDiagnostics *diagnostics = nullptr) -> http::HttpResponse;
 
 } // namespace mediaproxy

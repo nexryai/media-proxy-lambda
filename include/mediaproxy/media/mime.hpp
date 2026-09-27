@@ -44,8 +44,7 @@ enum class MimeType {
     application_octet_stream,
 };
 
-[[nodiscard]] MimeType sniff_mime(
-    std::span<const std::byte> body) noexcept;
-[[nodiscard]] std::string_view mime_type_name(MimeType type) noexcept;
+[[nodiscard]] auto sniff_mime(std::span<const std::byte> body) noexcept -> MimeType;
+[[nodiscard]] auto mime_type_name(MimeType type) noexcept -> std::string_view;
 
 } // namespace mediaproxy::media

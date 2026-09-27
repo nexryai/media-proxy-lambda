@@ -7,8 +7,7 @@ namespace {
 
 class VipsRuntime final {
   public:
-    VipsRuntime() noexcept
-        : initialized_(vips_init("mediaproxy-lambda") == 0) {
+    VipsRuntime() noexcept : initialized_(vips_init("mediaproxy-lambda") == 0) {
         if (!initialized_) {
             return;
         }
@@ -25,9 +24,10 @@ class VipsRuntime final {
     }
 
     VipsRuntime(const VipsRuntime &) = delete;
-    VipsRuntime &operator=(const VipsRuntime &) = delete;
+    auto operator=(const VipsRuntime &) -> VipsRuntime & = delete;
 
-    [[nodiscard]] bool initialized() const noexcept {
+    [[nodiscard]] auto initialized() const noexcept -> bool {
+
         return initialized_;
     }
 
@@ -37,8 +37,9 @@ class VipsRuntime final {
 
 } // namespace
 
-bool initialize_vips() noexcept {
+auto initialize_vips() noexcept -> bool {
     static const VipsRuntime runtime;
+
     return runtime.initialized();
 }
 

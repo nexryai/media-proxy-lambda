@@ -23,18 +23,13 @@ struct AnimatedConversionResult {
     std::vector<std::byte> body;
 
     [[nodiscard]] explicit operator bool() const noexcept {
+
         return error == AnimatedConversionError::none;
     }
 };
 
-[[nodiscard]] AnimatedConversionResult convert_animated_image(
-    std::span<const std::byte> body,
-    ImageDimensions limits,
-    EncodingQuality quality = EncodingQuality::standard);
+[[nodiscard]] auto convert_animated_image(std::span<const std::byte> body, ImageDimensions limits, EncodingQuality quality = EncodingQuality::standard) -> AnimatedConversionResult;
 
-[[nodiscard]] AnimatedConversionResult convert_animated_avif(
-    std::span<const std::byte> body,
-    ImageDimensions limits,
-    EncodingQuality quality = EncodingQuality::standard);
+[[nodiscard]] auto convert_animated_avif(std::span<const std::byte> body, ImageDimensions limits, EncodingQuality quality = EncodingQuality::standard) -> AnimatedConversionResult;
 
 } // namespace mediaproxy::media

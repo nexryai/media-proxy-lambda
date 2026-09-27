@@ -18,6 +18,6 @@ struct MediaRequest {
 
 using RequestPlan = std::variant<HttpResponse, MediaRequest>;
 
-[[nodiscard]] RequestPlan plan_request(const EventParseResult &event);
+[[nodiscard]] auto plan_request(const EventParseResult &event) -> RequestPlan;
 
 } // namespace mediaproxy::http

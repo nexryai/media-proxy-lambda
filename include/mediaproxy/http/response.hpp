@@ -27,10 +27,8 @@ enum class ErrorResponse {
     internal,
 };
 
-[[nodiscard]] HttpResponse make_status_response();
-[[nodiscard]] HttpResponse make_error_response(ErrorResponse error);
-[[nodiscard]] HttpResponse make_media_response(
-    PreferredOutput output,
-    std::vector<std::byte> body);
+[[nodiscard]] auto make_status_response() -> HttpResponse;
+[[nodiscard]] auto make_error_response(ErrorResponse error) -> HttpResponse;
+[[nodiscard]] auto make_media_response(PreferredOutput output, std::vector<std::byte> body) -> HttpResponse;
 
 } // namespace mediaproxy::http

@@ -32,50 +32,49 @@ struct CurlStringDeleter {
 using CurlUrl = std::unique_ptr<CURLU, CurlUrlDeleter>;
 using CurlString = std::unique_ptr<char, CurlStringDeleter>;
 
-[[nodiscard]] UrlPolicyResult fail(UrlError error) {
+[[nodiscard]] auto fail(UrlError error) -> UrlPolicyResult {
+
     return {.url = std::nullopt, .error = error};
 }
 
-[[nodiscard]] std::optional<std::string> get_part(
-    CURLU *handle,
-    CURLUPart part) {
+[[nodiscard]] auto get_part(CURLU *handle, CURLUPart part) -> std::optional<std::string> {
     char *raw = nullptr;
     if (curl_url_get(handle, part, &raw, 0) != CURLUE_OK) {
         return std::nullopt;
     }
     CurlString value{raw};
+
     return std::string{value.get()};
 }
 
-[[nodiscard]] bool has_user_information(CURLU *handle) noexcept {
+[[nodiscard]] auto has_user_information(CURLU *handle) noexcept -> bool {
     char *raw = nullptr;
-    const CURLUcode user_result =
-        curl_url_get(handle, CURLUPART_USER, &raw, 0);
+    const CURLUcode user_result = curl_url_get(handle, CURLUPART_USER, &raw, 0);
     CurlString user{raw};
     raw = nullptr;
-    const CURLUcode password_result =
-        curl_url_get(handle, CURLUPART_PASSWORD, &raw, 0);
+    const CURLUcode password_result = curl_url_get(handle, CURLUPART_PASSWORD, &raw, 0);
     CurlString password{raw};
+
     return user_result != CURLUE_NO_USER || password_result != CURLUE_NO_PASSWORD;
 }
 
-[[nodiscard]] std::optional<std::uint16_t> parse_port(CURLU *handle) {
+[[nodiscard]] auto parse_port(CURLU *handle) -> std::optional<std::uint16_t> {
     const auto value = get_part(handle, CURLUPART_PORT);
     if (!value) {
         return std::uint16_t{443};
     }
     unsigned int parsed = 0;
-    const auto result = std::from_chars(
-        value->data(), value->data() + value->size(), parsed, 10);
+    const auto result = std::from_chars(value->data(), value->data() + value->size(), parsed, 10);
     if (result.ec != std::errc{} || result.ptr != value->data() + value->size() || (parsed != 80 && parsed != 443)) {
         return std::nullopt;
     }
+
     return static_cast<std::uint16_t>(parsed);
 }
 
 } // namespace
 
-UrlPolicyResult validate_origin_url(std::string_view source) {
+auto validate_origin_url(std::string_view source) -> UrlPolicyResult {
     if (source.find('\0') != std::string_view::npos) {
         return fail(UrlError::invalid_syntax);
     }
@@ -136,14 +135,16 @@ UrlPolicyResult validate_origin_url(std::string_view source) {
         canonical_url.append(":80");
     }
     canonical_url.append(request_target);
+
     return {
-        .url = OriginUrl{
-            .canonical_url = std::move(canonical_url),
-            .hostname = std::move(normalized.ascii),
-            .port = *port,
-            .request_target = std::move(request_target),
-            .literal_address = std::move(literal_address),
-        },
+        .url =
+            OriginUrl{
+                .canonical_url = std::move(canonical_url),
+                .hostname = std::move(normalized.ascii),
+                .port = *port,
+                .request_target = std::move(request_target),
+                .literal_address = literal_address,
+            },
         .error = UrlError::none,
     };
 }
