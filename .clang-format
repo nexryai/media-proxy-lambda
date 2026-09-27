@@ -1,0 +1,47 @@
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+ContinuationIndentWidth: 4
+UseTab: Never
+
+# 行長による折り返しをしない
+ColumnLimit: 0
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  # AfterRequiresExpression: false
+
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+
+  IndentBraces: false
+
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+SpaceBeforeParens: ControlStatements
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: WithoutElse
+
+BinPackArguments: true
+BinPackParameters: true
+
+IndentCaseLabels: true
+IndentCaseBlocks: false
+
+PointerAlignment: Right
+ReferenceAlignment: Right

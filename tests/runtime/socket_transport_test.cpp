@@ -11,11 +11,10 @@
 
 namespace {
 
-using mediaproxy::runtime::SocketTransport;
 using mediaproxy::runtime::parse_runtime_authority;
+using mediaproxy::runtime::SocketTransport;
 
-TEST(RuntimeSocketTransport, ParsesHostPortAndBracketedIpv6)
-{
+TEST(RuntimeSocketTransport, ParsesHostPortAndBracketedIpv6) {
     const auto ipv4 = parse_runtime_authority("127.0.0.1:9001");
     ASSERT_TRUE(ipv4.has_value());
     EXPECT_EQ(ipv4->host, "127.0.0.1");
@@ -32,12 +31,11 @@ TEST(RuntimeSocketTransport, ParsesHostPortAndBracketedIpv6)
     EXPECT_FALSE(parse_runtime_authority("bad host:9001").has_value());
 }
 
-TEST(RuntimeSocketTransport, WritesAllBytesAndReadsFragments)
-{
+TEST(RuntimeSocketTransport, WritesAllBytesAndReadsFragments) {
     std::array<int, 2> sockets{};
     ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0,
-                  sockets.data()),
-        0);
+                         sockets.data()),
+              0);
     SocketTransport transport{sockets[0]};
     const std::string outbound = "request-bytes";
     ASSERT_TRUE(transport.write(std::as_bytes(std::span{outbound})));
@@ -50,21 +48,20 @@ TEST(RuntimeSocketTransport, WritesAllBytesAndReadsFragments)
 
     const std::string inbound = "fragmented-response";
     ASSERT_EQ(send(sockets[1], inbound.data(), inbound.size(), MSG_NOSIGNAL),
-        static_cast<ssize_t>(inbound.size()));
+              static_cast<ssize_t>(inbound.size()));
     std::array<std::byte, 4> fragment{};
     EXPECT_EQ(transport.read_some(fragment), 4);
     EXPECT_EQ(std::string_view(
-                  reinterpret_cast<const char*>(fragment.data()), 4),
-        "frag");
+                  reinterpret_cast<const char *>(fragment.data()), 4),
+              "frag");
     ::close(sockets[1]);
 }
 
-TEST(RuntimeSocketTransport, ReportsPeerClosureWithoutSigpipe)
-{
+TEST(RuntimeSocketTransport, ReportsPeerClosureWithoutSigpipe) {
     std::array<int, 2> sockets{};
     ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0,
-                  sockets.data()),
-        0);
+                         sockets.data()),
+              0);
     SocketTransport transport{sockets[0]};
     ::close(sockets[1]);
     const std::string bytes = "response";

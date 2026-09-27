@@ -23,8 +23,7 @@ struct MediaConversionResult {
     OutputFormat encoded_format = OutputFormat::webp;
     std::vector<std::byte> body;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == MediaConversionError::none;
     }
 };

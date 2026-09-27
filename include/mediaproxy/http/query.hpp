@@ -13,14 +13,14 @@ struct QueryParameter {
 };
 
 class QueryParameters {
-public:
+  public:
     explicit QueryParameters(std::vector<QueryParameter> parameters);
 
-    [[nodiscard]] const std::vector<QueryParameter>& entries() const noexcept;
+    [[nodiscard]] const std::vector<QueryParameter> &entries() const noexcept;
     [[nodiscard]] std::string_view first(std::string_view key) const noexcept;
     [[nodiscard]] bool boolean(std::string_view key) const noexcept;
 
-private:
+  private:
     std::vector<QueryParameter> parameters_;
 };
 
@@ -51,6 +51,6 @@ struct MediaOptions {
 };
 
 [[nodiscard]] MediaOptions select_media_options(
-    const QueryParameters& parameters) noexcept;
+    const QueryParameters &parameters) noexcept;
 
 } // namespace mediaproxy::http

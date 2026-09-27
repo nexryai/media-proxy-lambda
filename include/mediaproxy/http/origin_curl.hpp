@@ -19,26 +19,26 @@ enum class OriginCurlConfigError {
 };
 
 [[nodiscard]] OriginCurlConfigError configure_origin_curl(
-    CURL* easy,
-    const OriginUrl& origin,
-    const CurlResolvePin& pin,
-    OriginResponseAccumulator& response,
+    CURL *easy,
+    const OriginUrl &origin,
+    const CurlResolvePin &pin,
+    OriginResponseAccumulator &response,
     long timeout_milliseconds) noexcept;
 
 [[nodiscard]] std::size_t origin_header_callback(
-    char* data,
+    char *data,
     std::size_t size,
     std::size_t count,
-    void* user_data) noexcept;
+    void *user_data) noexcept;
 
 [[nodiscard]] std::size_t origin_body_callback(
-    char* data,
+    char *data,
     std::size_t size,
     std::size_t count,
-    void* user_data) noexcept;
+    void *user_data) noexcept;
 
 [[nodiscard]] bool is_body_limit_completion(
     CURLcode result,
-    const OriginResponseAccumulator& response) noexcept;
+    const OriginResponseAccumulator &response) noexcept;
 
 } // namespace mediaproxy::http

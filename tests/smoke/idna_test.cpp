@@ -13,8 +13,7 @@ namespace {
 using mediaproxy::http::HostnameError;
 using mediaproxy::http::normalize_hostname;
 
-std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadIdnaVectors()
-{
+std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadIdnaVectors() {
     const std::string path =
         std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/vectors/idna.json";
     std::ifstream input(path, std::ios::binary);
@@ -34,25 +33,23 @@ std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadIdnaVectors()
 
 } // namespace
 
-TEST(Idna, MatchesCheckedInUts46Corpus)
-{
+TEST(Idna, MatchesCheckedInUts46Corpus) {
     const auto document = LoadIdnaVectors();
     ASSERT_NE(document, nullptr);
-    yyjson_val* const root = yyjson_doc_get_root(document.get());
+    yyjson_val *const root = yyjson_doc_get_root(document.get());
     ASSERT_TRUE(yyjson_is_obj(root));
-    yyjson_val* const cases = yyjson_obj_get(root, "cases");
+    yyjson_val *const cases = yyjson_obj_get(root, "cases");
     ASSERT_TRUE(yyjson_is_arr(cases));
 
     std::size_t index = 0;
     std::size_t maximum = 0;
-    yyjson_val* value = nullptr;
-    yyjson_arr_foreach(cases, index, maximum, value)
-    {
+    yyjson_val *value = nullptr;
+    yyjson_arr_foreach(cases, index, maximum, value) {
         ASSERT_TRUE(yyjson_is_obj(value));
-        const char* const id = yyjson_get_str(yyjson_obj_get(value, "id"));
-        const char* const input =
+        const char *const id = yyjson_get_str(yyjson_obj_get(value, "id"));
+        const char *const input =
             yyjson_get_str(yyjson_obj_get(value, "input"));
-        yyjson_val* const accepted_value =
+        yyjson_val *const accepted_value =
             yyjson_obj_get(value, "accepted");
         ASSERT_NE(id, nullptr);
         ASSERT_NE(input, nullptr);
@@ -63,7 +60,7 @@ TEST(Idna, MatchesCheckedInUts46Corpus)
         const bool accepted = yyjson_get_bool(accepted_value);
         EXPECT_EQ(static_cast<bool>(result), accepted);
         if (accepted) {
-            const char* const expected =
+            const char *const expected =
                 yyjson_get_str(yyjson_obj_get(value, "ascii"));
             ASSERT_NE(expected, nullptr);
             EXPECT_EQ(result.ascii, expected);
@@ -75,16 +72,14 @@ TEST(Idna, MatchesCheckedInUts46Corpus)
     }
 }
 
-TEST(Idna, RejectsInvalidUtf8BeforeDnsUse)
-{
+TEST(Idna, RejectsInvalidUtf8BeforeDnsUse) {
     const std::string invalid_utf8{"origin\xc0\xaf.example", 16};
     const auto result = normalize_hostname(invalid_utf8);
     EXPECT_FALSE(result);
     EXPECT_EQ(result.error, HostnameError::idna_conversion);
 }
 
-TEST(Idna, EnforcesBoundedInputAndDnsWireLengths)
-{
+TEST(Idna, EnforcesBoundedInputAndDnsWireLengths) {
     const auto oversized_input = normalize_hostname(std::string(4097, 'a'));
     EXPECT_FALSE(oversized_input);
     EXPECT_EQ(oversized_input.error, HostnameError::input_too_long);
@@ -95,19 +90,13 @@ TEST(Idna, EnforcesBoundedInputAndDnsWireLengths)
     EXPECT_EQ(oversized_label.error, HostnameError::label_too_long);
 
     const std::string maximum_hostname =
-        std::string(63, 'a') + "."
-        + std::string(63, 'b') + "."
-        + std::string(63, 'c') + "."
-        + std::string(61, 'd');
+        std::string(63, 'a') + "." + std::string(63, 'b') + "." + std::string(63, 'c') + "." + std::string(61, 'd');
     ASSERT_EQ(maximum_hostname.size(), 253U);
     EXPECT_TRUE(normalize_hostname(maximum_hostname));
     EXPECT_TRUE(normalize_hostname(maximum_hostname + "."));
 
     const std::string oversized_hostname =
-        std::string(63, 'a') + "."
-        + std::string(63, 'b') + "."
-        + std::string(63, 'c') + "."
-        + std::string(62, 'd');
+        std::string(63, 'a') + "." + std::string(63, 'b') + "." + std::string(63, 'c') + "." + std::string(62, 'd');
     ASSERT_EQ(oversized_hostname.size(), 254U);
     const auto oversized_result = normalize_hostname(oversized_hostname);
     EXPECT_FALSE(oversized_result);

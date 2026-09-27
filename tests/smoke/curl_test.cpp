@@ -8,39 +8,35 @@
 namespace {
 
 class CurlGlobal final {
-public:
+  public:
     CurlGlobal() noexcept
-        : result_(curl_global_init(CURL_GLOBAL_DEFAULT))
-    {
+        : result_(curl_global_init(CURL_GLOBAL_DEFAULT)) {
     }
 
-    ~CurlGlobal()
-    {
+    ~CurlGlobal() {
         if (result_ == CURLE_OK) {
             curl_global_cleanup();
         }
     }
 
-    CurlGlobal(const CurlGlobal&) = delete;
-    CurlGlobal& operator=(const CurlGlobal&) = delete;
+    CurlGlobal(const CurlGlobal &) = delete;
+    CurlGlobal &operator=(const CurlGlobal &) = delete;
 
-    [[nodiscard]] CURLcode result() const noexcept
-    {
+    [[nodiscard]] CURLcode result() const noexcept {
         return result_;
     }
 
-private:
+  private:
     CURLcode result_;
 };
 
 } // namespace
 
-TEST(BuildSmoke, InitializesMinimalPinnedCurl)
-{
+TEST(BuildSmoke, InitializesMinimalPinnedCurl) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
 
-    const curl_version_info_data* const version =
+    const curl_version_info_data *const version =
         curl_version_info(CURLVERSION_NOW);
     ASSERT_NE(version, nullptr);
     EXPECT_EQ(version->version_num, LIBCURL_VERSION_NUM);
@@ -52,7 +48,7 @@ TEST(BuildSmoke, InitializesMinimalPinnedCurl)
 
     std::array<bool, 2> found_protocols{};
     ASSERT_NE(version->protocols, nullptr);
-    for (const char* const* protocol = version->protocols;
+    for (const char *const *protocol = version->protocols;
          *protocol != nullptr;
          ++protocol) {
         const std::string_view name{*protocol};
@@ -71,11 +67,11 @@ TEST(BuildSmoke, InitializesMinimalPinnedCurl)
         &curl_easy_cleanup);
     ASSERT_NE(easy, nullptr);
     EXPECT_EQ(curl_easy_setopt(easy.get(), CURLOPT_PROTOCOLS_STR, "https"),
-        CURLE_OK);
+              CURLE_OK);
     EXPECT_EQ(curl_easy_setopt(
                   easy.get(), CURLOPT_REDIR_PROTOCOLS_STR, "https"),
-        CURLE_OK);
+              CURLE_OK);
     EXPECT_EQ(curl_easy_setopt(
                   easy.get(), CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS),
-        CURLE_OK);
+              CURLE_OK);
 }

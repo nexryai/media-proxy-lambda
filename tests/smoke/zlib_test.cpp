@@ -4,8 +4,7 @@
 #include <gtest/gtest.h>
 #include <zlib.h>
 
-TEST(BuildSmoke, RoundTripsWithPinnedZlib)
-{
+TEST(BuildSmoke, RoundTripsWithPinnedZlib) {
     constexpr std::string_view input =
         "bounded compressed response body for MediaProxy";
     std::array<Bytef, 128> compressed{};
@@ -15,7 +14,7 @@ TEST(BuildSmoke, RoundTripsWithPinnedZlib)
         compress2(
             compressed.data(),
             &compressed_length,
-            reinterpret_cast<const Bytef*>(input.data()),
+            reinterpret_cast<const Bytef *>(input.data()),
             input.size(),
             Z_BEST_COMPRESSION),
         Z_OK);
@@ -24,7 +23,7 @@ TEST(BuildSmoke, RoundTripsWithPinnedZlib)
     uLongf output_length = output.size();
     ASSERT_EQ(
         uncompress(
-            reinterpret_cast<Bytef*>(output.data()),
+            reinterpret_cast<Bytef *>(output.data()),
             &output_length,
             compressed.data(),
             compressed_length),

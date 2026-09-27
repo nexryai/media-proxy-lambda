@@ -18,15 +18,13 @@ namespace mediaproxy::http {
 namespace {
 
 struct CurlUrlDeleter {
-    void operator()(CURLU* handle) const noexcept
-    {
+    void operator()(CURLU *handle) const noexcept {
         curl_url_cleanup(handle);
     }
 };
 
 struct CurlStringDeleter {
-    void operator()(char* value) const noexcept
-    {
+    void operator()(char *value) const noexcept {
         curl_free(value);
     }
 };
@@ -34,16 +32,14 @@ struct CurlStringDeleter {
 using CurlUrl = std::unique_ptr<CURLU, CurlUrlDeleter>;
 using CurlString = std::unique_ptr<char, CurlStringDeleter>;
 
-[[nodiscard]] UrlPolicyResult fail(UrlError error)
-{
+[[nodiscard]] UrlPolicyResult fail(UrlError error) {
     return {.url = std::nullopt, .error = error};
 }
 
 [[nodiscard]] std::optional<std::string> get_part(
-    CURLU* handle,
-    CURLUPart part)
-{
-    char* raw = nullptr;
+    CURLU *handle,
+    CURLUPart part) {
+    char *raw = nullptr;
     if (curl_url_get(handle, part, &raw, 0) != CURLUE_OK) {
         return std::nullopt;
     }
@@ -51,9 +47,8 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
     return std::string{value.get()};
 }
 
-[[nodiscard]] bool has_user_information(CURLU* handle) noexcept
-{
-    char* raw = nullptr;
+[[nodiscard]] bool has_user_information(CURLU *handle) noexcept {
+    char *raw = nullptr;
     const CURLUcode user_result =
         curl_url_get(handle, CURLUPART_USER, &raw, 0);
     CurlString user{raw};
@@ -64,8 +59,7 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
     return user_result != CURLUE_NO_USER || password_result != CURLUE_NO_PASSWORD;
 }
 
-[[nodiscard]] std::optional<std::uint16_t> parse_port(CURLU* handle)
-{
+[[nodiscard]] std::optional<std::uint16_t> parse_port(CURLU *handle) {
     const auto value = get_part(handle, CURLUPART_PORT);
     if (!value) {
         return std::uint16_t{443};
@@ -73,8 +67,7 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
     unsigned int parsed = 0;
     const auto result = std::from_chars(
         value->data(), value->data() + value->size(), parsed, 10);
-    if (result.ec != std::errc{} || result.ptr != value->data() + value->size()
-        || (parsed != 80 && parsed != 443)) {
+    if (result.ec != std::errc{} || result.ptr != value->data() + value->size() || (parsed != 80 && parsed != 443)) {
         return std::nullopt;
     }
     return static_cast<std::uint16_t>(parsed);
@@ -82,8 +75,7 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
 
 } // namespace
 
-UrlPolicyResult validate_origin_url(std::string_view source)
-{
+UrlPolicyResult validate_origin_url(std::string_view source) {
     if (source.find('\0') != std::string_view::npos) {
         return fail(UrlError::invalid_syntax);
     }
@@ -101,8 +93,7 @@ UrlPolicyResult validate_origin_url(std::string_view source)
         return fail(UrlError::invalid_syntax);
     }
     const std::string terminated{source};
-    if (curl_url_set(handle.get(), CURLUPART_URL, terminated.c_str(), 0)
-        != CURLUE_OK) {
+    if (curl_url_set(handle.get(), CURLUPART_URL, terminated.c_str(), 0) != CURLUE_OK) {
         return fail(UrlError::invalid_syntax);
     }
     if (has_user_information(handle.get())) {

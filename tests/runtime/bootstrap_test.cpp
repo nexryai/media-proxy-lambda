@@ -1,6 +1,6 @@
 #include <array>
-#include <charconv>
 #include <cerrno>
+#include <charconv>
 #include <csignal>
 #include <cstddef>
 #include <cstdint>
@@ -25,41 +25,38 @@
 namespace {
 
 class FileDescriptor final {
-public:
+  public:
     explicit FileDescriptor(int value = -1) noexcept
-        : value_(value)
-    {
+        : value_(value) {
     }
 
-    ~FileDescriptor()
-    {
+    ~FileDescriptor() {
         if (value_ >= 0) {
             ::close(value_);
         }
     }
 
-    FileDescriptor(const FileDescriptor&) = delete;
-    FileDescriptor& operator=(const FileDescriptor&) = delete;
-    FileDescriptor(FileDescriptor&& other) noexcept
-        : value_(std::exchange(other.value_, -1))
-    {
+    FileDescriptor(const FileDescriptor &) = delete;
+    FileDescriptor &operator=(const FileDescriptor &) = delete;
+    FileDescriptor(FileDescriptor &&other) noexcept
+        : value_(std::exchange(other.value_, -1)) {
     }
 
-    [[nodiscard]] int get() const noexcept { return value_; }
+    [[nodiscard]] int get() const noexcept {
+        return value_;
+    }
 
-private:
+  private:
     int value_;
 };
 
 class ChildProcess final {
-public:
+  public:
     explicit ChildProcess(pid_t pid) noexcept
-        : pid_(pid)
-    {
+        : pid_(pid) {
     }
 
-    ~ChildProcess()
-    {
+    ~ChildProcess() {
         if (pid_ > 0) {
             ::kill(pid_, SIGKILL);
             int status = 0;
@@ -68,8 +65,7 @@ public:
         }
     }
 
-    [[nodiscard]] int wait()
-    {
+    [[nodiscard]] int wait() {
         int status = 0;
         pid_t result = -1;
         do {
@@ -82,12 +78,11 @@ public:
         return -1;
     }
 
-private:
+  private:
     pid_t pid_;
 };
 
-[[nodiscard]] FileDescriptor CreateListener(std::uint16_t& port)
-{
+[[nodiscard]] FileDescriptor CreateListener(std::uint16_t &port) {
     FileDescriptor listener{::socket(AF_INET, SOCK_STREAM, 0)};
     if (listener.get() < 0) {
         return listener;
@@ -98,23 +93,22 @@ private:
         .sin_addr = {.s_addr = htonl(INADDR_LOOPBACK)},
         .sin_zero = {},
     };
-    if (::bind(listener.get(), reinterpret_cast<const sockaddr*>(&address),
-            sizeof(address)) != 0
-        || ::listen(listener.get(), 4) != 0) {
+    if (::bind(listener.get(), reinterpret_cast<const sockaddr *>(&address),
+               sizeof(address)) != 0 ||
+        ::listen(listener.get(), 4) != 0) {
         return FileDescriptor{};
     }
     sockaddr_in bound{};
     socklen_t bound_size = sizeof(bound);
-    if (::getsockname(listener.get(), reinterpret_cast<sockaddr*>(&bound),
-            &bound_size) != 0) {
+    if (::getsockname(listener.get(), reinterpret_cast<sockaddr *>(&bound),
+                      &bound_size) != 0) {
         return FileDescriptor{};
     }
     port = ntohs(bound.sin_port);
     return listener;
 }
 
-[[nodiscard]] FileDescriptor Accept(int listener)
-{
+[[nodiscard]] FileDescriptor Accept(int listener) {
     int accepted = -1;
     do {
         accepted = ::accept(listener, nullptr, nullptr);
@@ -122,8 +116,7 @@ private:
     return FileDescriptor{accepted};
 }
 
-[[nodiscard]] bool SendAll(int socket, std::string_view bytes)
-{
+[[nodiscard]] bool SendAll(int socket, std::string_view bytes) {
     std::size_t offset = 0;
     while (offset < bytes.size()) {
         const ssize_t sent = ::send(
@@ -139,12 +132,10 @@ private:
     return true;
 }
 
-[[nodiscard]] std::string ReadHeaders(int socket)
-{
+[[nodiscard]] std::string ReadHeaders(int socket) {
     std::string output;
     std::array<char, 1024> buffer{};
-    while (output.size() <= 64U * 1024U
-        && output.find("\r\n\r\n") == std::string::npos) {
+    while (output.size() <= 64U * 1024U && output.find("\r\n\r\n") == std::string::npos) {
         const ssize_t received = ::recv(socket, buffer.data(), buffer.size(), 0);
         if (received < 0 && errno == EINTR) {
             continue;
@@ -157,8 +148,7 @@ private:
     return output;
 }
 
-[[nodiscard]] std::string ReadToEnd(int socket)
-{
+[[nodiscard]] std::string ReadToEnd(int socket) {
     std::string output;
     std::array<char, 4096> buffer{};
     while (output.size() <= 16U * 1024U * 1024U) {
@@ -177,8 +167,7 @@ private:
 [[nodiscard]] std::string InvocationResponse(
     std::string_view request_id,
     std::string_view trace_id,
-    std::string_view event)
-{
+    std::string_view event) {
     std::string response =
         "HTTP/1.1 200 OK\r\nLambda-Runtime-Aws-Request-Id: ";
     response += request_id;
@@ -193,8 +182,7 @@ private:
 }
 
 [[nodiscard]] std::optional<std::string> DecodeChunkedEntity(
-    std::string_view encoded)
-{
+    std::string_view encoded) {
     std::string decoded;
     std::size_t cursor = 0;
     while (cursor < encoded.size()) {
@@ -203,8 +191,8 @@ private:
             return std::nullopt;
         }
         std::size_t chunk_size = 0;
-        const char* const first = encoded.data() + cursor;
-        const char* const last = encoded.data() + line_end;
+        const char *const first = encoded.data() + cursor;
+        const char *const last = encoded.data() + line_end;
         const auto [end, error] =
             std::from_chars(first, last, chunk_size, 16);
         if (error != std::errc{} || end != last) {
@@ -217,9 +205,7 @@ private:
             }
             return decoded;
         }
-        if (chunk_size > encoded.size() - cursor
-            || encoded.size() - cursor - chunk_size < 2U
-            || encoded.substr(cursor + chunk_size, 2) != "\r\n") {
+        if (chunk_size > encoded.size() - cursor || encoded.size() - cursor - chunk_size < 2U || encoded.substr(cursor + chunk_size, 2) != "\r\n") {
             return std::nullopt;
         }
         decoded.append(encoded.substr(cursor, chunk_size));
@@ -228,11 +214,10 @@ private:
     return std::nullopt;
 }
 
-[[nodiscard]] bool InstallNoFileOpenFilter() noexcept
-{
+[[nodiscard]] bool InstallNoFileOpenFilter() noexcept {
     const sock_filter filter[] = {
         BPF_STMT(BPF_LD | BPF_W | BPF_ABS,
-            offsetof(seccomp_data, nr)),
+                 offsetof(seccomp_data, nr)),
 #ifdef __NR_open
         BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_open, 0, 1),
         BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM),
@@ -247,10 +232,9 @@ private:
     };
     const sock_fprog program{
         .len = static_cast<unsigned short>(std::size(filter)),
-        .filter = const_cast<sock_filter*>(filter),
+        .filter = const_cast<sock_filter *>(filter),
     };
-    return ::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == 0
-        && ::prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &program) == 0;
+    return ::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == 0 && ::prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &program) == 0;
 }
 
 [[nodiscard]] std::string ServeInvocation(
@@ -258,15 +242,12 @@ private:
     std::string_view authority,
     std::string_view request_id,
     std::string_view trace_id,
-    std::string_view event)
-{
+    std::string_view event) {
     FileDescriptor poll = Accept(listener);
     EXPECT_GE(poll.get(), 0);
     const std::string poll_request = ReadHeaders(poll.get());
     EXPECT_EQ(poll_request,
-        "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\nHost: "
-            + std::string{authority}
-            + "\r\nConnection: close\r\n\r\n");
+              "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\nHost: " + std::string{authority} + "\r\nConnection: close\r\n\r\n");
     EXPECT_TRUE(SendAll(
         poll.get(), InvocationResponse(request_id, trace_id, event)));
 
@@ -274,28 +255,25 @@ private:
     EXPECT_GE(response.get(), 0);
     const std::string response_request = ReadToEnd(response.get());
     EXPECT_TRUE(SendAll(response.get(),
-        "HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\n\r\n"));
+                        "HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\n\r\n"));
     return response_request;
 }
 
 void ExpectStreamingResponse(
-    const std::string& request,
+    const std::string &request,
     std::string_view authority,
     std::string_view request_id,
     unsigned int status,
     std::string_view content_type,
-    std::string_view body)
-{
+    std::string_view body) {
     const std::string expected_head =
-        "POST /2018-06-01/runtime/invocation/" + std::string{request_id}
-        + "/response HTTP/1.1\r\nHost: " + std::string{authority}
-        + "\r\nLambda-Runtime-Function-Response-Mode: streaming"
-          "\r\nTransfer-Encoding: chunked"
-          "\r\nContent-Type: "
-          "application/vnd.awslambda.http-integration-response"
-          "\r\nTrailer: Lambda-Runtime-Function-Error-Type, "
-          "Lambda-Runtime-Function-Error-Body"
-          "\r\nConnection: close\r\n\r\n";
+        "POST /2018-06-01/runtime/invocation/" + std::string{request_id} + "/response HTTP/1.1\r\nHost: " + std::string{authority} + "\r\nLambda-Runtime-Function-Response-Mode: streaming"
+                                                                                                                                     "\r\nTransfer-Encoding: chunked"
+                                                                                                                                     "\r\nContent-Type: "
+                                                                                                                                     "application/vnd.awslambda.http-integration-response"
+                                                                                                                                     "\r\nTrailer: Lambda-Runtime-Function-Error-Type, "
+                                                                                                                                     "Lambda-Runtime-Function-Error-Body"
+                                                                                                                                     "\r\nConnection: close\r\n\r\n";
     const std::size_t head_end = request.find("\r\n\r\n");
     ASSERT_NE(head_end, std::string::npos);
     EXPECT_EQ(request.substr(0, head_end + 4), expected_head);
@@ -303,16 +281,13 @@ void ExpectStreamingResponse(
     const auto decoded = DecodeChunkedEntity(
         std::string_view{request}.substr(head_end + 4));
     ASSERT_TRUE(decoded.has_value());
-    std::string expected = "{\"statusCode\":" + std::to_string(status)
-        + ",\"headers\":{\"Content-Type\":\""
-        + std::string{content_type} + "\"}}";
+    std::string expected = "{\"statusCode\":" + std::to_string(status) + ",\"headers\":{\"Content-Type\":\"" + std::string{content_type} + "\"}}";
     expected.append(8, '\0');
     expected.append(body);
     EXPECT_EQ(*decoded, expected);
 }
 
-TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsWithoutOpeningFiles)
-{
+TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsWithoutOpeningFiles) {
     std::uint16_t port = 0;
     FileDescriptor listener = CreateListener(port);
     ASSERT_GE(listener.get(), 0);
@@ -330,7 +305,7 @@ TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsWithoutOpeningFiles)
             _exit(125);
         }
         ::execl(MEDIAPROXY_BOOTSTRAP_PATH,
-            MEDIAPROXY_BOOTSTRAP_PATH, static_cast<char*>(nullptr));
+                MEDIAPROXY_BOOTSTRAP_PATH, static_cast<char *>(nullptr));
         _exit(127);
     }
     ChildProcess child{pid};
@@ -346,14 +321,13 @@ TEST(BootstrapRuntime, ProcessesConsecutiveInvocationsWithoutOpeningFiles)
     const std::string bad_response = ServeInvocation(
         listener.get(), authority, "request-2", "Root=trace-2", "{}");
     ExpectStreamingResponse(bad_response, authority, "request-2", 400,
-        "text/plain; charset=utf-8", "Bad request\n");
+                            "text/plain; charset=utf-8", "Bad request\n");
 
     {
         FileDescriptor final_poll = Accept(listener.get());
         ASSERT_GE(final_poll.get(), 0);
         EXPECT_EQ(ReadHeaders(final_poll.get()),
-            "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\nHost: "
-                + authority + "\r\nConnection: close\r\n\r\n");
+                  "GET /2018-06-01/runtime/invocation/next HTTP/1.1\r\nHost: " + authority + "\r\nConnection: close\r\n\r\n");
     }
 
     const int status = child.wait();

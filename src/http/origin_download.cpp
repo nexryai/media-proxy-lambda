@@ -15,74 +15,61 @@
 namespace mediaproxy::http {
 namespace {
 
-CURL* create_system_easy(void*)
-{
+CURL *create_system_easy(void *) {
     return curl_easy_init();
 }
 
-void destroy_system_easy(CURL* easy, void*)
-{
+void destroy_system_easy(CURL *easy, void *) {
     curl_easy_cleanup(easy);
 }
 
 CURLcode perform_system_request(
-    CURL* easy,
-    OriginResponseAccumulator&,
-    void*)
-{
+    CURL *easy,
+    OriginResponseAccumulator &,
+    void *) {
     return curl_easy_perform(easy);
 }
 
-CURLcode read_system_response_code(CURL* easy, long* status, void*)
-{
+CURLcode read_system_response_code(CURL *easy, long *status, void *) {
     return curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, status);
 }
 
 class EasyDeleter final {
-public:
+  public:
     explicit EasyDeleter(OriginTransportApi transport) noexcept
-        : transport_(transport)
-    {
+        : transport_(transport) {
     }
 
-    void operator()(CURL* easy) const noexcept
-    {
+    void operator()(CURL *easy) const noexcept {
         if (easy != nullptr && transport_.destroy != nullptr) {
             transport_.destroy(easy, transport_.context);
         }
     }
 
-private:
+  private:
     OriginTransportApi transport_;
 };
 
 using EasyHandle = std::unique_ptr<CURL, EasyDeleter>;
 
 [[nodiscard]] bool valid_transport(
-    const OriginTransportApi& transport) noexcept
-{
-    return transport.create != nullptr && transport.destroy != nullptr
-        && transport.perform != nullptr
-        && transport.response_code != nullptr;
+    const OriginTransportApi &transport) noexcept {
+    return transport.create != nullptr && transport.destroy != nullptr && transport.perform != nullptr && transport.response_code != nullptr;
 }
 
-[[nodiscard]] bool valid_timeout(const OriginTimeoutApi& timeout) noexcept
-{
+[[nodiscard]] bool valid_timeout(const OriginTimeoutApi &timeout) noexcept {
     return timeout.remaining_milliseconds != nullptr;
 }
 
-[[nodiscard]] bool is_redirect_status(long status) noexcept
-{
-    return status == 301 || status == 302 || status == 303 || status == 307
-        || status == 308;
+[[nodiscard]] bool is_redirect_status(long status) noexcept {
+    return status == 301 || status == 302 || status == 303 || status == 307 || status == 308;
 }
 
 [[nodiscard]] OriginDownloadResult perform_origin_request(
-    const OriginUrl& origin,
+    const OriginUrl &origin,
     OriginTimeoutApi timeout,
     AddressResolverApi resolver,
-    OriginTransportApi transport)
-{
+    OriginTransportApi transport) {
     OriginDownloadResult result;
     if (!valid_transport(transport) || !valid_timeout(timeout)) {
         result.error = OriginDownloadError::invalid_argument;
@@ -137,11 +124,10 @@ using EasyHandle = std::unique_ptr<CURL, EasyDeleter>;
     // The compatibility contract retains exactly 10 MiB without reading a
     // probe byte. curl reports the callback's intentional short write as an
     // error, but this one fully classified condition is a completed body.
-    if (result.curl_error != CURLE_OK
-        && !is_body_limit_completion(result.curl_error, result.response)) {
+    if (result.curl_error != CURLE_OK && !is_body_limit_completion(result.curl_error, result.response)) {
         result.error = result.response.error() == OriginResponseError::none
-            ? OriginDownloadError::transfer
-            : OriginDownloadError::response_policy;
+                           ? OriginDownloadError::transfer
+                           : OriginDownloadError::response_policy;
         return result;
     }
 
@@ -161,15 +147,13 @@ struct FixedTimeout {
     long milliseconds = 0;
 };
 
-long fixed_remaining_time(void* context)
-{
-    return static_cast<FixedTimeout*>(context)->milliseconds;
+long fixed_remaining_time(void *context) {
+    return static_cast<FixedTimeout *>(context)->milliseconds;
 }
 
 } // namespace
 
-OriginTransportApi system_origin_transport() noexcept
-{
+OriginTransportApi system_origin_transport() noexcept {
     return {
         .context = nullptr,
         .create = &create_system_easy,
@@ -180,11 +164,10 @@ OriginTransportApi system_origin_transport() noexcept
 }
 
 OriginDownloadResult download_origin_once(
-    const OriginUrl& origin,
+    const OriginUrl &origin,
     long timeout_milliseconds,
     AddressResolverApi resolver,
-    OriginTransportApi transport)
-{
+    OriginTransportApi transport) {
     if (timeout_milliseconds <= 0) {
         OriginDownloadResult result;
         result.error = OriginDownloadError::invalid_argument;
@@ -206,11 +189,10 @@ OriginDownloadResult download_origin_once(
 }
 
 OriginDownloadResult download_origin(
-    const OriginUrl& initial,
+    const OriginUrl &initial,
     OriginTimeoutApi timeout,
     AddressResolverApi resolver,
-    OriginTransportApi transport)
-{
+    OriginTransportApi transport) {
     OriginDownloadResult result;
     if (!valid_transport(transport) || !valid_timeout(timeout)) {
         result.error = OriginDownloadError::invalid_argument;
@@ -246,7 +228,7 @@ OriginDownloadResult download_origin(
             return result;
         }
 
-        const auto& location = result.response.location();
+        const auto &location = result.response.location();
         if (!location || location->empty()) {
             result.error = OriginDownloadError::redirect;
             result.redirect_error = RedirectError::invalid_location;

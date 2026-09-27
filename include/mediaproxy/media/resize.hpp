@@ -12,14 +12,14 @@ struct ImageDimensions {
     std::uint32_t width = 0;
     std::uint32_t height = 0;
 
-    [[nodiscard]] bool operator==(const ImageDimensions&) const = default;
+    [[nodiscard]] bool operator==(const ImageDimensions &) const = default;
 };
 
 struct AnimatedResize {
     std::uint32_t width = 0;
     std::uint32_t height = 0;
 
-    [[nodiscard]] bool operator==(const AnimatedResize&) const = default;
+    [[nodiscard]] bool operator==(const AnimatedResize &) const = default;
 };
 
 [[nodiscard]] std::optional<ImageDimensions> validate_dimensions(

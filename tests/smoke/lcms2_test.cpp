@@ -6,8 +6,7 @@
 #include <gtest/gtest.h>
 #include <lcms2.h>
 
-TEST(BuildSmoke, RoundTripsPinnedLcms2ProfileInMemory)
-{
+TEST(BuildSmoke, RoundTripsPinnedLcms2ProfileInMemory) {
     EXPECT_EQ(cmsGetEncodedCMMversion(), 2190);
 
     using Profile = std::unique_ptr<void, decltype(&cmsCloseProfile)>;
@@ -25,7 +24,7 @@ TEST(BuildSmoke, RoundTripsPinnedLcms2ProfileInMemory)
     std::vector<std::uint8_t> encoded(encoded_size);
     ASSERT_NE(cmsSaveProfileToMem(
                   generated.get(), encoded.data(), &encoded_size),
-        FALSE);
+              FALSE);
     ASSERT_EQ(encoded_size, encoded.size());
 
     Profile parsed(

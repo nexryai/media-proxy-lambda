@@ -6,33 +6,29 @@
 namespace {
 
 class PngImage final {
-public:
-    PngImage() noexcept
-    {
+  public:
+    PngImage() noexcept {
         image_.version = PNG_IMAGE_VERSION;
     }
 
-    ~PngImage()
-    {
+    ~PngImage() {
         png_image_free(&image_);
     }
 
-    PngImage(const PngImage&) = delete;
-    PngImage& operator=(const PngImage&) = delete;
+    PngImage(const PngImage &) = delete;
+    PngImage &operator=(const PngImage &) = delete;
 
-    [[nodiscard]] png_image* get() noexcept
-    {
+    [[nodiscard]] png_image *get() noexcept {
         return &image_;
     }
 
-private:
+  private:
     png_image image_{};
 };
 
 } // namespace
 
-TEST(BuildSmoke, RoundTripsWithPinnedLibPng)
-{
+TEST(BuildSmoke, RoundTripsWithPinnedLibPng) {
     constexpr std::array<png_byte, 4> expected_pixel = {17, 34, 51, 68};
     PngImage writer;
     writer.get()->width = 1;
@@ -71,8 +67,7 @@ TEST(BuildSmoke, RoundTripsWithPinnedLibPng)
 
     PngImage truncated;
     if (png_image_begin_read_from_memory(
-            truncated.get(), encoded.data(), encoded_size / 2)
-        != 0) {
+            truncated.get(), encoded.data(), encoded_size / 2) != 0) {
         truncated.get()->format = PNG_FORMAT_RGBA;
         std::array<png_byte, 4> discarded{};
         EXPECT_EQ(

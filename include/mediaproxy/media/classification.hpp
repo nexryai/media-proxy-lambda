@@ -17,7 +17,7 @@ struct MediaPlan {
     bool animated = false;
     OutputFormat output = OutputFormat::webp;
 
-    [[nodiscard]] bool operator==(const MediaPlan&) const = default;
+    [[nodiscard]] bool operator==(const MediaPlan &) const = default;
 };
 
 [[nodiscard]] bool is_convertible_mime(MimeType mime) noexcept;

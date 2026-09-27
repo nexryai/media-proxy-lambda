@@ -27,19 +27,19 @@ enum class NextParseStatus {
 };
 
 class NextResponseParser {
-public:
+  public:
     [[nodiscard]] NextParseStatus feed(std::span<const std::byte> bytes);
-    [[nodiscard]] NextParseStatus status() const noexcept { return status_; }
-    [[nodiscard]] const Invocation& invocation() const noexcept
-    {
+    [[nodiscard]] NextParseStatus status() const noexcept {
+        return status_;
+    }
+    [[nodiscard]] const Invocation &invocation() const noexcept {
         return invocation_;
     }
-    [[nodiscard]] Invocation take_invocation() noexcept
-    {
+    [[nodiscard]] Invocation take_invocation() noexcept {
         return std::move(invocation_);
     }
 
-private:
+  private:
     [[nodiscard]] bool parse_headers(std::size_t header_end);
     [[nodiscard]] NextParseStatus append_event(
         std::span<const std::byte> bytes);

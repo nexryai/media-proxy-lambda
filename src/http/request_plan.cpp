@@ -5,12 +5,11 @@
 
 namespace mediaproxy::http {
 
-RequestPlan plan_request(const EventParseResult& event)
-{
+RequestPlan plan_request(const EventParseResult &event) {
     if (!event.request) {
         return make_error_response(ErrorResponse::bad_request);
     }
-    const FunctionUrlRequest& request = *event.request;
+    const FunctionUrlRequest &request = *event.request;
     if (request.route == RequestRoute::status) {
         return make_status_response();
     }

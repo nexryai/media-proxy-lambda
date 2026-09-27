@@ -20,26 +20,26 @@ enum class ResolvePinError {
 };
 
 class CurlResolvePin final {
-public:
+  public:
     CurlResolvePin() noexcept = default;
     ~CurlResolvePin();
 
-    CurlResolvePin(const CurlResolvePin&) = delete;
-    CurlResolvePin& operator=(const CurlResolvePin&) = delete;
-    CurlResolvePin(CurlResolvePin&& other) noexcept;
-    CurlResolvePin& operator=(CurlResolvePin&& other) noexcept;
+    CurlResolvePin(const CurlResolvePin &) = delete;
+    CurlResolvePin &operator=(const CurlResolvePin &) = delete;
+    CurlResolvePin(CurlResolvePin &&other) noexcept;
+    CurlResolvePin &operator=(CurlResolvePin &&other) noexcept;
 
     [[nodiscard]] static CurlResolvePin create(
-        const OriginUrl& origin,
+        const OriginUrl &origin,
         std::span<const ValidatedAddress> addresses);
 
     [[nodiscard]] explicit operator bool() const noexcept;
     [[nodiscard]] ResolvePinError error() const noexcept;
-    [[nodiscard]] const std::string& entry() const noexcept;
-    [[nodiscard]] curl_slist* native_handle() const noexcept;
-    [[nodiscard]] bool matches(const OriginUrl& origin) const noexcept;
+    [[nodiscard]] const std::string &entry() const noexcept;
+    [[nodiscard]] curl_slist *native_handle() const noexcept;
+    [[nodiscard]] bool matches(const OriginUrl &origin) const noexcept;
 
-private:
+  private:
     explicit CurlResolvePin(ResolvePinError error) noexcept;
 
     ResolvePinError error_ = ResolvePinError::empty_addresses;
@@ -47,7 +47,7 @@ private:
     std::string hostname_;
     std::uint16_t port_ = 0;
     std::string entry_;
-    curl_slist* list_ = nullptr;
+    curl_slist *list_ = nullptr;
 };
 
 } // namespace mediaproxy::http

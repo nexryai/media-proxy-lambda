@@ -11,8 +11,7 @@
 namespace mediaproxy::http {
 
 ResolutionPolicyResult validate_resolved_addresses(
-    std::span<const std::string_view> candidates)
-{
+    std::span<const std::string_view> candidates) {
     if (candidates.empty()) {
         return {
             .addresses = {},

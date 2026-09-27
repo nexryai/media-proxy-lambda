@@ -6,18 +6,20 @@
 #include <arpa/inet.h>
 #include <curl/curl.h>
 #include <gtest/gtest.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <mediaproxy/http/dns_resolver.hpp>
 #include <mediaproxy/http/origin_download.hpp>
 #include <mediaproxy/http/origin_response.hpp>
 #include <mediaproxy/http/redirect_policy.hpp>
 #include <mediaproxy/http/url_policy.hpp>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 namespace {
 
 using mediaproxy::http::AddressResolverApi;
+using mediaproxy::http::download_origin;
+using mediaproxy::http::maximum_origin_redirects;
 using mediaproxy::http::OriginDownloadError;
 using mediaproxy::http::OriginResponseAccumulator;
 using mediaproxy::http::OriginResponseError;
@@ -25,30 +27,25 @@ using mediaproxy::http::OriginTimeoutApi;
 using mediaproxy::http::OriginTransportApi;
 using mediaproxy::http::RedirectError;
 using mediaproxy::http::UrlError;
-using mediaproxy::http::download_origin;
-using mediaproxy::http::maximum_origin_redirects;
 using mediaproxy::http::validate_origin_url;
 
 class CurlGlobal final {
-public:
+  public:
     CurlGlobal() noexcept
-        : result_(curl_global_init(CURL_GLOBAL_DEFAULT))
-    {
+        : result_(curl_global_init(CURL_GLOBAL_DEFAULT)) {
     }
 
-    ~CurlGlobal()
-    {
+    ~CurlGlobal() {
         if (result_ == CURLE_OK) {
             curl_global_cleanup();
         }
     }
 
-    [[nodiscard]] CURLcode result() const noexcept
-    {
+    [[nodiscard]] CURLcode result() const noexcept {
         return result_;
     }
 
-private:
+  private:
     CURLcode result_;
 };
 
@@ -66,35 +63,30 @@ struct RedirectTransportState {
     std::size_t response_code_calls = 0;
 };
 
-CURL* RedirectCreate(void* context)
-{
-    auto& state = *static_cast<RedirectTransportState*>(context);
+CURL *RedirectCreate(void *context) {
+    auto &state = *static_cast<RedirectTransportState *>(context);
     ++state.create_calls;
     return curl_easy_init();
 }
 
-void RedirectDestroy(CURL* easy, void* context)
-{
-    auto& state = *static_cast<RedirectTransportState*>(context);
+void RedirectDestroy(CURL *easy, void *context) {
+    auto &state = *static_cast<RedirectTransportState *>(context);
     ++state.destroy_calls;
     curl_easy_cleanup(easy);
 }
 
 CURLcode RedirectPerform(
-    CURL* easy,
-    OriginResponseAccumulator& response,
-    void* context)
-{
-    auto& state = *static_cast<RedirectTransportState*>(context);
+    CURL *easy,
+    OriginResponseAccumulator &response,
+    void *context) {
+    auto &state = *static_cast<RedirectTransportState *>(context);
     const std::size_t index = state.perform_calls++;
     if (index >= state.hop_count) {
         return CURLE_FAILED_INIT;
     }
 
-    char* effective_url = nullptr;
-    if (curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &effective_url)
-            == CURLE_OK
-        && effective_url != nullptr) {
+    char *effective_url = nullptr;
+    if (curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &effective_url) == CURLE_OK && effective_url != nullptr) {
         state.effective_urls[index] = effective_url;
     }
     if (!state.header_lines[index].empty()) {
@@ -103,9 +95,8 @@ CURLcode RedirectPerform(
     return CURLE_OK;
 }
 
-CURLcode RedirectResponseCode(CURL*, long* status, void* context)
-{
-    auto& state = *static_cast<RedirectTransportState*>(context);
+CURLcode RedirectResponseCode(CURL *, long *status, void *context) {
+    auto &state = *static_cast<RedirectTransportState *>(context);
     const std::size_t index = state.response_code_calls++;
     if (index >= state.hop_count) {
         return CURLE_BAD_FUNCTION_ARGUMENT;
@@ -114,8 +105,7 @@ CURLcode RedirectResponseCode(CURL*, long* status, void* context)
     return CURLE_OK;
 }
 
-OriginTransportApi RedirectTransport(RedirectTransportState& state)
-{
+OriginTransportApi RedirectTransport(RedirectTransportState &state) {
     return {
         .context = &state,
         .create = &RedirectCreate,
@@ -131,15 +121,13 @@ struct TimeoutState {
     std::size_t expire_on_call = static_cast<std::size_t>(-1);
 };
 
-long RemainingTime(void* context)
-{
-    auto& state = *static_cast<TimeoutState*>(context);
+long RemainingTime(void *context) {
+    auto &state = *static_cast<TimeoutState *>(context);
     const std::size_t call = state.calls++;
     return call == state.expire_on_call ? 0 : state.milliseconds;
 }
 
-OriginTimeoutApi Timeout(TimeoutState& state)
-{
+OriginTimeoutApi Timeout(TimeoutState &state) {
     return {
         .context = &state,
         .remaining_milliseconds = &RemainingTime,
@@ -154,17 +142,14 @@ struct ResolverState {
     std::size_t release_calls = 0;
 };
 
-ResolverState* active_resolver = nullptr;
+ResolverState *active_resolver = nullptr;
 
 int CountingLookup(
-    const char* hostname,
-    const char*,
-    const addrinfo*,
-    addrinfo** result)
-{
-    if (active_resolver == nullptr || hostname == nullptr || result == nullptr
-        || active_resolver->lookup_calls
-            >= active_resolver->hostnames.size()) {
+    const char *hostname,
+    const char *,
+    const addrinfo *,
+    addrinfo **result) {
+    if (active_resolver == nullptr || hostname == nullptr || result == nullptr || active_resolver->lookup_calls >= active_resolver->hostnames.size()) {
         return EAI_FAIL;
     }
     active_resolver->hostnames[active_resolver->lookup_calls] = hostname;
@@ -173,17 +158,15 @@ int CountingLookup(
     return 0;
 }
 
-void CountingRelease(addrinfo*)
-{
+void CountingRelease(addrinfo *) {
     if (active_resolver != nullptr) {
         ++active_resolver->release_calls;
     }
 }
 
 class ResolverScope final {
-public:
-    explicit ResolverScope(ResolverState& state)
-    {
+  public:
+    explicit ResolverScope(ResolverState &state) {
         EXPECT_EQ(active_resolver, nullptr);
         state.address.sin_family = AF_INET;
         EXPECT_EQ(
@@ -193,29 +176,26 @@ public:
         state.answer.ai_socktype = SOCK_STREAM;
         state.answer.ai_protocol = IPPROTO_TCP;
         state.answer.ai_addrlen = sizeof(state.address);
-        state.answer.ai_addr = reinterpret_cast<sockaddr*>(&state.address);
+        state.answer.ai_addr = reinterpret_cast<sockaddr *>(&state.address);
         active_resolver = &state;
     }
 
-    ~ResolverScope()
-    {
+    ~ResolverScope() {
         active_resolver = nullptr;
     }
 
-    ResolverScope(const ResolverScope&) = delete;
-    ResolverScope& operator=(const ResolverScope&) = delete;
+    ResolverScope(const ResolverScope &) = delete;
+    ResolverScope &operator=(const ResolverScope &) = delete;
 };
 
-AddressResolverApi CountingResolver()
-{
+AddressResolverApi CountingResolver() {
     return {
         .lookup = &CountingLookup,
         .release = &CountingRelease,
     };
 }
 
-TEST(OriginRedirectDownload, FollowsEachSupportedStatusWithFreshHop)
-{
+TEST(OriginRedirectDownload, FollowsEachSupportedStatusWithFreshHop) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     const auto origin = validate_origin_url("https://1.1.1.1/start");
@@ -245,8 +225,7 @@ TEST(OriginRedirectDownload, FollowsEachSupportedStatusWithFreshHop)
     }
 }
 
-TEST(OriginRedirectDownload, RejectsMissingUnsafeAndUnsupportedRedirects)
-{
+TEST(OriginRedirectDownload, RejectsMissingUnsafeAndUnsupportedRedirects) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     const auto origin = validate_origin_url("https://1.1.1.1/start");
@@ -314,8 +293,7 @@ TEST(OriginRedirectDownload, RejectsMissingUnsafeAndUnsupportedRedirects)
     EXPECT_EQ(loop.perform_calls, 2U);
 }
 
-TEST(OriginRedirectDownload, ResolvesAndPinsEveryHostnameHop)
-{
+TEST(OriginRedirectDownload, ResolvesAndPinsEveryHostnameHop) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     const auto origin = validate_origin_url("https://first.example/start");
@@ -346,19 +324,23 @@ TEST(OriginRedirectDownload, ResolvesAndPinsEveryHostnameHop)
     EXPECT_EQ(transport.effective_urls[1], "https://second.example/final");
 }
 
-TEST(OriginRedirectDownload, RejectsTheEleventhRedirectResponse)
-{
+TEST(OriginRedirectDownload, RejectsTheEleventhRedirectResponse) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     const auto origin = validate_origin_url("https://1.1.1.1/start");
     ASSERT_TRUE(origin);
     constexpr std::array<std::string_view, maximum_origin_redirects + 1>
         headers{
-            "Location: /1\r\n", "Location: /2\r\n",
-            "Location: /3\r\n", "Location: /4\r\n",
-            "Location: /5\r\n", "Location: /6\r\n",
-            "Location: /7\r\n", "Location: /8\r\n",
-            "Location: /9\r\n", "Location: /10\r\n",
+            "Location: /1\r\n",
+            "Location: /2\r\n",
+            "Location: /3\r\n",
+            "Location: /4\r\n",
+            "Location: /5\r\n",
+            "Location: /6\r\n",
+            "Location: /7\r\n",
+            "Location: /8\r\n",
+            "Location: /9\r\n",
+            "Location: /10\r\n",
             "Location: /11\r\n",
         };
     RedirectTransportState transport;
@@ -379,8 +361,7 @@ TEST(OriginRedirectDownload, RejectsTheEleventhRedirectResponse)
     EXPECT_EQ(transport.perform_calls, maximum_origin_redirects + 1);
 }
 
-TEST(OriginRedirectDownload, RefreshesAndEnforcesRemainingTime)
-{
+TEST(OriginRedirectDownload, RefreshesAndEnforcesRemainingTime) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     const auto origin = validate_origin_url("https://1.1.1.1/start");

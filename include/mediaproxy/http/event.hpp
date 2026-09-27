@@ -31,8 +31,7 @@ struct EventParseResult {
     std::optional<FunctionUrlRequest> request;
     EventError error = EventError::none;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return request.has_value();
     }
 };

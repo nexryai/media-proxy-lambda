@@ -20,8 +20,7 @@ namespace mediaproxy::media {
 namespace {
 
 struct ImageUnref {
-    void operator()(VipsImage* image) const noexcept
-    {
+    void operator()(VipsImage *image) const noexcept {
         if (image != nullptr) {
             g_object_unref(image);
         }
@@ -29,43 +28,37 @@ struct ImageUnref {
 };
 
 struct GFree {
-    void operator()(void* memory) const noexcept
-    {
+    void operator()(void *memory) const noexcept {
         g_free(memory);
     }
 };
 
 struct HeifContextFree {
-    void operator()(heif_context* context) const noexcept
-    {
+    void operator()(heif_context *context) const noexcept {
         heif_context_free(context);
     }
 };
 
 struct HeifTrackRelease {
-    void operator()(heif_track* track) const noexcept
-    {
+    void operator()(heif_track *track) const noexcept {
         heif_track_release(track);
     }
 };
 
 struct HeifImageRelease {
-    void operator()(heif_image* image) const noexcept
-    {
+    void operator()(heif_image *image) const noexcept {
         heif_image_release(image);
     }
 };
 
 struct HeifDecodingOptionsFree {
-    void operator()(heif_decoding_options* options) const noexcept
-    {
+    void operator()(heif_decoding_options *options) const noexcept {
         heif_decoding_options_free(options);
     }
 };
 
 struct EncoderDelete {
-    void operator()(WebPAnimEncoder* encoder) const noexcept
-    {
+    void operator()(WebPAnimEncoder *encoder) const noexcept {
         WebPAnimEncoderDelete(encoder);
     }
 };
@@ -75,29 +68,31 @@ struct Picture {
     bool initialized = false;
 
     Picture()
-        : initialized(WebPPictureInit(&value) != 0)
-    {
+        : initialized(WebPPictureInit(&value) != 0) {
     }
 
-    ~Picture()
-    {
+    ~Picture() {
         if (initialized) {
             WebPPictureFree(&value);
         }
     }
 
-    Picture(const Picture&) = delete;
-    Picture& operator=(const Picture&) = delete;
+    Picture(const Picture &) = delete;
+    Picture &operator=(const Picture &) = delete;
 };
 
 struct WebpData {
     WebPData value{};
 
-    WebpData() { WebPDataInit(&value); }
-    ~WebpData() { WebPDataClear(&value); }
+    WebpData() {
+        WebPDataInit(&value);
+    }
+    ~WebpData() {
+        WebPDataClear(&value);
+    }
 
-    WebpData(const WebpData&) = delete;
-    WebpData& operator=(const WebpData&) = delete;
+    WebpData(const WebpData &) = delete;
+    WebpData &operator=(const WebpData &) = delete;
 };
 
 using ImagePtr = std::unique_ptr<VipsImage, ImageUnref>;
@@ -113,19 +108,16 @@ constexpr std::size_t maximum_avif_frames = 1024;
 constexpr std::size_t maximum_avif_decoded_pixels = 128'000'000;
 
 [[nodiscard]] AnimatedConversionResult fail(
-    AnimatedConversionError error) noexcept
-{
+    AnimatedConversionError error) noexcept {
     vips_error_clear();
     return {.error = error, .body = {}};
 }
 
 [[nodiscard]] bool metadata_int(
-    VipsImage* image,
-    const char* name,
-    int& value) noexcept
-{
-    if (vips_image_get_typeof(image, name) == 0
-        || vips_image_get_int(image, name, &value) != 0) {
+    VipsImage *image,
+    const char *name,
+    int &value) noexcept {
+    if (vips_image_get_typeof(image, name) == 0 || vips_image_get_int(image, name, &value) != 0) {
         vips_error_clear();
         return false;
     }
@@ -137,8 +129,7 @@ constexpr std::size_t maximum_avif_decoded_pixels = 128'000'000;
 AnimatedConversionResult convert_animated_image(
     std::span<const std::byte> body,
     ImageDimensions limits,
-    EncodingQuality quality)
-{
+    EncodingQuality quality) {
     if (!initialize_vips()) {
         return fail(AnimatedConversionError::initialization);
     }
@@ -156,47 +147,41 @@ AnimatedConversionResult convert_animated_image(
     const int loaded_height = vips_image_get_height(loaded.get());
     int page_count = 0;
     int page_height = 0;
-    if (!metadata_int(loaded.get(), VIPS_META_N_PAGES, page_count)
-        || !metadata_int(loaded.get(), VIPS_META_PAGE_HEIGHT, page_height)
-        || page_count <= 0 || page_height <= 0
-        || loaded_height % page_height != 0
-        || loaded_height / page_height != page_count) {
+    if (!metadata_int(loaded.get(), VIPS_META_N_PAGES, page_count) || !metadata_int(loaded.get(), VIPS_META_PAGE_HEIGHT, page_height) || page_count <= 0 || page_height <= 0 || loaded_height % page_height != 0 || loaded_height / page_height != page_count) {
         return fail(AnimatedConversionError::dimensions);
     }
     const auto dimensions = validate_dimensions(
         loaded_width, loaded_height, page_count, true);
-    if (!dimensions.has_value()
-        || dimensions->height != static_cast<std::uint32_t>(page_height)) {
+    if (!dimensions.has_value() || dimensions->height != static_cast<std::uint32_t>(page_height)) {
         return fail(AnimatedConversionError::dimensions);
     }
 
     ImagePtr resized;
-    VipsImage* current = loaded.get();
+    VipsImage *current = loaded.get();
     if (const auto target = animated_resize_target(*dimensions, limits)) {
-        VipsImage* thumbnail = nullptr;
+        VipsImage *thumbnail = nullptr;
         if (vips_thumbnail_image(loaded.get(), &thumbnail, target->width,
-                "height", target->height,
-                "crop", VIPS_INTERESTING_ALL,
-                "size", VIPS_SIZE_DOWN,
-                nullptr)
-            != 0) {
+                                 "height", target->height,
+                                 "crop", VIPS_INTERESTING_ALL,
+                                 "size", VIPS_SIZE_DOWN,
+                                 nullptr) != 0) {
             return fail(AnimatedConversionError::resize);
         }
         resized.reset(thumbnail);
         current = resized.get();
     }
 
-    void* encoded_memory = nullptr;
+    void *encoded_memory = nullptr;
     std::size_t encoded_size = 0;
     const int encode_result = vips_webpsave_buffer(current, &encoded_memory,
-        &encoded_size, "Q", encoding_quality_value(quality), "lossless", false,
-        nullptr);
+                                                   &encoded_size, "Q", encoding_quality_value(quality), "lossless", false,
+                                                   nullptr);
     BufferPtr encoded(encoded_memory);
     if (encode_result != 0 || !encoded || encoded_size == 0) {
         return fail(AnimatedConversionError::encode);
     }
 
-    const auto* bytes = static_cast<const std::byte*>(encoded.get());
+    const auto *bytes = static_cast<const std::byte *>(encoded.get());
     return {
         .error = AnimatedConversionError::none,
         .body = std::vector<std::byte>(bytes, bytes + encoded_size),
@@ -206,30 +191,24 @@ AnimatedConversionResult convert_animated_image(
 AnimatedConversionResult convert_animated_avif(
     std::span<const std::byte> body,
     ImageDimensions limits,
-    EncodingQuality quality)
-{
+    EncodingQuality quality) {
     if (body.empty()) {
         return fail(AnimatedConversionError::decode);
     }
 
     HeifContextPtr context(heif_context_alloc());
-    if (!context
-        || heif_context_read_from_memory_without_copy(context.get(),
-               body.data(), body.size(), nullptr).code != heif_error_Ok
-        || heif_context_has_sequence(context.get()) == 0) {
+    if (!context || heif_context_read_from_memory_without_copy(context.get(), body.data(), body.size(), nullptr).code != heif_error_Ok || heif_context_has_sequence(context.get()) == 0) {
         return fail(AnimatedConversionError::decode);
     }
 
     HeifTrackPtr track(heif_context_get_track(context.get(), 0));
-    if (!track || heif_track_get_track_handler_type(track.get())
-            != heif_track_type_image_sequence) {
+    if (!track || heif_track_get_track_handler_type(track.get()) != heif_track_type_image_sequence) {
         return fail(AnimatedConversionError::decode);
     }
 
     std::uint16_t width = 0;
     std::uint16_t height = 0;
-    if (heif_track_get_image_resolution(track.get(), &width, &height).code
-            != heif_error_Ok) {
+    if (heif_track_get_image_resolution(track.get(), &width, &height).code != heif_error_Ok) {
         return fail(AnimatedConversionError::dimensions);
     }
     const auto dimensions = validate_dimensions(width, height, 1, false);
@@ -245,13 +224,9 @@ AnimatedConversionResult convert_animated_avif(
 
     const auto resized = animated_resize_target(*dimensions, limits);
     const ImageDimensions target = resized
-        ? ImageDimensions{resized->width, resized->height}
-        : *dimensions;
-    if (target.width == 0 || target.height == 0
-        || target.width > static_cast<std::uint32_t>(
-            std::numeric_limits<int>::max())
-        || target.height > static_cast<std::uint32_t>(
-            std::numeric_limits<int>::max())) {
+                                       ? ImageDimensions{resized->width, resized->height}
+                                       : *dimensions;
+    if (target.width == 0 || target.height == 0 || target.width > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) || target.height > static_cast<std::uint32_t>(std::numeric_limits<int>::max())) {
         return fail(AnimatedConversionError::dimensions);
     }
 
@@ -284,10 +259,10 @@ AnimatedConversionResult convert_animated_avif(
     std::int32_t timestamp_ms = 0;
     std::size_t frame_count = 0;
     for (;;) {
-        heif_image* raw_frame = nullptr;
+        heif_image *raw_frame = nullptr;
         const heif_error error = heif_track_decode_next_image(track.get(),
-            &raw_frame, heif_colorspace_RGB,
-            heif_chroma_interleaved_RGBA, decoding_options.get());
+                                                              &raw_frame, heif_colorspace_RGB,
+                                                              heif_chroma_interleaved_RGBA, decoding_options.get());
         HeifImagePtr frame(raw_frame);
         if (error.code == heif_error_End_of_sequence) {
             break;
@@ -295,26 +270,18 @@ AnimatedConversionResult convert_animated_avif(
         if (error.code != heif_error_Ok || !frame) {
             return fail(AnimatedConversionError::decode);
         }
-        if (++frame_count > maximum_avif_frames
-            || frame_count > maximum_avif_decoded_pixels / pixels_per_frame) {
+        if (++frame_count > maximum_avif_frames || frame_count > maximum_avif_decoded_pixels / pixels_per_frame) {
             return fail(AnimatedConversionError::dimensions);
         }
-        if (heif_image_get_width(frame.get(), heif_channel_interleaved)
-                != width
-            || heif_image_get_height(frame.get(), heif_channel_interleaved)
-                != height) {
+        if (heif_image_get_width(frame.get(), heif_channel_interleaved) != width || heif_image_get_height(frame.get(), heif_channel_interleaved) != height) {
             return fail(AnimatedConversionError::dimensions);
         }
 
         std::size_t stride = 0;
-        const std::uint8_t* pixels = heif_image_get_plane_readonly2(
+        const std::uint8_t *pixels = heif_image_get_plane_readonly2(
             frame.get(), heif_channel_interleaved, &stride);
         const std::size_t packed_width = static_cast<std::size_t>(width) * 4;
-        if (!pixels || stride < packed_width
-            || stride > static_cast<std::size_t>(
-                std::numeric_limits<int>::max())
-            || static_cast<std::size_t>(height)
-                > std::numeric_limits<std::size_t>::max() / stride) {
+        if (!pixels || stride < packed_width || stride > static_cast<std::size_t>(std::numeric_limits<int>::max()) || static_cast<std::size_t>(height) > std::numeric_limits<std::size_t>::max() / stride) {
             return fail(AnimatedConversionError::decode);
         }
 
@@ -326,20 +293,19 @@ AnimatedConversionResult convert_animated_avif(
         picture.value.height = height;
         picture.value.use_argb = 1;
         if (WebPPictureImportRGBA(&picture.value, pixels,
-                static_cast<int>(stride)) == 0
-            || (resized && WebPPictureRescale(&picture.value,
-                    static_cast<int>(target.width),
-                    static_cast<int>(target.height)) == 0)
-            || WebPAnimEncoderAdd(encoder.get(), &picture.value,
-                   timestamp_ms, &config) == 0) {
+                                  static_cast<int>(stride)) == 0 ||
+            (resized && WebPPictureRescale(&picture.value,
+                                           static_cast<int>(target.width),
+                                           static_cast<int>(target.height)) == 0) ||
+            WebPAnimEncoderAdd(encoder.get(), &picture.value,
+                               timestamp_ms, &config) == 0) {
             return fail(AnimatedConversionError::encode);
         }
 
         const std::uint64_t duration_ms = std::max<std::uint64_t>(1,
-            static_cast<std::uint64_t>(heif_image_get_duration(frame.get()))
-                * 1000U / timescale);
+                                                                  static_cast<std::uint64_t>(heif_image_get_duration(frame.get())) * 1000U / timescale);
         if (duration_ms > static_cast<std::uint64_t>(
-                std::numeric_limits<std::int32_t>::max() - timestamp_ms)) {
+                              std::numeric_limits<std::int32_t>::max() - timestamp_ms)) {
             return fail(AnimatedConversionError::dimensions);
         }
         timestamp_ms += static_cast<std::int32_t>(duration_ms);
@@ -349,15 +315,14 @@ AnimatedConversionResult convert_animated_avif(
         return fail(AnimatedConversionError::decode);
     }
     if (WebPAnimEncoderAdd(encoder.get(), nullptr, timestamp_ms,
-            nullptr) == 0) {
+                           nullptr) == 0) {
         return fail(AnimatedConversionError::encode);
     }
     WebpData output;
-    if (WebPAnimEncoderAssemble(encoder.get(), &output.value) == 0
-        || !output.value.bytes || output.value.size == 0) {
+    if (WebPAnimEncoderAssemble(encoder.get(), &output.value) == 0 || !output.value.bytes || output.value.size == 0) {
         return fail(AnimatedConversionError::encode);
     }
-    const auto* begin = reinterpret_cast<const std::byte*>(output.value.bytes);
+    const auto *begin = reinterpret_cast<const std::byte *>(output.value.bytes);
     return {
         .error = AnimatedConversionError::none,
         .body = std::vector<std::byte>(begin, begin + output.value.size),

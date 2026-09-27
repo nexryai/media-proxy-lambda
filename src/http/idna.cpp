@@ -15,21 +15,17 @@ constexpr std::size_t max_dns_label_bytes = 63;
 constexpr std::size_t max_dns_hostname_bytes = 253;
 constexpr std::size_t max_dns_hostname_with_trailing_dot_bytes = 254;
 
-[[nodiscard]] bool is_ascii_letter_or_digit(char value) noexcept
-{
-    return (value >= 'a' && value <= 'z')
-        || (value >= '0' && value <= '9');
+[[nodiscard]] bool is_ascii_letter_or_digit(char value) noexcept {
+    return (value >= 'a' && value <= 'z') || (value >= '0' && value <= '9');
 }
 
-[[nodiscard]] HostnameNormalization fail(HostnameError error)
-{
+[[nodiscard]] HostnameNormalization fail(HostnameError error) {
     return {.ascii = {}, .error = error};
 }
 
 } // namespace
 
-HostnameNormalization normalize_hostname(std::string_view hostname)
-{
+HostnameNormalization normalize_hostname(std::string_view hostname) {
     if (hostname.empty()) {
         return fail(HostnameError::empty);
     }
@@ -47,8 +43,8 @@ HostnameNormalization normalize_hostname(std::string_view hostname)
 
     const bool has_trailing_dot = ascii.ends_with('.');
     const std::size_t maximum_size = has_trailing_dot
-        ? max_dns_hostname_with_trailing_dot_bytes
-        : max_dns_hostname_bytes;
+                                         ? max_dns_hostname_with_trailing_dot_bytes
+                                         : max_dns_hostname_bytes;
     if (ascii.size() > maximum_size) {
         return fail(HostnameError::hostname_too_long);
     }
@@ -85,10 +81,7 @@ HostnameNormalization normalize_hostname(std::string_view hostname)
         if (label.front() == '-' || label.back() == '-') {
             return fail(HostnameError::invalid_hyphen);
         }
-        if (label.size() >= 4
-            && label[2] == '-'
-            && label[3] == '-'
-            && !label.starts_with("xn--")) {
+        if (label.size() >= 4 && label[2] == '-' && label[3] == '-' && !label.starts_with("xn--")) {
             return fail(HostnameError::invalid_hyphen);
         }
 

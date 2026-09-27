@@ -13,22 +13,20 @@ namespace {
 
 using mediaproxy::http::ErrorResponse;
 using mediaproxy::http::HttpResponse;
-using mediaproxy::http::PreferredOutput;
 using mediaproxy::http::make_error_response;
 using mediaproxy::http::make_media_response;
 using mediaproxy::http::make_status_response;
+using mediaproxy::http::PreferredOutput;
 
-std::vector<std::byte> Bytes(std::string_view text)
-{
+std::vector<std::byte> Bytes(std::string_view text) {
     const auto bytes = std::as_bytes(std::span{text});
     return {bytes.begin(), bytes.end()};
 }
 
 std::string_view HeaderValue(
-    const HttpResponse& response,
-    std::string_view name)
-{
-    for (const auto& header : response.headers) {
+    const HttpResponse &response,
+    std::string_view name) {
+    for (const auto &header : response.headers) {
         if (header.name == name) {
             return header.value;
         }
@@ -37,18 +35,17 @@ std::string_view HeaderValue(
 }
 
 struct ErrorCase {
-    const char* name;
+    const char *name;
     ErrorResponse error;
     std::uint16_t status;
-    const char* body;
+    const char *body;
 };
 
 class ErrorResponseTest : public testing::TestWithParam<ErrorCase> {
 };
 
-TEST_P(ErrorResponseTest, MatchesExactStatusHeadersAndBody)
-{
-    const ErrorCase& expected = GetParam();
+TEST_P(ErrorResponseTest, MatchesExactStatusHeadersAndBody) {
+    const ErrorCase &expected = GetParam();
     const HttpResponse response = make_error_response(expected.error);
     EXPECT_EQ(response.status, expected.status);
     ASSERT_EQ(response.headers.size(), 1U);
@@ -82,12 +79,11 @@ INSTANTIATE_TEST_SUITE_P(
             ErrorResponse::internal,
             500,
             "Internal Server Error\n"}),
-    [](const testing::TestParamInfo<ErrorCase>& info) {
+    [](const testing::TestParamInfo<ErrorCase> &info) {
         return info.param.name;
     });
 
-TEST(Response, BuildsExactStatusResponse)
-{
+TEST(Response, BuildsExactStatusResponse) {
     const HttpResponse response = make_status_response();
     EXPECT_EQ(response.status, 200);
     ASSERT_EQ(response.headers.size(), 1U);
@@ -95,8 +91,7 @@ TEST(Response, BuildsExactStatusResponse)
     EXPECT_EQ(response.body, Bytes(R"({"status":"OK"})"));
 }
 
-TEST(Response, BuildsMediaMetadataWithoutInspectingBinaryBody)
-{
+TEST(Response, BuildsMediaMetadataWithoutInspectingBinaryBody) {
     const std::vector<std::byte> binary_body{
         std::byte{0}, std::byte{0xff}};
     const HttpResponse avif =

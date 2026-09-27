@@ -31,8 +31,7 @@ struct UrlPolicyResult {
     std::optional<OriginUrl> url;
     UrlError error = UrlError::none;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return url.has_value();
     }
 };

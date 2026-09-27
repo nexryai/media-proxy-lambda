@@ -8,12 +8,12 @@
 namespace mediaproxy::runtime {
 
 class InvocationResponder {
-public:
+  public:
     virtual ~InvocationResponder() = default;
 
     [[nodiscard]] virtual bool send_response(
         std::string_view request_id,
-        const http::HttpResponse& response) const = 0;
+        const http::HttpResponse &response) const = 0;
     [[nodiscard]] virtual bool send_invocation_error(
         std::string_view request_id,
         std::string_view error_type,
@@ -21,8 +21,8 @@ public:
 };
 
 using InvocationHandlerFunction = http::HttpResponse (*)(
-    const Invocation& invocation,
-    void* context);
+    const Invocation &invocation,
+    void *context);
 
 enum class InvocationExecutionResult {
     response_sent,
@@ -34,9 +34,9 @@ enum class InvocationExecutionResult {
 };
 
 [[nodiscard]] InvocationExecutionResult execute_invocation(
-    const InvocationResponder& responder,
-    const Invocation& invocation,
+    const InvocationResponder &responder,
+    const Invocation &invocation,
     InvocationHandlerFunction handler,
-    void* handler_context = nullptr) noexcept;
+    void *handler_context = nullptr) noexcept;
 
 } // namespace mediaproxy::runtime

@@ -5,8 +5,7 @@
 #include <gtest/gtest.h>
 #include <yyjson.h>
 
-TEST(BuildSmoke, ParsesStrictJsonWithPinnedYyjson)
-{
+TEST(BuildSmoke, ParsesStrictJsonWithPinnedYyjson) {
     std::string event =
         R"({"version":"2.0","rawPath":"/convert","requestContext":{"requestId":"test-request"}})";
     yyjson_read_err error{};
@@ -20,20 +19,19 @@ TEST(BuildSmoke, ParsesStrictJsonWithPinnedYyjson)
         &yyjson_doc_free);
 
     ASSERT_NE(document, nullptr) << error.msg;
-    yyjson_val* root = yyjson_doc_get_root(document.get());
+    yyjson_val *root = yyjson_doc_get_root(document.get());
     ASSERT_TRUE(yyjson_is_obj(root));
     EXPECT_STREQ(yyjson_get_str(yyjson_obj_get(root, "version")), "2.0");
     EXPECT_STREQ(yyjson_get_str(yyjson_obj_get(root, "rawPath")), "/convert");
 }
 
-TEST(BuildSmoke, SerializesResponseMetadataWithPinnedYyjson)
-{
+TEST(BuildSmoke, SerializesResponseMetadataWithPinnedYyjson) {
     std::unique_ptr<yyjson_mut_doc, decltype(&yyjson_mut_doc_free)> document(
         yyjson_mut_doc_new(nullptr),
         &yyjson_mut_doc_free);
     ASSERT_NE(document, nullptr);
 
-    yyjson_mut_val* root = yyjson_mut_obj(document.get());
+    yyjson_mut_val *root = yyjson_mut_obj(document.get());
     ASSERT_NE(root, nullptr);
     yyjson_mut_doc_set_root(document.get(), root);
     ASSERT_TRUE(yyjson_mut_obj_add_int(document.get(), root, "statusCode", 200));

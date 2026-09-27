@@ -18,8 +18,7 @@ namespace mediaproxy::media {
 namespace {
 
 struct ImageUnref {
-    void operator()(VipsImage* image) const noexcept
-    {
+    void operator()(VipsImage *image) const noexcept {
         if (image != nullptr) {
             g_object_unref(image);
         }
@@ -29,9 +28,8 @@ struct ImageUnref {
 using ImagePtr = std::unique_ptr<VipsImage, ImageUnref>;
 
 class RequestStateReset final {
-public:
-    ~RequestStateReset()
-    {
+  public:
+    ~RequestStateReset() {
         // Cached lazy operations can retain references to invocation-owned
         // input buffers. Keep the configured cache available within a
         // conversion, then release all request state before returning.
@@ -40,16 +38,14 @@ public:
     }
 };
 
-[[nodiscard]] MediaConversionResult fail(MediaConversionError error)
-{
+[[nodiscard]] MediaConversionResult fail(MediaConversionError error) {
     vips_error_clear();
     return {.error = error, .encoded_format = OutputFormat::webp, .body = {}};
 }
 
 [[nodiscard]] MediaConversionResult convert_apng(
     std::span<const std::byte> body,
-    EncodingQuality quality)
-{
+    EncodingQuality quality) {
     if (!initialize_vips()) {
         return fail(MediaConversionError::decode);
     }
@@ -64,8 +60,8 @@ public:
         return fail(MediaConversionError::decode);
     }
     auto converted = convert_apng_to_webp(body,
-        static_cast<std::uint32_t>(width),
-        static_cast<std::uint32_t>(height), quality);
+                                          static_cast<std::uint32_t>(width),
+                                          static_cast<std::uint32_t>(height), quality);
     if (!converted) {
         return fail(MediaConversionError::convert);
     }
@@ -84,8 +80,7 @@ MediaConversionResult convert_media(
     bool force_static,
     OutputFormat preferred_output,
     ImageDimensions limits,
-    EncodingQuality quality)
-{
+    EncodingQuality quality) {
     if (!initialize_vips()) {
         return fail(MediaConversionError::decode);
     }
@@ -105,8 +100,8 @@ MediaConversionResult convert_media(
     }
     if (plan->animated) {
         auto converted = mime == MimeType::image_avif
-            ? convert_animated_avif(body, limits, quality)
-            : convert_animated_image(body, limits, quality);
+                             ? convert_animated_avif(body, limits, quality)
+                             : convert_animated_image(body, limits, quality);
         if (!converted) {
             return fail(MediaConversionError::convert);
         }
@@ -118,7 +113,7 @@ MediaConversionResult convert_media(
     }
 
     auto converted = convert_static_image(body, mime, plan->output, limits,
-        quality);
+                                          quality);
     if (!converted) {
         return fail(MediaConversionError::convert);
     }

@@ -13,33 +13,29 @@
 namespace {
 
 class WebPDataOwner final {
-public:
-    WebPDataOwner() noexcept
-    {
+  public:
+    WebPDataOwner() noexcept {
         WebPDataInit(&data_);
     }
 
-    ~WebPDataOwner()
-    {
+    ~WebPDataOwner() {
         WebPDataClear(&data_);
     }
 
-    WebPDataOwner(const WebPDataOwner&) = delete;
-    WebPDataOwner& operator=(const WebPDataOwner&) = delete;
+    WebPDataOwner(const WebPDataOwner &) = delete;
+    WebPDataOwner &operator=(const WebPDataOwner &) = delete;
 
-    [[nodiscard]] WebPData* get() noexcept
-    {
+    [[nodiscard]] WebPData *get() noexcept {
         return &data_;
     }
 
-private:
+  private:
     WebPData data_{};
 };
 
 } // namespace
 
-TEST(BuildSmoke, AssemblesPinnedAnimatedWebPInMemory)
-{
+TEST(BuildSmoke, AssemblesPinnedAnimatedWebPInMemory) {
     constexpr int required_webp_version = 0x010600;
     EXPECT_EQ(WebPGetDecoderVersion(), required_webp_version);
     EXPECT_EQ(WebPGetEncoderVersion(), required_webp_version);
@@ -49,7 +45,7 @@ TEST(BuildSmoke, AssemblesPinnedAnimatedWebPInMemory)
 
     constexpr std::array<std::uint8_t, 4> first_pixel = {17, 34, 51, 68};
     constexpr std::array<std::uint8_t, 4> second_pixel = {85, 102, 119, 136};
-    std::uint8_t* first_bytes = nullptr;
+    std::uint8_t *first_bytes = nullptr;
     const std::size_t first_size = WebPEncodeLosslessRGBA(
         first_pixel.data(), 1, 1, 4, &first_bytes);
     std::unique_ptr<std::uint8_t, decltype(&WebPFree)> first(
@@ -57,7 +53,7 @@ TEST(BuildSmoke, AssemblesPinnedAnimatedWebPInMemory)
     ASSERT_GT(first_size, 0U);
     ASSERT_NE(first, nullptr);
 
-    std::uint8_t* second_bytes = nullptr;
+    std::uint8_t *second_bytes = nullptr;
     const std::size_t second_size = WebPEncodeLosslessRGBA(
         second_pixel.data(), 1, 1, 4, &second_bytes);
     std::unique_ptr<std::uint8_t, decltype(&WebPFree)> second(

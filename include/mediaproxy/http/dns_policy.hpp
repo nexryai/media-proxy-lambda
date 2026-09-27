@@ -22,8 +22,7 @@ struct ResolutionPolicyResult {
     std::optional<std::size_t> rejected_index;
     AddressError address_error = AddressError::none;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == ResolutionError::none;
     }
 };

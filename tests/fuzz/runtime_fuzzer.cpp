@@ -10,24 +10,22 @@
 namespace {
 
 class DiscardSink final : public mediaproxy::runtime::ByteSink {
-public:
+  public:
     [[nodiscard]] bool write(
-        std::span<const std::byte> bytes) override
-    {
+        std::span<const std::byte> bytes) override {
         retained_bytes_ += bytes.size();
         return retained_bytes_ <= 128U * 1024U;
     }
 
-private:
+  private:
     std::size_t retained_bytes_ = 0;
 };
 
 } // namespace
 
 extern "C" int LLVMFuzzerTestOneInput(
-    const std::uint8_t* data,
-    std::size_t size)
-{
+    const std::uint8_t *data,
+    std::size_t size) {
     const auto bytes = std::as_bytes(std::span{data, size});
     mediaproxy::runtime::NextResponseParser raw_parser;
     static_cast<void>(raw_parser.feed(bytes));
@@ -41,7 +39,7 @@ extern "C" int LLVMFuzzerTestOneInput(
     response += std::to_string(size);
     response += "\r\n\r\n";
     if (size != 0U) {
-        response.append(reinterpret_cast<const char*>(data), size);
+        response.append(reinterpret_cast<const char *>(data), size);
     }
     mediaproxy::runtime::NextResponseParser framed_parser;
     static_cast<void>(framed_parser.feed(
@@ -54,7 +52,7 @@ extern "C" int LLVMFuzzerTestOneInput(
     };
     if (size != 0U) {
         integration.headers.front().value.assign(
-            reinterpret_cast<const char*>(data), size);
+            reinterpret_cast<const char *>(data), size);
     }
     DiscardSink sink;
     static_cast<void>(

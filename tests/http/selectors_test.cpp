@@ -12,12 +12,11 @@
 namespace {
 
 using mediaproxy::http::MediaSelector;
-using mediaproxy::http::PreferredOutput;
 using mediaproxy::http::parse_query;
+using mediaproxy::http::PreferredOutput;
 using mediaproxy::http::select_media_options;
 
-std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadSelectorVectors()
-{
+std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadSelectorVectors() {
     const std::string path =
         std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/vectors/selectors.json";
     std::ifstream input(path, std::ios::binary);
@@ -35,8 +34,7 @@ std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadSelectorVectors()
     return document;
 }
 
-MediaSelector ParseSelector(std::string_view value)
-{
+MediaSelector ParseSelector(std::string_view value) {
     if (value == "avatar") {
         return MediaSelector::avatar;
     }
@@ -59,8 +57,7 @@ MediaSelector ParseSelector(std::string_view value)
     return MediaSelector::default_media;
 }
 
-PreferredOutput ParseOutput(std::string_view value)
-{
+PreferredOutput ParseOutput(std::string_view value) {
     if (value == "avif") {
         return PreferredOutput::avif;
     }
@@ -70,27 +67,25 @@ PreferredOutput ParseOutput(std::string_view value)
 
 } // namespace
 
-TEST(Selectors, MatchesCheckedInPrecedenceVectors)
-{
+TEST(Selectors, MatchesCheckedInPrecedenceVectors) {
     const auto document = LoadSelectorVectors();
     ASSERT_NE(document, nullptr);
-    yyjson_val* const root = yyjson_doc_get_root(document.get());
+    yyjson_val *const root = yyjson_doc_get_root(document.get());
     ASSERT_TRUE(yyjson_is_obj(root));
-    yyjson_val* const cases = yyjson_obj_get(root, "cases");
+    yyjson_val *const cases = yyjson_obj_get(root, "cases");
     ASSERT_TRUE(yyjson_is_arr(cases));
 
     std::size_t index = 0;
     std::size_t maximum = 0;
-    yyjson_val* vector = nullptr;
-    yyjson_arr_foreach(cases, index, maximum, vector)
-    {
+    yyjson_val *vector = nullptr;
+    yyjson_arr_foreach(cases, index, maximum, vector) {
         ASSERT_TRUE(yyjson_is_obj(vector));
-        const char* const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
-        const char* const raw_query =
+        const char *const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
+        const char *const raw_query =
             yyjson_get_str(yyjson_obj_get(vector, "rawQuery"));
-        const char* const selector =
+        const char *const selector =
             yyjson_get_str(yyjson_obj_get(vector, "selector"));
-        const char* const output =
+        const char *const output =
             yyjson_get_str(yyjson_obj_get(vector, "output"));
         ASSERT_NE(id, nullptr);
         ASSERT_NE(raw_query, nullptr);

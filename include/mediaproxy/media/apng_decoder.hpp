@@ -27,8 +27,7 @@ struct ApngDecodedAnimation {
     std::uint32_t canvas_height = 0;
     std::vector<ApngDecodedFrame> frames;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == ApngDecodeError::none;
     }
 };

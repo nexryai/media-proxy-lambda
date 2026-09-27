@@ -4,27 +4,27 @@
 
 #include <arpa/inet.h>
 #include <gtest/gtest.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <mediaproxy/http/address_policy.hpp>
 #include <mediaproxy/http/dns_policy.hpp>
 #include <mediaproxy/http/dns_resolver.hpp>
 #include <mediaproxy/http/url_policy.hpp>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 namespace {
 
 using mediaproxy::http::AddressError;
 using mediaproxy::http::AddressFamily;
 using mediaproxy::http::AddressResolverApi;
+using mediaproxy::http::maximum_dns_candidates;
 using mediaproxy::http::OriginResolutionError;
 using mediaproxy::http::ResolutionError;
-using mediaproxy::http::maximum_dns_candidates;
 using mediaproxy::http::resolve_origin_addresses;
 using mediaproxy::http::validate_origin_url;
 
 struct FakeResolverState {
-    addrinfo* result = nullptr;
+    addrinfo *result = nullptr;
     int error = 0;
     int lookup_calls = 0;
     int release_calls = 0;
@@ -33,16 +33,14 @@ struct FakeResolverState {
     addrinfo hints{};
 };
 
-FakeResolverState* active_state = nullptr;
+FakeResolverState *active_state = nullptr;
 
 int FakeLookup(
-    const char* hostname,
-    const char* service,
-    const addrinfo* hints,
-    addrinfo** result)
-{
-    if (active_state == nullptr || hostname == nullptr || service == nullptr
-        || hints == nullptr || result == nullptr) {
+    const char *hostname,
+    const char *service,
+    const addrinfo *hints,
+    addrinfo **result) {
+    if (active_state == nullptr || hostname == nullptr || service == nullptr || hints == nullptr || result == nullptr) {
         return EAI_FAIL;
     }
     ++active_state->lookup_calls;
@@ -53,28 +51,25 @@ int FakeLookup(
     return active_state->error;
 }
 
-void FakeRelease(addrinfo*)
-{
+void FakeRelease(addrinfo *) {
     if (active_state != nullptr) {
         ++active_state->release_calls;
     }
 }
 
 class FakeResolverScope final {
-public:
-    explicit FakeResolverScope(FakeResolverState& state)
-    {
+  public:
+    explicit FakeResolverScope(FakeResolverState &state) {
         EXPECT_EQ(active_state, nullptr);
         active_state = &state;
     }
 
-    ~FakeResolverScope()
-    {
+    ~FakeResolverScope() {
         active_state = nullptr;
     }
 
-    FakeResolverScope(const FakeResolverScope&) = delete;
-    FakeResolverScope& operator=(const FakeResolverScope&) = delete;
+    FakeResolverScope(const FakeResolverScope &) = delete;
+    FakeResolverScope &operator=(const FakeResolverScope &) = delete;
 };
 
 struct Candidate {
@@ -82,42 +77,38 @@ struct Candidate {
     addrinfo info{};
 };
 
-void SetIpv4(Candidate& candidate, const char* text)
-{
+void SetIpv4(Candidate &candidate, const char *text) {
     candidate = {};
-    auto* address = reinterpret_cast<sockaddr_in*>(&candidate.storage);
+    auto *address = reinterpret_cast<sockaddr_in *>(&candidate.storage);
     address->sin_family = AF_INET;
     EXPECT_EQ(inet_pton(AF_INET, text, &address->sin_addr), 1);
     candidate.info.ai_family = AF_INET;
     candidate.info.ai_socktype = SOCK_STREAM;
     candidate.info.ai_protocol = IPPROTO_TCP;
     candidate.info.ai_addrlen = sizeof(sockaddr_in);
-    candidate.info.ai_addr = reinterpret_cast<sockaddr*>(address);
+    candidate.info.ai_addr = reinterpret_cast<sockaddr *>(address);
 }
 
-void SetIpv6(Candidate& candidate, const char* text)
-{
+void SetIpv6(Candidate &candidate, const char *text) {
     candidate = {};
-    auto* address = reinterpret_cast<sockaddr_in6*>(&candidate.storage);
+    auto *address = reinterpret_cast<sockaddr_in6 *>(&candidate.storage);
     address->sin6_family = AF_INET6;
     EXPECT_EQ(inet_pton(AF_INET6, text, &address->sin6_addr), 1);
     candidate.info.ai_family = AF_INET6;
     candidate.info.ai_socktype = SOCK_STREAM;
     candidate.info.ai_protocol = IPPROTO_TCP;
     candidate.info.ai_addrlen = sizeof(sockaddr_in6);
-    candidate.info.ai_addr = reinterpret_cast<sockaddr*>(address);
+    candidate.info.ai_addr = reinterpret_cast<sockaddr *>(address);
 }
 
-AddressResolverApi FakeApi()
-{
+AddressResolverApi FakeApi() {
     return {
         .lookup = &FakeLookup,
         .release = &FakeRelease,
     };
 }
 
-TEST(DnsResolver, ResolvesCanonicalHostOnceAndPreservesAnswerOrder)
-{
+TEST(DnsResolver, ResolvesCanonicalHostOnceAndPreservesAnswerOrder) {
     Candidate first;
     Candidate second;
     Candidate third;
@@ -149,8 +140,7 @@ TEST(DnsResolver, ResolvesCanonicalHostOnceAndPreservesAnswerOrder)
     EXPECT_NE(state.hints.ai_flags & AI_NUMERICSERV, 0);
 }
 
-TEST(DnsResolver, RejectsWholeMixedAnswerAndReleasesIt)
-{
+TEST(DnsResolver, RejectsWholeMixedAnswerAndReleasesIt) {
     Candidate public_address;
     Candidate private_address;
     SetIpv4(public_address, "1.1.1.1");
@@ -173,8 +163,7 @@ TEST(DnsResolver, RejectsWholeMixedAnswerAndReleasesIt)
     EXPECT_EQ(state.release_calls, 1);
 }
 
-TEST(DnsResolver, ReportsLookupEmptyAndMalformedAnswers)
-{
+TEST(DnsResolver, ReportsLookupEmptyAndMalformedAnswers) {
     const auto origin = validate_origin_url("https://origin.example/");
     ASSERT_TRUE(origin);
 
@@ -214,8 +203,7 @@ TEST(DnsResolver, ReportsLookupEmptyAndMalformedAnswers)
     }
 }
 
-TEST(DnsResolver, BoundsCandidateTraversal)
-{
+TEST(DnsResolver, BoundsCandidateTraversal) {
     std::array<Candidate, maximum_dns_candidates + 1> candidates{};
     for (std::size_t index = 0; index < candidates.size(); ++index) {
         SetIpv4(candidates[index], "1.1.1.1");
@@ -236,8 +224,7 @@ TEST(DnsResolver, BoundsCandidateTraversal)
     EXPECT_EQ(state.release_calls, 1);
 }
 
-TEST(DnsResolver, BypassesLookupForValidatedLiteralAndRejectsForgery)
-{
+TEST(DnsResolver, BypassesLookupForValidatedLiteralAndRejectsForgery) {
     FakeResolverState state;
     state.error = EAI_FAIL;
     const FakeResolverScope scope{state};

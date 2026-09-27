@@ -10,60 +10,49 @@
 #include <utility>
 
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <mediaproxy/http/address_policy.hpp>
 #include <mediaproxy/http/dns_policy.hpp>
 #include <mediaproxy/http/url_policy.hpp>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 namespace mediaproxy::http {
 namespace {
 
 class AddressInfoDeleter final {
-public:
+  public:
     explicit AddressInfoDeleter(AddressReleaseFunction release) noexcept
-        : release_(release)
-    {
+        : release_(release) {
     }
 
-    void operator()(addrinfo* result) const noexcept
-    {
+    void operator()(addrinfo *result) const noexcept {
         if (result != nullptr && release_ != nullptr) {
             release_(result);
         }
     }
 
-private:
+  private:
     AddressReleaseFunction release_;
 };
 
 using AddressInfo = std::unique_ptr<addrinfo, AddressInfoDeleter>;
 
 [[nodiscard]] bool equal_address(
-    const std::optional<ValidatedAddress>& left,
-    const std::optional<ValidatedAddress>& right) noexcept
-{
+    const std::optional<ValidatedAddress> &left,
+    const std::optional<ValidatedAddress> &right) noexcept {
     if (left.has_value() != right.has_value()) {
         return false;
     }
-    return !left || (left->family == right->family
-        && left->bytes == right->bytes);
+    return !left || (left->family == right->family && left->bytes == right->bytes);
 }
 
 [[nodiscard]] std::optional<OriginUrl> revalidate_origin(
-    const OriginUrl& origin)
-{
+    const OriginUrl &origin) {
     // OriginUrl is public data rather than an unforgeable capability. Reparse
     // the canonical URL and compare every derived field before DNS or bypass.
     UrlPolicyResult validated = validate_origin_url(origin.canonical_url);
-    if (!validated
-        || validated.url->canonical_url != origin.canonical_url
-        || validated.url->hostname != origin.hostname
-        || validated.url->port != origin.port
-        || validated.url->request_target != origin.request_target
-        || !equal_address(
-            validated.url->literal_address, origin.literal_address)) {
+    if (!validated || validated.url->canonical_url != origin.canonical_url || validated.url->hostname != origin.hostname || validated.url->port != origin.port || validated.url->request_target != origin.request_target || !equal_address(validated.url->literal_address, origin.literal_address)) {
         return std::nullopt;
     }
     return std::move(validated.url);
@@ -71,8 +60,7 @@ using AddressInfo = std::unique_ptr<addrinfo, AddressInfoDeleter>;
 
 [[nodiscard]] OriginResolutionResult fail(
     OriginResolutionError error,
-    int native_error = 0)
-{
+    int native_error = 0) {
     return {
         .addresses = {},
         .error = error,
@@ -84,47 +72,43 @@ using AddressInfo = std::unique_ptr<addrinfo, AddressInfoDeleter>;
 }
 
 [[nodiscard]] bool format_candidate(
-    const addrinfo& candidate,
-    std::span<char> output) noexcept
-{
+    const addrinfo &candidate,
+    std::span<char> output) noexcept {
     if (candidate.ai_addr == nullptr) {
         return false;
     }
 
-    const void* bytes = nullptr;
+    const void *bytes = nullptr;
     if (candidate.ai_family == AF_INET) {
-        if (candidate.ai_addrlen < sizeof(sockaddr_in)
-            || candidate.ai_addr->sa_family != AF_INET) {
+        if (candidate.ai_addrlen < sizeof(sockaddr_in) || candidate.ai_addr->sa_family != AF_INET) {
             return false;
         }
-        const auto* address =
-            reinterpret_cast<const sockaddr_in*>(candidate.ai_addr);
+        const auto *address =
+            reinterpret_cast<const sockaddr_in *>(candidate.ai_addr);
         bytes = &address->sin_addr;
     } else if (candidate.ai_family == AF_INET6) {
-        if (candidate.ai_addrlen < sizeof(sockaddr_in6)
-            || candidate.ai_addr->sa_family != AF_INET6) {
+        if (candidate.ai_addrlen < sizeof(sockaddr_in6) || candidate.ai_addr->sa_family != AF_INET6) {
             return false;
         }
-        const auto* address =
-            reinterpret_cast<const sockaddr_in6*>(candidate.ai_addr);
+        const auto *address =
+            reinterpret_cast<const sockaddr_in6 *>(candidate.ai_addr);
         bytes = &address->sin6_addr;
     } else {
         return false;
     }
 
     return inet_ntop(
-        candidate.ai_family,
-        bytes,
-        output.data(),
-        static_cast<socklen_t>(output.size())) != nullptr;
+               candidate.ai_family,
+               bytes,
+               output.data(),
+               static_cast<socklen_t>(output.size())) != nullptr;
 }
 
 } // namespace
 
 OriginResolutionResult resolve_origin_addresses(
-    const OriginUrl& origin,
-    AddressResolverApi api)
-{
+    const OriginUrl &origin,
+    AddressResolverApi api) {
     const std::optional<OriginUrl> validated = revalidate_origin(origin);
     if (!validated) {
         return fail(OriginResolutionError::invalid_origin);
@@ -154,7 +138,7 @@ OriginResolutionResult resolve_origin_addresses(
         .ai_next = nullptr,
     };
     const std::string service = std::to_string(validated->port);
-    addrinfo* raw = nullptr;
+    addrinfo *raw = nullptr;
     const int lookup_result = api.lookup(
         validated->hostname.c_str(), service.c_str(), &hints, &raw);
     AddressInfo results{raw, AddressInfoDeleter{api.release}};
@@ -171,7 +155,7 @@ OriginResolutionResult resolve_origin_addresses(
     // Keep the complete answer bounded and intact. Policy evaluation happens
     // only after traversal so a late forbidden address rejects the whole set.
     std::size_t count = 0;
-    for (const addrinfo* current = results.get(); current != nullptr;
+    for (const addrinfo *current = results.get(); current != nullptr;
          current = current->ai_next) {
         if (count == maximum_dns_candidates) {
             return fail(OriginResolutionError::too_many_answers);

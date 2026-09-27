@@ -35,6 +35,6 @@ struct HandlerDiagnostics {
     http::OriginTimeoutApi timeout,
     http::AddressResolverApi resolver = {},
     http::OriginTransportApi transport = http::system_origin_transport(),
-    HandlerDiagnostics* diagnostics = nullptr);
+    HandlerDiagnostics *diagnostics = nullptr);
 
 } // namespace mediaproxy

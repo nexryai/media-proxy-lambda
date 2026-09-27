@@ -24,8 +24,7 @@ struct StaticConversionResult {
     StaticConversionError error = StaticConversionError::none;
     std::vector<std::byte> body;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == StaticConversionError::none;
     }
 };

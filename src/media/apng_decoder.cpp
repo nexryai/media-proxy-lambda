@@ -21,18 +21,15 @@ constexpr std::array<std::byte, 8> png_signature{
 
 [[nodiscard]] std::uint32_t read_u32(
     std::span<const std::byte> body,
-    std::size_t offset) noexcept
-{
+    std::size_t offset) noexcept {
     const auto byte = [&body](std::size_t index) {
         return static_cast<std::uint32_t>(
             std::to_integer<std::uint8_t>(body[index]));
     };
-    return (byte(offset) << 24U) | (byte(offset + 1) << 16U)
-        | (byte(offset + 2) << 8U) | byte(offset + 3);
+    return (byte(offset) << 24U) | (byte(offset + 1) << 16U) | (byte(offset + 2) << 8U) | byte(offset + 3);
 }
 
-void append_u32(std::vector<std::byte>& output, std::uint32_t value)
-{
+void append_u32(std::vector<std::byte> &output, std::uint32_t value) {
     output.push_back(static_cast<std::byte>((value >> 24U) & 0xffU));
     output.push_back(static_cast<std::byte>((value >> 16U) & 0xffU));
     output.push_back(static_cast<std::byte>((value >> 8U) & 0xffU));
@@ -42,28 +39,23 @@ void append_u32(std::vector<std::byte>& output, std::uint32_t value)
 [[nodiscard]] bool tag_at(
     std::span<const std::byte> body,
     std::size_t offset,
-    std::string_view tag) noexcept
-{
-    return offset <= body.size() && tag.size() <= body.size() - offset
-        && std::equal(tag.begin(), tag.end(), body.begin() + offset,
-            [](char expected, std::byte actual) {
-                return static_cast<unsigned char>(expected)
-                    == std::to_integer<unsigned char>(actual);
-            });
+    std::string_view tag) noexcept {
+    return offset <= body.size() && tag.size() <= body.size() - offset && std::equal(tag.begin(), tag.end(), body.begin() + offset, [](char expected, std::byte actual) {
+               return static_cast<unsigned char>(expected) == std::to_integer<unsigned char>(actual);
+           });
 }
 
 void append_chunk(
-    std::vector<std::byte>& output,
+    std::vector<std::byte> &output,
     std::string_view type,
-    std::span<const std::byte> data)
-{
+    std::span<const std::byte> data) {
     append_u32(output, static_cast<std::uint32_t>(data.size()));
     const std::size_t crc_begin = output.size();
     for (const char value : type) {
         output.push_back(static_cast<std::byte>(value));
     }
     output.insert(output.end(), data.begin(), data.end());
-    const auto* bytes = reinterpret_cast<const Bytef*>(
+    const auto *bytes = reinterpret_cast<const Bytef *>(
         output.data() + crc_begin);
     const auto crc = static_cast<std::uint32_t>(
         crc32(0, bytes, static_cast<uInt>(type.size() + data.size())));
@@ -73,10 +65,8 @@ void append_chunk(
 [[nodiscard]] bool rgba_size(
     std::uint32_t width,
     std::uint32_t height,
-    std::size_t& output) noexcept
-{
-    if (width == 0 || height == 0
-        || width > std::numeric_limits<std::size_t>::max() / height) {
+    std::size_t &output) noexcept {
+    if (width == 0 || height == 0 || width > std::numeric_limits<std::size_t>::max() / height) {
         return false;
     }
     const std::size_t pixels = static_cast<std::size_t>(width) * height;
@@ -89,9 +79,8 @@ void append_chunk(
 
 [[nodiscard]] ApngDecodeError decode_png(
     std::span<const std::byte> png,
-    const ApngFrameControl& control,
-    std::vector<std::byte>& rgba)
-{
+    const ApngFrameControl &control,
+    std::vector<std::byte> &rgba) {
     png_image image{};
     image.version = PNG_IMAGE_VERSION;
     if (png_image_begin_read_from_memory(
@@ -99,8 +88,10 @@ void append_chunk(
         return ApngDecodeError::png_decode;
     }
     struct ImageCleanup {
-        png_image* image;
-        ~ImageCleanup() { png_image_free(image); }
+        png_image *image;
+        ~ImageCleanup() {
+            png_image_free(image);
+        }
     } cleanup{&image};
 
     if (image.width != control.width || image.height != control.height) {
@@ -111,22 +102,19 @@ void append_chunk(
     image.flags |= PNG_IMAGE_FLAG_16BIT_sRGB;
     image.format = PNG_FORMAT_RGBA;
     std::size_t expected_size = 0;
-    if (!rgba_size(control.width, control.height, expected_size)
-        || PNG_IMAGE_SIZE(image) != expected_size) {
+    if (!rgba_size(control.width, control.height, expected_size) || PNG_IMAGE_SIZE(image) != expected_size) {
         return ApngDecodeError::dimensions;
     }
     rgba.resize(expected_size);
     if (png_image_finish_read(
-            &image, nullptr, rgba.data(), 0, nullptr)
-        == 0) {
+            &image, nullptr, rgba.data(), 0, nullptr) == 0) {
         rgba.clear();
         return ApngDecodeError::png_decode;
     }
     return ApngDecodeError::none;
 }
 
-[[nodiscard]] ApngDecodedAnimation fail(ApngDecodeError error)
-{
+[[nodiscard]] ApngDecodedAnimation fail(ApngDecodeError error) {
     ApngDecodedAnimation result;
     result.error = error;
     return result;
@@ -135,8 +123,7 @@ void append_chunk(
 } // namespace
 
 ApngDecodedAnimation decode_apng_frames(
-    std::span<const std::byte> body)
-{
+    std::span<const std::byte> body) {
     const auto description = parse_apng(body);
     if (!description) {
         return fail(ApngDecodeError::parse);
@@ -165,8 +152,7 @@ ApngDecodedAnimation decode_apng_frames(
         } else if (tag_at(body, type_offset, "IDAT")) {
             before_default_image_data = false;
             // The fallback-only default image must not enter animation state.
-            if (description.default_image_is_frame
-                && frame_index >= compressed.size()) {
+            if (description.default_image_is_frame && frame_index >= compressed.size()) {
                 return fail(ApngDecodeError::frame_stream);
             }
             if (description.default_image_is_frame) {
@@ -179,12 +165,11 @@ ApngDecodedAnimation decode_apng_frames(
             }
             const auto payload = data.subspan(4);
             compressed[frame_index].insert(compressed[frame_index].end(),
-                payload.begin(), payload.end());
-        } else if (before_default_image_data
-            && !tag_at(body, type_offset, "acTL")) {
+                                           payload.begin(), payload.end());
+        } else if (before_default_image_data && !tag_at(body, type_offset, "acTL")) {
             // Shared palette/alpha chunks may follow the first frame control.
             shared_chunks.insert(shared_chunks.end(), body.begin() + offset,
-                body.begin() + static_cast<std::ptrdiff_t>(chunk_end));
+                                 body.begin() + static_cast<std::ptrdiff_t>(chunk_end));
         }
         offset = chunk_end;
     }
@@ -201,7 +186,7 @@ ApngDecodedAnimation decode_apng_frames(
             return fail(ApngDecodeError::frame_stream);
         }
         auto frame_ihdr = ihdr;
-        const auto& control = description.frames[index];
+        const auto &control = description.frames[index];
         for (std::size_t byte = 0; byte < 4; ++byte) {
             frame_ihdr[byte] = static_cast<std::byte>(
                 control.width >> (24U - static_cast<unsigned>(byte) * 8U));

@@ -17,44 +17,40 @@
 
 namespace {
 
-using mediaproxy::http::CurlResolvePin;
-using mediaproxy::http::OriginCurlConfigError;
-using mediaproxy::http::OriginResponseAccumulator;
-using mediaproxy::http::OriginResponseError;
 using mediaproxy::http::configure_origin_curl;
+using mediaproxy::http::CurlResolvePin;
 using mediaproxy::http::embedded_ca_bundle;
 using mediaproxy::http::is_body_limit_completion;
 using mediaproxy::http::maximum_origin_body_bytes;
 using mediaproxy::http::origin_body_callback;
 using mediaproxy::http::origin_header_callback;
+using mediaproxy::http::OriginCurlConfigError;
+using mediaproxy::http::OriginResponseAccumulator;
+using mediaproxy::http::OriginResponseError;
 using mediaproxy::http::validate_origin_url;
 using mediaproxy::http::validate_resolved_addresses;
 
 class CurlGlobal final {
-public:
+  public:
     CurlGlobal() noexcept
-        : result_(curl_global_init(CURL_GLOBAL_DEFAULT))
-    {
+        : result_(curl_global_init(CURL_GLOBAL_DEFAULT)) {
     }
 
-    ~CurlGlobal()
-    {
+    ~CurlGlobal() {
         if (result_ == CURLE_OK) {
             curl_global_cleanup();
         }
     }
 
-    [[nodiscard]] CURLcode result() const noexcept
-    {
+    [[nodiscard]] CURLcode result() const noexcept {
         return result_;
     }
 
-private:
+  private:
     CURLcode result_;
 };
 
-TEST(OriginCurl, ConfiguresPinnedVerifiedGetRequest)
-{
+TEST(OriginCurl, ConfiguresPinnedVerifiedGetRequest) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> easy(
@@ -76,12 +72,11 @@ TEST(OriginCurl, ConfiguresPinnedVerifiedGetRequest)
         OriginCurlConfigError::none);
 }
 
-TEST(OriginCurl, EmbedsPinnedMozillaTrustBundle)
-{
+TEST(OriginCurl, EmbedsPinnedMozillaTrustBundle) {
     const std::span<const std::byte> bundle = embedded_ca_bundle();
     ASSERT_EQ(bundle.size(), 186446U);
     const std::string_view text{
-        reinterpret_cast<const char*>(bundle.data()), bundle.size()};
+        reinterpret_cast<const char *>(bundle.data()), bundle.size()};
     EXPECT_TRUE(text.starts_with("##\n## Bundle of CA Root Certificates\n"));
     EXPECT_NE(
         text.find("Certificate data from Mozilla as of: "
@@ -92,16 +87,14 @@ TEST(OriginCurl, EmbedsPinnedMozillaTrustBundle)
         "-----BEGIN CERTIFICATE-----";
     std::size_t certificate_count = 0;
     for (std::size_t offset = 0;
-         (offset = text.find(certificate_begin, offset))
-            != std::string_view::npos;
+         (offset = text.find(certificate_begin, offset)) != std::string_view::npos;
          offset += certificate_begin.size()) {
         ++certificate_count;
     }
     EXPECT_EQ(certificate_count, 119U);
 }
 
-TEST(OriginCurl, RejectsInvalidArgumentsAndMismatchedPin)
-{
+TEST(OriginCurl, RejectsInvalidArgumentsAndMismatchedPin) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> easy(
@@ -138,8 +131,7 @@ TEST(OriginCurl, RejectsInvalidArgumentsAndMismatchedPin)
         OriginCurlConfigError::invalid_argument);
 }
 
-TEST(OriginCurl, CallbacksContainErrorsAndRetainBoundedBytes)
-{
+TEST(OriginCurl, CallbacksContainErrorsAndRetainBoundedBytes) {
     OriginResponseAccumulator response;
     std::array<char, 20> length_header{
         'C', 'o', 'n', 't', 'e', 'n', 't', '-', 'L', 'e',
@@ -175,8 +167,7 @@ TEST(OriginCurl, CallbacksContainErrorsAndRetainBoundedBytes)
     EXPECT_EQ(blocked.error(), OriginResponseError::blocked_by_nextdns);
 }
 
-TEST(OriginCurl, RecognizesOnlyIntentionalBodyLimitWriteAbort)
-{
+TEST(OriginCurl, RecognizesOnlyIntentionalBodyLimitWriteAbort) {
     OriginResponseAccumulator response;
     const std::vector<std::byte> body(
         maximum_origin_body_bytes,

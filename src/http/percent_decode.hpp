@@ -9,8 +9,7 @@ namespace mediaproxy::http::detail {
 
 [[nodiscard]] inline std::optional<unsigned char> decode_hex_pair(
     char high,
-    char low) noexcept
-{
+    char low) noexcept {
     const auto decode_nibble = [](char value) -> std::optional<unsigned char> {
         if (value >= '0' && value <= '9') {
             return static_cast<unsigned char>(value - '0');
@@ -34,8 +33,7 @@ namespace mediaproxy::http::detail {
 
 [[nodiscard]] inline std::optional<std::string> percent_decode(
     std::string_view encoded,
-    bool plus_as_space)
-{
+    bool plus_as_space) {
     std::string decoded;
     decoded.reserve(encoded.size());
     for (std::size_t index = 0; index < encoded.size(); ++index) {

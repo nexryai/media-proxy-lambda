@@ -22,8 +22,7 @@ struct HostnameNormalization {
     std::string ascii;
     HostnameError error = HostnameError::none;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == HostnameError::none;
     }
 };

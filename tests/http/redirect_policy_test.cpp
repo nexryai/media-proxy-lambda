@@ -9,14 +9,13 @@
 
 namespace {
 
+using mediaproxy::http::maximum_origin_redirects;
 using mediaproxy::http::RedirectError;
 using mediaproxy::http::RedirectTracker;
 using mediaproxy::http::UrlError;
-using mediaproxy::http::maximum_origin_redirects;
 using mediaproxy::http::validate_origin_url;
 
-std::optional<RedirectTracker> MakeTracker(const char* initial)
-{
+std::optional<RedirectTracker> MakeTracker(const char *initial) {
     const auto parsed = validate_origin_url(initial);
     if (!parsed) {
         return std::nullopt;
@@ -24,8 +23,7 @@ std::optional<RedirectTracker> MakeTracker(const char* initial)
     return RedirectTracker::create(*parsed.url);
 }
 
-TEST(RedirectPolicy, ResolvesRelativeQueryAndNetworkLocations)
-{
+TEST(RedirectPolicy, ResolvesRelativeQueryAndNetworkLocations) {
     auto created = MakeTracker(
         "https://origin.example/a/b/source.png?old=1");
     ASSERT_TRUE(created.has_value());
@@ -53,8 +51,7 @@ TEST(RedirectPolicy, ResolvesRelativeQueryAndNetworkLocations)
     EXPECT_EQ(tracker.redirect_count(), 3U);
 }
 
-TEST(RedirectPolicy, ReappliesSyntaxAndLiteralAddressPolicy)
-{
+TEST(RedirectPolicy, ReappliesSyntaxAndLiteralAddressPolicy) {
     auto created = MakeTracker("https://origin.example/start");
     ASSERT_TRUE(created.has_value());
     auto tracker = std::move(*created);
@@ -86,8 +83,7 @@ TEST(RedirectPolicy, ReappliesSyntaxAndLiteralAddressPolicy)
     EXPECT_EQ(tracker.redirect_count(), 1U);
 }
 
-TEST(RedirectPolicy, DetectsCanonicalLoopsWithoutMutatingState)
-{
+TEST(RedirectPolicy, DetectsCanonicalLoopsWithoutMutatingState) {
     auto created = MakeTracker("https://origin.example/path?x=1");
     ASSERT_TRUE(created.has_value());
     auto tracker = std::move(*created);
@@ -118,8 +114,7 @@ TEST(RedirectPolicy, DetectsCanonicalLoopsWithoutMutatingState)
     EXPECT_EQ(tracker.redirect_count(), 1U);
 }
 
-TEST(RedirectPolicy, EnforcesTenSuccessfulRedirects)
-{
+TEST(RedirectPolicy, EnforcesTenSuccessfulRedirects) {
     auto created = MakeTracker("https://origin.example/start");
     ASSERT_TRUE(created.has_value());
     auto tracker = std::move(*created);
@@ -137,8 +132,7 @@ TEST(RedirectPolicy, EnforcesTenSuccessfulRedirects)
     EXPECT_EQ(tracker.redirect_count(), maximum_origin_redirects);
 }
 
-TEST(RedirectPolicy, RejectsMalformedLocationsAndForgedInitialState)
-{
+TEST(RedirectPolicy, RejectsMalformedLocationsAndForgedInitialState) {
     auto created = MakeTracker("https://origin.example/start");
     ASSERT_TRUE(created.has_value());
     auto tracker = std::move(*created);

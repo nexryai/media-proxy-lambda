@@ -15,8 +15,7 @@ using mediaproxy::http::ResolvePinError;
 using mediaproxy::http::validate_origin_url;
 using mediaproxy::http::validate_resolved_addresses;
 
-TEST(CurlResolvePin, PinsMixedPublicAddressesInResolverOrder)
-{
+TEST(CurlResolvePin, PinsMixedPublicAddressesInResolverOrder) {
     const auto parsed = validate_origin_url("https://origin.example/image.png");
     ASSERT_TRUE(parsed);
     ASSERT_TRUE(parsed.url.has_value());
@@ -37,8 +36,7 @@ TEST(CurlResolvePin, PinsMixedPublicAddressesInResolverOrder)
     EXPECT_NE(pin.native_handle(), nullptr);
 }
 
-TEST(CurlResolvePin, RetainsCanonicalHostAndExplicitPort)
-{
+TEST(CurlResolvePin, RetainsCanonicalHostAndExplicitPort) {
     const auto parsed =
         validate_origin_url("https://Origin.Example:80/image.png");
     ASSERT_TRUE(parsed);
@@ -52,8 +50,7 @@ TEST(CurlResolvePin, RetainsCanonicalHostAndExplicitPort)
     EXPECT_EQ(pin.entry(), "origin.example:80:1.1.1.1");
 }
 
-TEST(CurlResolvePin, RejectsEmptyCandidatesAndInvalidOrigins)
-{
+TEST(CurlResolvePin, RejectsEmptyCandidatesAndInvalidOrigins) {
     const auto parsed = validate_origin_url("https://origin.example/");
     ASSERT_TRUE(parsed);
     ASSERT_TRUE(parsed.url.has_value());
@@ -73,8 +70,7 @@ TEST(CurlResolvePin, RejectsEmptyCandidatesAndInvalidOrigins)
     EXPECT_EQ(invalid_pin.error(), ResolvePinError::invalid_origin);
 }
 
-TEST(CurlResolvePin, TransfersNativeListOwnershipOnMove)
-{
+TEST(CurlResolvePin, TransfersNativeListOwnershipOnMove) {
     const auto parsed = validate_origin_url("https://origin.example/");
     ASSERT_TRUE(parsed);
     constexpr std::array<std::string_view, 1> candidates{"1.1.1.1"};
@@ -82,7 +78,7 @@ TEST(CurlResolvePin, TransfersNativeListOwnershipOnMove)
     ASSERT_TRUE(resolved);
     auto source = CurlResolvePin::create(*parsed.url, resolved.addresses);
     ASSERT_TRUE(source);
-    auto* const native = source.native_handle();
+    auto *const native = source.native_handle();
 
     CurlResolvePin destination{std::move(source)};
     EXPECT_FALSE(source);

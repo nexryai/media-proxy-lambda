@@ -51,8 +51,7 @@ struct ApngDescription {
     bool default_image_is_frame = false;
     std::vector<ApngFrameControl> frames;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == ApngParseError::none;
     }
 };

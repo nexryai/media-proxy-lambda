@@ -19,61 +19,51 @@ constexpr std::size_t maximum_chunk_length = 10U * 1024U * 1024U;
 
 [[nodiscard]] std::uint32_t read_u32(
     std::span<const std::byte> body,
-    std::size_t offset) noexcept
-{
+    std::size_t offset) noexcept {
     const auto byte = [&body](std::size_t index) {
         return static_cast<std::uint32_t>(
             std::to_integer<std::uint8_t>(body[index]));
     };
-    return (byte(offset) << 24U) | (byte(offset + 1) << 16U)
-        | (byte(offset + 2) << 8U) | byte(offset + 3);
+    return (byte(offset) << 24U) | (byte(offset + 1) << 16U) | (byte(offset + 2) << 8U) | byte(offset + 3);
 }
 
 [[nodiscard]] std::uint16_t read_u16(
     std::span<const std::byte> body,
-    std::size_t offset) noexcept
-{
+    std::size_t offset) noexcept {
     return static_cast<std::uint16_t>(
-        (std::to_integer<std::uint8_t>(body[offset]) << 8U)
-        | std::to_integer<std::uint8_t>(body[offset + 1]));
+        (std::to_integer<std::uint8_t>(body[offset]) << 8U) | std::to_integer<std::uint8_t>(body[offset + 1]));
 }
 
 [[nodiscard]] bool tag_at(
     std::span<const std::byte> body,
     std::size_t offset,
-    std::string_view tag) noexcept
-{
+    std::string_view tag) noexcept {
     if (offset > body.size() || tag.size() > body.size() - offset) {
         return false;
     }
     for (std::size_t index = 0; index < tag.size(); ++index) {
-        if (std::to_integer<unsigned char>(body[offset + index])
-            != static_cast<unsigned char>(tag[index])) {
+        if (std::to_integer<unsigned char>(body[offset + index]) != static_cast<unsigned char>(tag[index])) {
             return false;
         }
     }
     return true;
 }
 
-[[nodiscard]] ApngDescription fail(ApngParseError error)
-{
+[[nodiscard]] ApngDescription fail(ApngParseError error) {
     ApngDescription result;
     result.error = error;
     return result;
 }
 
 [[nodiscard]] bool has_png_signature(
-    std::span<const std::byte> body) noexcept
-{
-    return body.size() >= png_signature.size()
-        && std::equal(png_signature.begin(), png_signature.end(), body.begin());
+    std::span<const std::byte> body) noexcept {
+    return body.size() >= png_signature.size() && std::equal(png_signature.begin(), png_signature.end(), body.begin());
 }
 
 } // namespace
 
 ApngClassification classify_apng(
-    std::span<const std::byte> body) noexcept
-{
+    std::span<const std::byte> body) noexcept {
     if (body.size() <= 41 || !has_png_signature(body)) {
         return ApngClassification::not_apng;
     }
@@ -89,8 +79,7 @@ ApngClassification classify_apng(
             return ApngClassification::not_apng;
         }
         const std::size_t length = read_u32(body, offset);
-        if (length > maximum_chunk_length
-            || length > body.size() - offset - chunk_overhead) {
+        if (length > maximum_chunk_length || length > body.size() - offset - chunk_overhead) {
             return ApngClassification::not_apng;
         }
 
@@ -114,12 +103,11 @@ ApngClassification classify_apng(
         return ApngClassification::not_apng;
     }
     return has_palette
-        ? ApngClassification::palette
-        : ApngClassification::animated;
+               ? ApngClassification::palette
+               : ApngClassification::animated;
 }
 
-ApngDescription parse_apng(std::span<const std::byte> body)
-{
+ApngDescription parse_apng(std::span<const std::byte> body) {
     if (!has_png_signature(body)) {
         return fail(ApngParseError::signature);
     }
@@ -150,7 +138,7 @@ ApngDescription parse_apng(std::span<const std::byte> body)
         const std::size_t type_offset = offset + 4;
         const std::size_t data_offset = offset + 8;
         const std::size_t crc_offset = data_offset + length;
-        const auto* crc_bytes = reinterpret_cast<const Bytef*>(
+        const auto *crc_bytes = reinterpret_cast<const Bytef *>(
             body.data() + type_offset);
         const auto computed_crc = static_cast<std::uint32_t>(
             crc32(0, crc_bytes, static_cast<uInt>(length + 4)));
@@ -202,11 +190,7 @@ ApngDescription parse_apng(std::span<const std::byte> body)
             if (frame.sequence != expected_sequence++) {
                 return fail(ApngParseError::sequence);
             }
-            if (frame.width == 0 || frame.height == 0
-                || frame.x_offset > result.canvas_width
-                || frame.width > result.canvas_width - frame.x_offset
-                || frame.y_offset > result.canvas_height
-                || frame.height > result.canvas_height - frame.y_offset) {
+            if (frame.width == 0 || frame.height == 0 || frame.x_offset > result.canvas_width || frame.width > result.canvas_width - frame.x_offset || frame.y_offset > result.canvas_height || frame.height > result.canvas_height - frame.y_offset) {
                 return fail(ApngParseError::frame_rectangle);
             }
             if (frame.delay_denominator == 0) {
@@ -222,9 +206,7 @@ ApngDescription parse_apng(std::span<const std::byte> body)
             frame_has_data = false;
         } else if (tag_at(body, type_offset, "IDAT")) {
             // Without an earlier fcTL, IDAT belongs to the static fallback.
-            if (!have_actl || (!result.frames.empty()
-                    && (!result.default_image_is_frame
-                        || result.frames.size() != 1))) {
+            if (!have_actl || (!result.frames.empty() && (!result.default_image_is_frame || result.frames.size() != 1))) {
                 return fail(ApngParseError::frame_data);
             }
             saw_idat = true;
@@ -232,9 +214,7 @@ ApngDescription parse_apng(std::span<const std::byte> body)
                 frame_has_data = true;
             }
         } else if (tag_at(body, type_offset, "fdAT")) {
-            if (!saw_idat || result.frames.empty() || length < 4
-                || (result.default_image_is_frame
-                    && result.frames.size() == 1)) {
+            if (!saw_idat || result.frames.empty() || length < 4 || (result.default_image_is_frame && result.frames.size() == 1)) {
                 return fail(ApngParseError::frame_data);
             }
             if (read_u32(body, data_offset) != expected_sequence++) {
@@ -245,8 +225,7 @@ ApngDescription parse_apng(std::span<const std::byte> body)
 
         offset = crc_offset + 4;
     }
-    if (!have_ihdr || !have_actl || !frame_has_data
-        || result.frames.size() != result.declared_frames) {
+    if (!have_ihdr || !have_actl || !frame_has_data || result.frames.size() != result.declared_frames) {
         return fail(ApngParseError::animation_control);
     }
     return result;

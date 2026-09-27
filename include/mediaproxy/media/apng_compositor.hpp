@@ -22,17 +22,16 @@ struct ApngComposedFrame {
     ApngCompositionError error = ApngCompositionError::none;
     std::vector<std::byte> displayed_rgba;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == ApngCompositionError::none;
     }
 };
 
 [[nodiscard]] ApngComposedFrame compose_apng_frame(
-    std::vector<std::byte>& canvas_rgba,
+    std::vector<std::byte> &canvas_rgba,
     std::uint32_t canvas_width,
     std::uint32_t canvas_height,
-    const ApngFrameControl& control,
+    const ApngFrameControl &control,
     std::span<const std::byte> frame_rgba);
 
 [[nodiscard]] std::int32_t apng_frame_duration_ms(

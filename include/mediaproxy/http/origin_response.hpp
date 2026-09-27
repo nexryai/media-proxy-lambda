@@ -23,7 +23,7 @@ enum class OriginResponseError {
 };
 
 class OriginResponseAccumulator final {
-public:
+  public:
     void consume_header_line(std::string_view line) noexcept;
     [[nodiscard]] std::size_t append_body(
         std::span<const std::byte> bytes) noexcept;
@@ -31,11 +31,11 @@ public:
 
     [[nodiscard]] OriginResponseError error() const noexcept;
     [[nodiscard]] std::optional<std::int64_t> content_length() const noexcept;
-    [[nodiscard]] const std::optional<std::string>& location() const noexcept;
-    [[nodiscard]] const std::vector<std::byte>& body() const noexcept;
+    [[nodiscard]] const std::optional<std::string> &location() const noexcept;
+    [[nodiscard]] const std::vector<std::byte> &body() const noexcept;
     [[nodiscard]] bool at_body_limit() const noexcept;
 
-private:
+  private:
     void set_content_length(std::string_view value) noexcept;
 
     OriginResponseError error_ = OriginResponseError::none;

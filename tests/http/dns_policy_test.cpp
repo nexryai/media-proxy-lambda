@@ -12,8 +12,7 @@ using mediaproxy::http::AddressFamily;
 using mediaproxy::http::ResolutionError;
 using mediaproxy::http::validate_resolved_addresses;
 
-TEST(DnsPolicy, AcceptsEveryPublicCandidateInResolverOrder)
-{
+TEST(DnsPolicy, AcceptsEveryPublicCandidateInResolverOrder) {
     constexpr std::array<std::string_view, 3> candidates{
         "1.1.1.1",
         "2606:4700:4700::1111",
@@ -28,8 +27,7 @@ TEST(DnsPolicy, AcceptsEveryPublicCandidateInResolverOrder)
     EXPECT_FALSE(result.rejected_index.has_value());
 }
 
-TEST(DnsPolicy, RejectsWholeAnswerWhenAnyCandidateIsForbidden)
-{
+TEST(DnsPolicy, RejectsWholeAnswerWhenAnyCandidateIsForbidden) {
     constexpr std::array<std::string_view, 3> candidates{
         "1.1.1.1",
         "192.168.1.1",
@@ -44,8 +42,7 @@ TEST(DnsPolicy, RejectsWholeAnswerWhenAnyCandidateIsForbidden)
     EXPECT_TRUE(result.addresses.empty());
 }
 
-TEST(DnsPolicy, RejectsEmptyMalformedAndMappedAnswers)
-{
+TEST(DnsPolicy, RejectsEmptyMalformedAndMappedAnswers) {
     constexpr std::array<std::string_view, 0> empty{};
     const auto empty_result = validate_resolved_addresses(empty);
     EXPECT_FALSE(empty_result);

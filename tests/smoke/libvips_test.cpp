@@ -9,8 +9,7 @@
 namespace {
 
 struct VipsImageUnref {
-    void operator()(VipsImage* image) const noexcept
-    {
+    void operator()(VipsImage *image) const noexcept {
         if (image != nullptr) {
             g_object_unref(image);
         }
@@ -18,8 +17,7 @@ struct VipsImageUnref {
 };
 
 struct GFree {
-    void operator()(void* memory) const noexcept
-    {
+    void operator()(void *memory) const noexcept {
         g_free(memory);
     }
 };
@@ -27,8 +25,7 @@ struct GFree {
 using ImagePtr = std::unique_ptr<VipsImage, VipsImageUnref>;
 using BufferPtr = std::unique_ptr<void, GFree>;
 
-TEST(LibvipsBuild, ProvidesAvifWithoutOptionalForeignLoaders)
-{
+TEST(LibvipsBuild, ProvidesAvifWithoutOptionalForeignLoaders) {
     ASSERT_EQ(vips_init("mediaproxy-smoke"), 0) << vips_error_buffer();
     vips_concurrency_set(1);
     vips_cache_set_max(0);
@@ -49,25 +46,25 @@ TEST(LibvipsBuild, ProvidesAvifWithoutOptionalForeignLoaders)
     EXPECT_EQ(vips_type_find("VipsOperation", "svgload_buffer"), 0U);
     EXPECT_EQ(vips_type_find("VipsOperation", "text"), 0U);
 
-    VipsImage* raw_image = nullptr;
+    VipsImage *raw_image = nullptr;
     ASSERT_EQ(vips_black(&raw_image, 2, 3, nullptr), 0)
         << vips_error_buffer();
     ImagePtr image(raw_image);
 
-    void* raw_buffer = nullptr;
+    void *raw_buffer = nullptr;
     std::size_t encoded_size = 0;
     ASSERT_EQ(vips_heifsave_buffer(image.get(), &raw_buffer, &encoded_size,
-                  "compression", VIPS_FOREIGN_HEIF_COMPRESSION_AV1, nullptr),
-        0)
+                                   "compression", VIPS_FOREIGN_HEIF_COMPRESSION_AV1, nullptr),
+              0)
         << vips_error_buffer();
     BufferPtr encoded(raw_buffer);
     ASSERT_NE(encoded.get(), nullptr);
     ASSERT_GT(encoded_size, 0U);
 
-    VipsImage* raw_decoded = nullptr;
+    VipsImage *raw_decoded = nullptr;
     ASSERT_EQ(vips_heifload_buffer(
                   encoded.get(), encoded_size, &raw_decoded, nullptr),
-        0)
+              0)
         << vips_error_buffer();
     ImagePtr decoded(raw_decoded);
     EXPECT_EQ(vips_image_get_width(decoded.get()), 2);

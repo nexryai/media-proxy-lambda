@@ -5,21 +5,19 @@
 
 namespace {
 
-int trigger_address_error()
-{
-    volatile char* const memory =
-        static_cast<volatile char*>(std::malloc(4));
+int trigger_address_error() {
+    volatile char *const memory =
+        static_cast<volatile char *>(std::malloc(4));
     if (memory == nullptr) {
         return 2;
     }
     volatile std::size_t offset = 4;
     memory[offset] = 1;
-    std::free(const_cast<char*>(memory));
+    std::free(const_cast<char *>(memory));
     return 0;
 }
 
-int trigger_undefined_error()
-{
+int trigger_undefined_error() {
     volatile int maximum = std::numeric_limits<int>::max();
     volatile int one = 1;
     return maximum + one;
@@ -27,8 +25,7 @@ int trigger_undefined_error()
 
 } // namespace
 
-int main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
     if (argc != 2) {
         return 2;
     }

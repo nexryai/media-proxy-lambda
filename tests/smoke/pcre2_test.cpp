@@ -3,8 +3,8 @@
 #include <memory>
 #include <string_view>
 
-#include <pcre2.h>
 #include <gtest/gtest.h>
+#include <pcre2.h>
 
 namespace {
 
@@ -16,12 +16,11 @@ using MatchDataPtr =
 
 } // namespace
 
-TEST(BuildSmoke, MatchesBoundedUnicodeWithPinnedPcre2)
-{
+TEST(BuildSmoke, MatchesBoundedUnicodeWithPinnedPcre2) {
     PCRE2_UCHAR version[32] = {};
     ASSERT_GE(pcre2_config(PCRE2_CONFIG_VERSION, version), 0);
     EXPECT_TRUE(
-        std::string_view{reinterpret_cast<const char*>(version)}.starts_with(
+        std::string_view{reinterpret_cast<const char *>(version)}.starts_with(
             "10.48 "));
 
     std::uint32_t jit_enabled = 1U;
@@ -34,8 +33,8 @@ TEST(BuildSmoke, MatchesBoundedUnicodeWithPinnedPcre2)
     PCRE2_SIZE error_offset = 0;
     CodePtr code(
         pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern),
-            sizeof(pattern) - 1U, PCRE2_UTF | PCRE2_UCP, &error_code,
-            &error_offset, nullptr),
+                      sizeof(pattern) - 1U, PCRE2_UTF | PCRE2_UCP, &error_code,
+                      &error_offset, nullptr),
         &pcre2_code_free);
     ASSERT_NE(code, nullptr) << "PCRE2 error " << error_code << " at "
                              << error_offset;
@@ -49,18 +48,18 @@ TEST(BuildSmoke, MatchesBoundedUnicodeWithPinnedPcre2)
 
     MatchDataPtr match_data(pcre2_match_data_create_from_pattern(
                                 code.get(), nullptr),
-        &pcre2_match_data_free);
+                            &pcre2_match_data_free);
     ASSERT_NE(match_data, nullptr);
 
     constexpr char subject[] = "/image/安全.webp";
     constexpr std::size_t subject_size = sizeof(subject) - 1U;
     static_assert(subject_size < 64U);
     ASSERT_EQ(pcre2_match(code.get(),
-                  reinterpret_cast<PCRE2_SPTR>(subject), subject_size, 0U, 0U,
-                  match_data.get(), match_context.get()),
-        1);
+                          reinterpret_cast<PCRE2_SPTR>(subject), subject_size, 0U, 0U,
+                          match_data.get(), match_context.get()),
+              1);
 
-    PCRE2_SIZE* const offsets = pcre2_get_ovector_pointer(match_data.get());
+    PCRE2_SIZE *const offsets = pcre2_get_ovector_pointer(match_data.get());
     ASSERT_NE(offsets, nullptr);
     EXPECT_EQ(offsets[0], 0U);
     EXPECT_EQ(offsets[1], subject_size);

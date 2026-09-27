@@ -17,8 +17,7 @@ namespace {
 using mediaproxy::http::parse_query;
 using mediaproxy::http::select_media_options;
 
-std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadQueryVectors()
-{
+std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadQueryVectors() {
     const std::string path =
         std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/vectors/query.json";
     std::ifstream input(path, std::ios::binary);
@@ -36,8 +35,7 @@ std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadQueryVectors()
     return document;
 }
 
-std::string ToHex(const std::string& value)
-{
+std::string ToHex(const std::string &value) {
     std::ostringstream output;
     output << std::hex << std::setfill('0');
     for (const unsigned char byte : value) {
@@ -48,42 +46,39 @@ std::string ToHex(const std::string& value)
 
 } // namespace
 
-TEST(Query, MatchesCheckedInParsingLookupAndBooleanVectors)
-{
+TEST(Query, MatchesCheckedInParsingLookupAndBooleanVectors) {
     const auto document = LoadQueryVectors();
     ASSERT_NE(document, nullptr);
-    yyjson_val* const root = yyjson_doc_get_root(document.get());
+    yyjson_val *const root = yyjson_doc_get_root(document.get());
     ASSERT_TRUE(yyjson_is_obj(root));
-    yyjson_val* const cases = yyjson_obj_get(root, "cases");
+    yyjson_val *const cases = yyjson_obj_get(root, "cases");
     ASSERT_TRUE(yyjson_is_arr(cases));
 
     std::size_t case_index = 0;
     std::size_t case_maximum = 0;
-    yyjson_val* vector = nullptr;
-    yyjson_arr_foreach(cases, case_index, case_maximum, vector)
-    {
+    yyjson_val *vector = nullptr;
+    yyjson_arr_foreach(cases, case_index, case_maximum, vector) {
         ASSERT_TRUE(yyjson_is_obj(vector));
-        const char* const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
-        const char* const raw = yyjson_get_str(yyjson_obj_get(vector, "raw"));
+        const char *const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
+        const char *const raw = yyjson_get_str(yyjson_obj_get(vector, "raw"));
         ASSERT_NE(id, nullptr);
         ASSERT_NE(raw, nullptr);
         SCOPED_TRACE(id);
 
         const auto parameters = parse_query(raw);
-        if (yyjson_val* const expected = yyjson_obj_get(vector, "expected")) {
+        if (yyjson_val *const expected = yyjson_obj_get(vector, "expected")) {
             ASSERT_TRUE(yyjson_is_arr(expected));
             ASSERT_EQ(parameters.entries().size(), yyjson_arr_size(expected));
 
             std::size_t entry_index = 0;
             std::size_t entry_maximum = 0;
-            yyjson_val* entry = nullptr;
+            yyjson_val *entry = nullptr;
             yyjson_arr_foreach(
-                expected, entry_index, entry_maximum, entry)
-            {
+                expected, entry_index, entry_maximum, entry) {
                 ASSERT_TRUE(yyjson_is_obj(entry));
-                const char* const key_hex =
+                const char *const key_hex =
                     yyjson_get_str(yyjson_obj_get(entry, "keyHex"));
-                const char* const value_hex =
+                const char *const value_hex =
                     yyjson_get_str(yyjson_obj_get(entry, "valueHex"));
                 ASSERT_NE(key_hex, nullptr);
                 ASSERT_NE(value_hex, nullptr);
@@ -93,15 +88,14 @@ TEST(Query, MatchesCheckedInParsingLookupAndBooleanVectors)
             }
         }
 
-        if (yyjson_val* const lookups = yyjson_obj_get(vector, "lookups")) {
+        if (yyjson_val *const lookups = yyjson_obj_get(vector, "lookups")) {
             ASSERT_TRUE(yyjson_is_obj(lookups));
             std::size_t lookup_index = 0;
             std::size_t lookup_maximum = 0;
-            yyjson_val* key = nullptr;
-            yyjson_val* value = nullptr;
+            yyjson_val *key = nullptr;
+            yyjson_val *value = nullptr;
             yyjson_obj_foreach(
-                lookups, lookup_index, lookup_maximum, key, value)
-            {
+                lookups, lookup_index, lookup_maximum, key, value) {
                 ASSERT_TRUE(yyjson_is_str(key));
                 ASSERT_TRUE(yyjson_is_str(value));
                 EXPECT_EQ(
@@ -110,16 +104,15 @@ TEST(Query, MatchesCheckedInParsingLookupAndBooleanVectors)
             }
         }
 
-        if (yyjson_val* const booleans =
+        if (yyjson_val *const booleans =
                 yyjson_obj_get(vector, "expectedBooleans")) {
             ASSERT_TRUE(yyjson_is_obj(booleans));
             std::size_t boolean_index = 0;
             std::size_t boolean_maximum = 0;
-            yyjson_val* key = nullptr;
-            yyjson_val* value = nullptr;
+            yyjson_val *key = nullptr;
+            yyjson_val *value = nullptr;
             yyjson_obj_foreach(
-                booleans, boolean_index, boolean_maximum, key, value)
-            {
+                booleans, boolean_index, boolean_maximum, key, value) {
                 ASSERT_TRUE(yyjson_is_str(key));
                 ASSERT_TRUE(yyjson_is_bool(value));
                 EXPECT_EQ(
@@ -130,8 +123,7 @@ TEST(Query, MatchesCheckedInParsingLookupAndBooleanVectors)
     }
 }
 
-TEST(Query, UrlOnlyQualityUsesAcceptedEntries)
-{
+TEST(Query, UrlOnlyQualityUsesAcceptedEntries) {
     struct Case {
         std::string_view query;
         bool url_only;
@@ -146,9 +138,9 @@ TEST(Query, UrlOnlyQualityUsesAcceptedEntries)
         Case{"url=x&avatar=1", false},
         Case{"avatar=1", false},
     };
-    for (const auto& test_case : cases) {
+    for (const auto &test_case : cases) {
         SCOPED_TRACE(test_case.query);
         EXPECT_EQ(select_media_options(parse_query(test_case.query)).url_only,
-            test_case.url_only);
+                  test_case.url_only);
     }
 }

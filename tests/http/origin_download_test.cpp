@@ -5,44 +5,41 @@
 
 #include <curl/curl.h>
 #include <gtest/gtest.h>
-#include <netdb.h>
 #include <mediaproxy/http/dns_resolver.hpp>
 #include <mediaproxy/http/origin_download.hpp>
 #include <mediaproxy/http/origin_response.hpp>
 #include <mediaproxy/http/url_policy.hpp>
+#include <netdb.h>
 
 namespace {
 
 using mediaproxy::http::AddressResolverApi;
+using mediaproxy::http::download_origin_once;
+using mediaproxy::http::maximum_origin_body_bytes;
 using mediaproxy::http::OriginDownloadError;
 using mediaproxy::http::OriginResponseAccumulator;
 using mediaproxy::http::OriginResponseError;
 using mediaproxy::http::OriginTransportApi;
-using mediaproxy::http::download_origin_once;
-using mediaproxy::http::maximum_origin_body_bytes;
 using mediaproxy::http::system_origin_transport;
 using mediaproxy::http::validate_origin_url;
 
 class CurlGlobal final {
-public:
+  public:
     CurlGlobal() noexcept
-        : result_(curl_global_init(CURL_GLOBAL_DEFAULT))
-    {
+        : result_(curl_global_init(CURL_GLOBAL_DEFAULT)) {
     }
 
-    ~CurlGlobal()
-    {
+    ~CurlGlobal() {
         if (result_ == CURLE_OK) {
             curl_global_cleanup();
         }
     }
 
-    [[nodiscard]] CURLcode result() const noexcept
-    {
+    [[nodiscard]] CURLcode result() const noexcept {
         return result_;
     }
 
-private:
+  private:
     CURLcode result_;
 };
 
@@ -64,26 +61,23 @@ struct FakeTransportState {
     int response_code_calls = 0;
 };
 
-CURL* FakeCreate(void* context)
-{
-    auto& state = *static_cast<FakeTransportState*>(context);
+CURL *FakeCreate(void *context) {
+    auto &state = *static_cast<FakeTransportState *>(context);
     ++state.create_calls;
     return state.fail_create ? nullptr : curl_easy_init();
 }
 
-void FakeDestroy(CURL* easy, void* context)
-{
-    auto& state = *static_cast<FakeTransportState*>(context);
+void FakeDestroy(CURL *easy, void *context) {
+    auto &state = *static_cast<FakeTransportState *>(context);
     ++state.destroy_calls;
     curl_easy_cleanup(easy);
 }
 
 CURLcode FakePerform(
-    CURL*,
-    OriginResponseAccumulator& response,
-    void* context)
-{
-    auto& state = *static_cast<FakeTransportState*>(context);
+    CURL *,
+    OriginResponseAccumulator &response,
+    void *context) {
+    auto &state = *static_cast<FakeTransportState *>(context);
     ++state.perform_calls;
     if (state.action == ResponseAction::fill_body_limit) {
         const std::array<std::byte, 64U * 1024U> chunk{};
@@ -102,16 +96,14 @@ CURLcode FakePerform(
     return state.perform_result;
 }
 
-CURLcode FakeResponseCode(CURL*, long* status, void* context)
-{
-    auto& state = *static_cast<FakeTransportState*>(context);
+CURLcode FakeResponseCode(CURL *, long *status, void *context) {
+    auto &state = *static_cast<FakeTransportState *>(context);
     ++state.response_code_calls;
     *status = state.status;
     return state.response_code_result;
 }
 
-OriginTransportApi FakeTransport(FakeTransportState& state)
-{
+OriginTransportApi FakeTransport(FakeTransportState &state) {
     return {
         .context = &state,
         .create = &FakeCreate,
@@ -122,21 +114,18 @@ OriginTransportApi FakeTransport(FakeTransportState& state)
 }
 
 int FailingLookup(
-    const char*,
-    const char*,
-    const addrinfo*,
-    addrinfo** result)
-{
+    const char *,
+    const char *,
+    const addrinfo *,
+    addrinfo **result) {
     *result = nullptr;
     return EAI_AGAIN;
 }
 
-void NoopRelease(addrinfo*)
-{
+void NoopRelease(addrinfo *) {
 }
 
-TEST(OriginDownload, PerformsValidatedPinnedLiteralRequest)
-{
+TEST(OriginDownload, PerformsValidatedPinnedLiteralRequest) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     const auto origin = validate_origin_url("https://1.1.1.1/image");
@@ -156,8 +145,7 @@ TEST(OriginDownload, PerformsValidatedPinnedLiteralRequest)
     EXPECT_EQ(transport_state.destroy_calls, 1);
 }
 
-TEST(OriginDownload, StopsBeforeTransportWhenResolutionFails)
-{
+TEST(OriginDownload, StopsBeforeTransportWhenResolutionFails) {
     const auto origin = validate_origin_url("https://origin.example/image");
     ASSERT_TRUE(origin);
     FakeTransportState transport_state;
@@ -175,8 +163,7 @@ TEST(OriginDownload, StopsBeforeTransportWhenResolutionFails)
     EXPECT_EQ(transport_state.create_calls, 0);
 }
 
-TEST(OriginDownload, SeparatesTransferInfoAndResponsePolicyFailures)
-{
+TEST(OriginDownload, SeparatesTransferInfoAndResponsePolicyFailures) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     const auto origin = validate_origin_url("https://1.1.1.1/image");
@@ -208,8 +195,7 @@ TEST(OriginDownload, SeparatesTransferInfoAndResponsePolicyFailures)
     EXPECT_EQ(result.response.error(), OriginResponseError::non_200_status);
 }
 
-TEST(OriginDownload, PreservesExactLimitAndCallbackPolicyErrors)
-{
+TEST(OriginDownload, PreservesExactLimitAndCallbackPolicyErrors) {
     const CurlGlobal global;
     ASSERT_EQ(global.result(), CURLE_OK);
     const auto origin = validate_origin_url("https://1.1.1.1/image");
@@ -235,8 +221,7 @@ TEST(OriginDownload, PreservesExactLimitAndCallbackPolicyErrors)
     EXPECT_EQ(blocked.response_code_calls, 0);
 }
 
-TEST(OriginDownload, RejectsInvalidTimeoutAndTransportTable)
-{
+TEST(OriginDownload, RejectsInvalidTimeoutAndTransportTable) {
     const auto origin = validate_origin_url("https://1.1.1.1/image");
     ASSERT_TRUE(origin);
     FakeTransportState transport_state;
@@ -260,8 +245,7 @@ TEST(OriginDownload, RejectsInvalidTimeoutAndTransportTable)
     EXPECT_NE(system.response_code, nullptr);
 }
 
-TEST(OriginDownload, ReportsEasyHandleAllocationFailure)
-{
+TEST(OriginDownload, ReportsEasyHandleAllocationFailure) {
     const auto origin = validate_origin_url("https://1.1.1.1/image");
     ASSERT_TRUE(origin);
     FakeTransportState transport_state;

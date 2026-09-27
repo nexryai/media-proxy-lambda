@@ -16,8 +16,7 @@ namespace mediaproxy::media {
 namespace {
 
 struct EncoderDelete {
-    void operator()(WebPAnimEncoder* encoder) const noexcept
-    {
+    void operator()(WebPAnimEncoder *encoder) const noexcept {
         WebPAnimEncoderDelete(encoder);
     }
 };
@@ -27,45 +26,44 @@ struct Picture {
     bool initialized = false;
 
     Picture()
-        : initialized(WebPPictureInit(&value) != 0)
-    {
+        : initialized(WebPPictureInit(&value) != 0) {
     }
 
-    ~Picture()
-    {
+    ~Picture() {
         if (initialized) {
             WebPPictureFree(&value);
         }
     }
 
-    Picture(const Picture&) = delete;
-    Picture& operator=(const Picture&) = delete;
+    Picture(const Picture &) = delete;
+    Picture &operator=(const Picture &) = delete;
 };
 
 struct WebpData {
     WebPData value{};
 
-    WebpData() { WebPDataInit(&value); }
-    ~WebpData() { WebPDataClear(&value); }
+    WebpData() {
+        WebPDataInit(&value);
+    }
+    ~WebpData() {
+        WebPDataClear(&value);
+    }
 
-    WebpData(const WebpData&) = delete;
-    WebpData& operator=(const WebpData&) = delete;
+    WebpData(const WebpData &) = delete;
+    WebpData &operator=(const WebpData &) = delete;
 };
 
 using EncoderPtr = std::unique_ptr<WebPAnimEncoder, EncoderDelete>;
 
-[[nodiscard]] ApngConversionResult fail(ApngConversionError error)
-{
+[[nodiscard]] ApngConversionResult fail(ApngConversionError error) {
     return {.error = error, .body = {}};
 }
 
 [[nodiscard]] bool canvas_size(
     std::uint32_t width,
     std::uint32_t height,
-    std::size_t& output) noexcept
-{
-    if (width == 0 || height == 0
-        || width > std::numeric_limits<std::size_t>::max() / height) {
+    std::size_t &output) noexcept {
+    if (width == 0 || height == 0 || width > std::numeric_limits<std::size_t>::max() / height) {
         return false;
     }
     const std::size_t pixels = static_cast<std::size_t>(width) * height;
@@ -79,9 +77,8 @@ using EncoderPtr = std::unique_ptr<WebPAnimEncoder, EncoderDelete>;
 } // namespace
 
 bool initialize_apng_webp_config(
-    WebPConfig& config,
-    EncodingQuality quality) noexcept
-{
+    WebPConfig &config,
+    EncodingQuality quality) noexcept {
     if (WebPConfigInit(&config) == 0) {
         return false;
     }
@@ -95,13 +92,8 @@ ApngConversionResult convert_apng_to_webp(
     std::span<const std::byte> body,
     std::uint32_t target_width,
     std::uint32_t target_height,
-    EncodingQuality quality)
-{
-    if (target_width == 0 || target_height == 0
-        || target_width > static_cast<std::uint32_t>(
-            std::numeric_limits<int>::max())
-        || target_height > static_cast<std::uint32_t>(
-            std::numeric_limits<int>::max())) {
+    EncodingQuality quality) {
+    if (target_width == 0 || target_height == 0 || target_width > static_cast<std::uint32_t>(std::numeric_limits<int>::max()) || target_height > static_cast<std::uint32_t>(std::numeric_limits<int>::max())) {
         return fail(ApngConversionError::dimensions);
     }
 
@@ -110,9 +102,9 @@ ApngConversionResult convert_apng_to_webp(
         return fail(ApngConversionError::decode);
     }
     if (decoded.canvas_width > static_cast<std::uint32_t>(
-            std::numeric_limits<int>::max() / 4)
-        || decoded.canvas_height > static_cast<std::uint32_t>(
-            std::numeric_limits<int>::max())) {
+                                   std::numeric_limits<int>::max() / 4) ||
+        decoded.canvas_height > static_cast<std::uint32_t>(
+                                    std::numeric_limits<int>::max())) {
         return fail(ApngConversionError::dimensions);
     }
     std::size_t expected_canvas_size = 0;
@@ -140,18 +132,17 @@ ApngConversionResult convert_apng_to_webp(
     std::int32_t timestamp = 0;
     for (std::size_t index = 0; index < decoded.frames.size(); ++index) {
         if (index != 0) {
-            const auto& previous = decoded.frames[index - 1].control;
+            const auto &previous = decoded.frames[index - 1].control;
             const auto duration = apng_frame_duration_ms(
                 previous.delay_numerator, previous.delay_denominator);
-            if (duration > std::numeric_limits<std::int32_t>::max()
-                    - timestamp) {
+            if (duration > std::numeric_limits<std::int32_t>::max() - timestamp) {
                 return fail(ApngConversionError::encoder);
             }
             timestamp += duration;
         }
-        const auto& frame = decoded.frames[index];
+        const auto &frame = decoded.frames[index];
         auto composed = compose_apng_frame(canvas, decoded.canvas_width,
-            decoded.canvas_height, frame.control, frame.rgba);
+                                           decoded.canvas_height, frame.control, frame.rgba);
         if (!composed) {
             return fail(ApngConversionError::composition);
         }
@@ -165,29 +156,25 @@ ApngConversionResult convert_apng_to_webp(
         // Keep composed RGBA in ARGB until the lossy encoder converts color.
         picture.value.use_argb = 1;
         if (WebPPictureImportRGBA(&picture.value,
-                reinterpret_cast<const std::uint8_t*>(
-                    composed.displayed_rgba.data()),
-                static_cast<int>(decoded.canvas_width * 4U))
-                == 0
-            || WebPPictureRescale(&picture.value,
-                   static_cast<int>(target_width),
-                   static_cast<int>(target_height))
-                == 0) {
+                                  reinterpret_cast<const std::uint8_t *>(
+                                      composed.displayed_rgba.data()),
+                                  static_cast<int>(decoded.canvas_width * 4U)) == 0 ||
+            WebPPictureRescale(&picture.value,
+                               static_cast<int>(target_width),
+                               static_cast<int>(target_height)) == 0) {
             return fail(ApngConversionError::picture);
         }
         if (WebPAnimEncoderAdd(
-                encoder.get(), &picture.value, timestamp, &config)
-            == 0) {
+                encoder.get(), &picture.value, timestamp, &config) == 0) {
             return fail(ApngConversionError::encoder);
         }
     }
 
     WebpData output;
-    if (WebPAnimEncoderAssemble(encoder.get(), &output.value) == 0
-        || output.value.bytes == nullptr || output.value.size == 0) {
+    if (WebPAnimEncoderAssemble(encoder.get(), &output.value) == 0 || output.value.bytes == nullptr || output.value.size == 0) {
         return fail(ApngConversionError::encoder);
     }
-    const auto* begin = reinterpret_cast<const std::byte*>(output.value.bytes);
+    const auto *begin = reinterpret_cast<const std::byte *>(output.value.bytes);
     return {
         .error = ApngConversionError::none,
         .body = std::vector<std::byte>(begin, begin + output.value.size),

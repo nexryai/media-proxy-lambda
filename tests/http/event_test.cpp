@@ -19,21 +19,19 @@ namespace {
 
 using mediaproxy::http::EventError;
 using mediaproxy::http::HttpResponse;
-using mediaproxy::http::MediaSelector;
 using mediaproxy::http::MediaRequest;
-using mediaproxy::http::PreferredOutput;
-using mediaproxy::http::RequestRoute;
+using mediaproxy::http::MediaSelector;
 using mediaproxy::http::parse_function_url_event;
 using mediaproxy::http::plan_request;
+using mediaproxy::http::PreferredOutput;
+using mediaproxy::http::RequestRoute;
 
-std::vector<std::byte> Bytes(std::string_view text)
-{
+std::vector<std::byte> Bytes(std::string_view text) {
     const auto bytes = std::as_bytes(std::span{text});
     return {bytes.begin(), bytes.end()};
 }
 
-std::string ReadFile(const std::string& path)
-{
+std::string ReadFile(const std::string &path) {
     std::ifstream input(path, std::ios::binary);
     EXPECT_TRUE(input.is_open()) << path;
     return {
@@ -41,10 +39,8 @@ std::string ReadFile(const std::string& path)
         std::istreambuf_iterator<char>{}};
 }
 
-std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadEventManifest()
-{
-    const std::string path = std::string{MEDIAPROXY_SOURCE_DIR}
-        + "/tests/fixtures/events/manifest.json";
+std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadEventManifest() {
+    const std::string path = std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/fixtures/events/manifest.json";
     std::string json = ReadFile(path);
     yyjson_read_err error{};
     std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> document(
@@ -55,8 +51,7 @@ std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadEventManifest()
     return document;
 }
 
-MediaSelector ParseSelector(std::string_view value)
-{
+MediaSelector ParseSelector(std::string_view value) {
     if (value == "avatar") {
         return MediaSelector::avatar;
     }
@@ -64,8 +59,7 @@ MediaSelector ParseSelector(std::string_view value)
     return MediaSelector::default_media;
 }
 
-PreferredOutput ParseOutput(std::string_view value)
-{
+PreferredOutput ParseOutput(std::string_view value) {
     if (value == "avif") {
         return PreferredOutput::avif;
     }
@@ -74,10 +68,9 @@ PreferredOutput ParseOutput(std::string_view value)
 }
 
 std::string_view HeaderValue(
-    const HttpResponse& response,
-    std::string_view name)
-{
-    for (const auto& header : response.headers) {
+    const HttpResponse &response,
+    std::string_view name) {
+    for (const auto &header : response.headers) {
         if (header.name == name) {
             return header.value;
         }
@@ -87,34 +80,31 @@ std::string_view HeaderValue(
 
 } // namespace
 
-TEST(Event, MatchesCheckedInFunctionUrlFixtures)
-{
+TEST(Event, MatchesCheckedInFunctionUrlFixtures) {
     const auto manifest = LoadEventManifest();
     ASSERT_NE(manifest, nullptr);
-    yyjson_val* const root = yyjson_doc_get_root(manifest.get());
+    yyjson_val *const root = yyjson_doc_get_root(manifest.get());
     ASSERT_TRUE(yyjson_is_obj(root));
-    yyjson_val* const fixtures = yyjson_obj_get(root, "fixtures");
+    yyjson_val *const fixtures = yyjson_obj_get(root, "fixtures");
     ASSERT_TRUE(yyjson_is_arr(fixtures));
 
     std::size_t index = 0;
     std::size_t maximum = 0;
-    yyjson_val* fixture = nullptr;
-    yyjson_arr_foreach(fixtures, index, maximum, fixture)
-    {
+    yyjson_val *fixture = nullptr;
+    yyjson_arr_foreach(fixtures, index, maximum, fixture) {
         ASSERT_TRUE(yyjson_is_obj(fixture));
-        const char* const id = yyjson_get_str(yyjson_obj_get(fixture, "id"));
-        const char* const file =
+        const char *const id = yyjson_get_str(yyjson_obj_get(fixture, "id"));
+        const char *const file =
             yyjson_get_str(yyjson_obj_get(fixture, "file"));
-        yyjson_val* const expected = yyjson_obj_get(fixture, "expected");
+        yyjson_val *const expected = yyjson_obj_get(fixture, "expected");
         ASSERT_NE(id, nullptr);
         ASSERT_NE(file, nullptr);
         ASSERT_TRUE(yyjson_is_obj(expected));
         SCOPED_TRACE(id);
 
-        const std::string path = std::string{MEDIAPROXY_SOURCE_DIR}
-            + "/tests/fixtures/events/" + file;
+        const std::string path = std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/fixtures/events/" + file;
         const auto result = parse_function_url_event(ReadFile(path));
-        const char* const expected_route =
+        const char *const expected_route =
             yyjson_get_str(yyjson_obj_get(expected, "route"));
         ASSERT_NE(expected_route, nullptr);
         if (std::string_view{expected_route} == "error") {
@@ -122,14 +112,14 @@ TEST(Event, MatchesCheckedInFunctionUrlFixtures)
             EXPECT_EQ(result.error, EventError::invalid_path_escape);
             const auto plan = plan_request(result);
             ASSERT_TRUE(std::holds_alternative<HttpResponse>(plan));
-            const auto& response = std::get<HttpResponse>(plan);
+            const auto &response = std::get<HttpResponse>(plan);
             EXPECT_EQ(
                 response.status,
                 yyjson_get_uint(yyjson_obj_get(expected, "status")));
             EXPECT_EQ(
                 response.body,
                 Bytes(yyjson_get_str(yyjson_obj_get(expected, "bodyUtf8"))));
-            yyjson_val* const headers = yyjson_obj_get(expected, "headers");
+            yyjson_val *const headers = yyjson_obj_get(expected, "headers");
             EXPECT_EQ(
                 HeaderValue(response, "Content-Type"),
                 yyjson_get_str(yyjson_obj_get(headers, "Content-Type")));
@@ -139,7 +129,7 @@ TEST(Event, MatchesCheckedInFunctionUrlFixtures)
         ASSERT_TRUE(result);
         ASSERT_TRUE(result.request.has_value());
         EXPECT_EQ(result.error, EventError::none);
-        const auto& request = *result.request;
+        const auto &request = *result.request;
         EXPECT_EQ(
             request.method,
             yyjson_get_str(yyjson_obj_get(expected, "method")));
@@ -147,14 +137,14 @@ TEST(Event, MatchesCheckedInFunctionUrlFixtures)
             request.decoded_path,
             yyjson_get_str(yyjson_obj_get(expected, "decodedPath")));
         const RequestRoute route = std::string_view{expected_route} == "status"
-            ? RequestRoute::status
-            : RequestRoute::media;
+                                       ? RequestRoute::status
+                                       : RequestRoute::media;
         EXPECT_EQ(request.route, route);
 
         const auto plan = plan_request(result);
         if (route == RequestRoute::status) {
             ASSERT_TRUE(std::holds_alternative<HttpResponse>(plan));
-            const auto& response = std::get<HttpResponse>(plan);
+            const auto &response = std::get<HttpResponse>(plan);
             EXPECT_EQ(
                 response.status,
                 yyjson_get_uint(yyjson_obj_get(expected, "status")));
@@ -163,13 +153,13 @@ TEST(Event, MatchesCheckedInFunctionUrlFixtures)
                 Bytes(yyjson_get_str(yyjson_obj_get(expected, "bodyUtf8"))));
         } else {
             ASSERT_TRUE(std::holds_alternative<MediaRequest>(plan));
-            const auto& media_request = std::get<MediaRequest>(plan);
+            const auto &media_request = std::get<MediaRequest>(plan);
             EXPECT_EQ(
                 media_request.source_url,
                 yyjson_get_str(yyjson_obj_get(expected, "firstUrl")));
             EXPECT_EQ(media_request.method, request.method);
             EXPECT_EQ(media_request.decoded_path, request.decoded_path);
-            const auto& options = media_request.options;
+            const auto &options = media_request.options;
             EXPECT_EQ(
                 options.selector,
                 ParseSelector(yyjson_get_str(
@@ -191,8 +181,7 @@ TEST(Event, MatchesCheckedInFunctionUrlFixtures)
     }
 }
 
-TEST(Event, RejectsMalformedJsonAndRequiredFields)
-{
+TEST(Event, RejectsMalformedJsonAndRequiredFields) {
     const auto invalid_json = parse_function_url_event("{");
     EXPECT_FALSE(invalid_json);
     EXPECT_EQ(invalid_json.error, EventError::invalid_json);
@@ -218,8 +207,7 @@ TEST(Event, RejectsMalformedJsonAndRequiredFields)
     EXPECT_EQ(missing_field.error, EventError::invalid_structure);
 }
 
-TEST(RequestPlan, RejectsMissingOrEmptyFirstUrl)
-{
+TEST(RequestPlan, RejectsMissingOrEmptyFirstUrl) {
     constexpr std::string_view missing_url = R"({
         "version":"2.0",
         "rawPath":"/media",

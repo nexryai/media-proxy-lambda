@@ -10,34 +10,30 @@
 
 namespace {
 
-void append_u16(std::vector<std::byte>& output, std::uint16_t value)
-{
+void append_u16(std::vector<std::byte> &output, std::uint16_t value) {
     output.push_back(static_cast<std::byte>(value & 0xffU));
     output.push_back(static_cast<std::byte>((value >> 8U) & 0xffU));
 }
 
-void append_u32(std::vector<std::byte>& output, std::uint32_t value)
-{
+void append_u32(std::vector<std::byte> &output, std::uint32_t value) {
     output.push_back(static_cast<std::byte>(value & 0xffU));
     output.push_back(static_cast<std::byte>((value >> 8U) & 0xffU));
     output.push_back(static_cast<std::byte>((value >> 16U) & 0xffU));
     output.push_back(static_cast<std::byte>((value >> 24U) & 0xffU));
 }
 
-void convert_ico(std::span<const std::byte> bytes)
-{
+void convert_ico(std::span<const std::byte> bytes) {
     static_cast<void>(mediaproxy::media::convert_media(bytes,
-        mediaproxy::media::MimeType::image_ico, false,
-        mediaproxy::media::OutputFormat::webp,
-        mediaproxy::media::ImageDimensions{.width = 64, .height = 64}));
+                                                       mediaproxy::media::MimeType::image_ico, false,
+                                                       mediaproxy::media::OutputFormat::webp,
+                                                       mediaproxy::media::ImageDimensions{.width = 64, .height = 64}));
 }
 
 } // namespace
 
 extern "C" int LLVMFuzzerTestOneInput(
-    const std::uint8_t* data,
-    std::size_t size)
-{
+    const std::uint8_t *data,
+    std::size_t size) {
     const auto bytes = std::as_bytes(std::span{data, size});
     convert_ico(bytes);
 

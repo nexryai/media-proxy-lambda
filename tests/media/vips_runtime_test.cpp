@@ -10,8 +10,7 @@ using mediaproxy::media::vips_cache_maximum_files;
 using mediaproxy::media::vips_cache_maximum_memory;
 using mediaproxy::media::vips_worker_concurrency;
 
-TEST(VipsRuntime, InitializesOnceWithBoundedExecutionSettings)
-{
+TEST(VipsRuntime, InitializesOnceWithBoundedExecutionSettings) {
     ASSERT_TRUE(initialize_vips()) << vips_error_buffer();
     EXPECT_TRUE(initialize_vips());
     EXPECT_EQ(vips_concurrency_get(), vips_worker_concurrency);

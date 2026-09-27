@@ -16,15 +16,13 @@ namespace mediaproxy::http {
 namespace {
 
 struct CurlUrlDeleter {
-    void operator()(CURLU* handle) const noexcept
-    {
+    void operator()(CURLU *handle) const noexcept {
         curl_url_cleanup(handle);
     }
 };
 
 struct CurlStringDeleter {
-    void operator()(char* value) const noexcept
-    {
+    void operator()(char *value) const noexcept {
         curl_free(value);
     }
 };
@@ -32,19 +30,15 @@ struct CurlStringDeleter {
 using CurlUrl = std::unique_ptr<CURLU, CurlUrlDeleter>;
 using CurlString = std::unique_ptr<char, CurlStringDeleter>;
 
-[[nodiscard]] bool is_ascii_alpha(char value) noexcept
-{
-    return (value >= 'a' && value <= 'z')
-        || (value >= 'A' && value <= 'Z');
+[[nodiscard]] bool is_ascii_alpha(char value) noexcept {
+    return (value >= 'a' && value <= 'z') || (value >= 'A' && value <= 'Z');
 }
 
-[[nodiscard]] bool is_ascii_digit(char value) noexcept
-{
+[[nodiscard]] bool is_ascii_digit(char value) noexcept {
     return value >= '0' && value <= '9';
 }
 
-[[nodiscard]] bool has_scheme(std::string_view value) noexcept
-{
+[[nodiscard]] bool has_scheme(std::string_view value) noexcept {
     if (value.empty() || !is_ascii_alpha(value.front())) {
         return false;
     }
@@ -53,8 +47,7 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
         if (current == ':') {
             return true;
         }
-        if (!is_ascii_alpha(current) && !is_ascii_digit(current)
-            && current != '+' && current != '-' && current != '.') {
+        if (!is_ascii_alpha(current) && !is_ascii_digit(current) && current != '+' && current != '-' && current != '.') {
             return false;
         }
     }
@@ -62,24 +55,21 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
 }
 
 [[nodiscard]] std::optional<std::string> resolve_relative_location(
-    const OriginUrl& current,
-    std::string_view location)
-{
+    const OriginUrl &current,
+    std::string_view location) {
     CurlUrl handle{curl_url()};
     if (!handle) {
         return std::nullopt;
     }
     const std::string base{current.canonical_url};
-    if (curl_url_set(handle.get(), CURLUPART_URL, base.c_str(), 0)
-        != CURLUE_OK) {
+    if (curl_url_set(handle.get(), CURLUPART_URL, base.c_str(), 0) != CURLUE_OK) {
         return std::nullopt;
     }
     const std::string relative{location};
-    if (curl_url_set(handle.get(), CURLUPART_URL, relative.c_str(), 0)
-        != CURLUE_OK) {
+    if (curl_url_set(handle.get(), CURLUPART_URL, relative.c_str(), 0) != CURLUE_OK) {
         return std::nullopt;
     }
-    char* raw = nullptr;
+    char *raw = nullptr;
     if (curl_url_get(handle.get(), CURLUPART_URL, &raw, 0) != CURLUE_OK) {
         return std::nullopt;
     }
@@ -88,20 +78,17 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
 }
 
 [[nodiscard]] bool equal_address(
-    const std::optional<ValidatedAddress>& left,
-    const std::optional<ValidatedAddress>& right) noexcept
-{
+    const std::optional<ValidatedAddress> &left,
+    const std::optional<ValidatedAddress> &right) noexcept {
     if (left.has_value() != right.has_value()) {
         return false;
     }
-    return !left || (left->family == right->family
-        && left->bytes == right->bytes);
+    return !left || (left->family == right->family && left->bytes == right->bytes);
 }
 
 [[nodiscard]] RedirectResult fail(
     RedirectError error,
-    UrlError url_error = UrlError::none)
-{
+    UrlError url_error = UrlError::none) {
     return {
         .url = std::nullopt,
         .error = error,
@@ -112,31 +99,22 @@ using CurlString = std::unique_ptr<char, CurlStringDeleter>;
 } // namespace
 
 RedirectTracker::RedirectTracker(OriginUrl initial)
-    : current_(std::move(initial))
-{
+    : current_(std::move(initial)) {
     visited_[0] = current_.canonical_url;
     visited_count_ = 1;
 }
 
 std::optional<RedirectTracker> RedirectTracker::create(
-    const OriginUrl& initial)
-{
+    const OriginUrl &initial) {
     UrlPolicyResult validated =
         validate_origin_url(initial.canonical_url);
-    if (!validated
-        || validated.url->canonical_url != initial.canonical_url
-        || validated.url->hostname != initial.hostname
-        || validated.url->port != initial.port
-        || validated.url->request_target != initial.request_target
-        || !equal_address(
-            validated.url->literal_address, initial.literal_address)) {
+    if (!validated || validated.url->canonical_url != initial.canonical_url || validated.url->hostname != initial.hostname || validated.url->port != initial.port || validated.url->request_target != initial.request_target || !equal_address(validated.url->literal_address, initial.literal_address)) {
         return std::nullopt;
     }
     return RedirectTracker{std::move(*validated.url)};
 }
 
-RedirectResult RedirectTracker::follow(std::string_view location)
-{
+RedirectResult RedirectTracker::follow(std::string_view location) {
     if (redirect_count_ >= maximum_origin_redirects) {
         return fail(RedirectError::too_many_redirects);
     }
@@ -179,13 +157,11 @@ RedirectResult RedirectTracker::follow(std::string_view location)
     };
 }
 
-const OriginUrl& RedirectTracker::current() const noexcept
-{
+const OriginUrl &RedirectTracker::current() const noexcept {
     return current_;
 }
 
-std::size_t RedirectTracker::redirect_count() const noexcept
-{
+std::size_t RedirectTracker::redirect_count() const noexcept {
     return redirect_count_;
 }
 

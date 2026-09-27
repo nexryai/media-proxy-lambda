@@ -24,14 +24,13 @@ struct ApngConversionResult {
     ApngConversionError error = ApngConversionError::none;
     std::vector<std::byte> body;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == ApngConversionError::none;
     }
 };
 
 [[nodiscard]] bool initialize_apng_webp_config(
-    WebPConfig& config,
+    WebPConfig &config,
     EncodingQuality quality) noexcept;
 
 [[nodiscard]] ApngConversionResult convert_apng_to_webp(

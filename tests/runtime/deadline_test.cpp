@@ -8,13 +8,11 @@ namespace {
 using mediaproxy::runtime::EpochClockApi;
 using mediaproxy::runtime::InvocationDeadline;
 
-std::uint64_t Now(void* context) noexcept
-{
-    return *static_cast<std::uint64_t*>(context);
+std::uint64_t Now(void *context) noexcept {
+    return *static_cast<std::uint64_t *>(context);
 }
 
-TEST(RuntimeDeadline, SubtractsExactResponseSubmissionReserve)
-{
+TEST(RuntimeDeadline, SubtractsExactResponseSubmissionReserve) {
     std::uint64_t now = 10'000;
     InvocationDeadline deadline{
         15'000, EpochClockApi{.context = &now, .now = &Now}};
@@ -28,8 +26,7 @@ TEST(RuntimeDeadline, SubtractsExactResponseSubmissionReserve)
     EXPECT_EQ(deadline.remaining_origin_milliseconds(), 0);
 }
 
-TEST(RuntimeDeadline, RefreshesTimeThroughOriginCallback)
-{
+TEST(RuntimeDeadline, RefreshesTimeThroughOriginCallback) {
     std::uint64_t now = 1'000;
     InvocationDeadline deadline{
         5'000, EpochClockApi{.context = &now, .now = &Now}};
@@ -40,8 +37,7 @@ TEST(RuntimeDeadline, RefreshesTimeThroughOriginCallback)
     EXPECT_EQ(timeout.remaining_milliseconds(timeout.context), 500);
 }
 
-TEST(RuntimeDeadline, RejectsMissingClock)
-{
+TEST(RuntimeDeadline, RejectsMissingClock) {
     InvocationDeadline deadline{5'000, {}};
     EXPECT_EQ(deadline.remaining_origin_milliseconds(), 0);
 }

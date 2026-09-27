@@ -1,10 +1,9 @@
 #include <cstddef>
 #include <cstdint>
 
-extern "C" [[gnu::noinline]] int mediaproxy_corrupt_stack()
-{
+extern "C" [[gnu::noinline]] int mediaproxy_corrupt_stack() {
     volatile std::uint8_t buffer[8]{};
-    auto* address = const_cast<std::uint8_t*>(buffer);
+    auto *address = const_cast<std::uint8_t *>(buffer);
 
     asm volatile("" : "+r"(address) : : "memory");
     for (std::size_t index = 0; index < 64; ++index) {
@@ -16,7 +15,6 @@ extern "C" [[gnu::noinline]] int mediaproxy_corrupt_stack()
     return buffer[0];
 }
 
-int main()
-{
+int main() {
     return mediaproxy_corrupt_stack();
 }

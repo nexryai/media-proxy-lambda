@@ -7,14 +7,13 @@
 
 namespace {
 
+using mediaproxy::media::apng_frame_duration_ms;
 using mediaproxy::media::ApngCompositionError;
 using mediaproxy::media::ApngFrameControl;
-using mediaproxy::media::apng_frame_duration_ms;
 using mediaproxy::media::compose_apng_frame;
 
 std::vector<std::byte> Pixels(
-    std::initializer_list<std::uint8_t> values)
-{
+    std::initializer_list<std::uint8_t> values) {
     std::vector<std::byte> result;
     result.reserve(values.size());
     for (const auto value : values) {
@@ -25,8 +24,7 @@ std::vector<std::byte> Pixels(
 
 ApngFrameControl Control(
     std::uint8_t dispose,
-    std::uint8_t blend)
-{
+    std::uint8_t blend) {
     return {
         .sequence = 1,
         .width = 1,
@@ -40,31 +38,28 @@ ApngFrameControl Control(
     };
 }
 
-TEST(ApngCompositor, SourceOverUsesPriorCanvasAtOffset)
-{
+TEST(ApngCompositor, SourceOverUsesPriorCanvasAtOffset) {
     auto canvas = Pixels({0, 0, 255, 255, 0, 0, 255, 255});
     const auto half_red = Pixels({255, 0, 0, 128});
     const auto result = compose_apng_frame(
         canvas, 2, 1, Control(0, 1), half_red);
     ASSERT_TRUE(result);
     EXPECT_EQ(result.displayed_rgba,
-        Pixels({0, 0, 255, 255, 128, 0, 127, 255}));
+              Pixels({0, 0, 255, 255, 128, 0, 127, 255}));
     EXPECT_EQ(canvas, result.displayed_rgba);
 }
 
-TEST(ApngCompositor, SourceClearsAndReplacesOnlyFrameRectangle)
-{
+TEST(ApngCompositor, SourceClearsAndReplacesOnlyFrameRectangle) {
     auto canvas = Pixels({0, 255, 0, 255, 0, 0, 255, 255});
     const auto transparent = Pixels({0, 0, 0, 0});
     const auto result = compose_apng_frame(
         canvas, 2, 1, Control(0, 0), transparent);
     ASSERT_TRUE(result);
     EXPECT_EQ(result.displayed_rgba,
-        Pixels({0, 255, 0, 255, 0, 0, 0, 0}));
+              Pixels({0, 255, 0, 255, 0, 0, 0, 0}));
 }
 
-TEST(ApngCompositor, AppliesBackgroundAndPreviousAfterDisplayCapture)
-{
+TEST(ApngCompositor, AppliesBackgroundAndPreviousAfterDisplayCapture) {
     const auto red = Pixels({255, 0, 0, 255});
 
     auto background_canvas =
@@ -73,9 +68,9 @@ TEST(ApngCompositor, AppliesBackgroundAndPreviousAfterDisplayCapture)
         background_canvas, 2, 1, Control(1, 0), red);
     ASSERT_TRUE(background);
     EXPECT_EQ(background.displayed_rgba,
-        Pixels({0, 255, 0, 255, 255, 0, 0, 255}));
+              Pixels({0, 255, 0, 255, 255, 0, 0, 255}));
     EXPECT_EQ(background_canvas,
-        Pixels({0, 255, 0, 255, 0, 0, 0, 0}));
+              Pixels({0, 255, 0, 255, 0, 0, 0, 0}));
 
     auto previous_canvas =
         Pixels({0, 255, 0, 255, 0, 0, 255, 255});
@@ -84,11 +79,10 @@ TEST(ApngCompositor, AppliesBackgroundAndPreviousAfterDisplayCapture)
     ASSERT_TRUE(previous);
     EXPECT_EQ(previous.displayed_rgba, background.displayed_rgba);
     EXPECT_EQ(previous_canvas,
-        Pixels({0, 255, 0, 255, 0, 0, 255, 255}));
+              Pixels({0, 255, 0, 255, 0, 0, 255, 255}));
 }
 
-TEST(ApngCompositor, RejectsInvalidInputBeforeChangingCanvas)
-{
+TEST(ApngCompositor, RejectsInvalidInputBeforeChangingCanvas) {
     auto canvas = Pixels({0, 0, 0, 0});
     const auto original = canvas;
     auto control = Control(0, 0);
@@ -100,8 +94,7 @@ TEST(ApngCompositor, RejectsInvalidInputBeforeChangingCanvas)
     EXPECT_EQ(canvas, original);
 }
 
-TEST(ApngCompositor, TruncatesFrameDelayToMilliseconds)
-{
+TEST(ApngCompositor, TruncatesFrameDelayToMilliseconds) {
     EXPECT_EQ(apng_frame_duration_ms(1, 10), 100);
     EXPECT_EQ(apng_frame_duration_ms(1, 3), 333);
     EXPECT_EQ(apng_frame_duration_ms(5, 1), 5000);

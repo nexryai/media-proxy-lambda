@@ -22,8 +22,7 @@ struct AnimatedConversionResult {
     AnimatedConversionError error = AnimatedConversionError::none;
     std::vector<std::byte> body;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == AnimatedConversionError::none;
     }
 };

@@ -10,65 +10,58 @@
 namespace {
 
 class JpegCompressor final {
-public:
-    JpegCompressor() noexcept
-    {
+  public:
+    JpegCompressor() noexcept {
         state_.err = jpeg_std_error(&errors_);
         jpeg_create_compress(&state_);
     }
 
-    ~JpegCompressor()
-    {
+    ~JpegCompressor() {
         jpeg_destroy_compress(&state_);
     }
 
-    JpegCompressor(const JpegCompressor&) = delete;
-    JpegCompressor& operator=(const JpegCompressor&) = delete;
+    JpegCompressor(const JpegCompressor &) = delete;
+    JpegCompressor &operator=(const JpegCompressor &) = delete;
 
-    [[nodiscard]] jpeg_compress_struct* get() noexcept
-    {
+    [[nodiscard]] jpeg_compress_struct *get() noexcept {
         return &state_;
     }
 
-private:
+  private:
     jpeg_compress_struct state_{};
     jpeg_error_mgr errors_{};
 };
 
 class JpegDecompressor final {
-public:
-    JpegDecompressor() noexcept
-    {
+  public:
+    JpegDecompressor() noexcept {
         state_.err = jpeg_std_error(&errors_);
         jpeg_create_decompress(&state_);
     }
 
-    ~JpegDecompressor()
-    {
+    ~JpegDecompressor() {
         jpeg_destroy_decompress(&state_);
     }
 
-    JpegDecompressor(const JpegDecompressor&) = delete;
-    JpegDecompressor& operator=(const JpegDecompressor&) = delete;
+    JpegDecompressor(const JpegDecompressor &) = delete;
+    JpegDecompressor &operator=(const JpegDecompressor &) = delete;
 
-    [[nodiscard]] jpeg_decompress_struct* get() noexcept
-    {
+    [[nodiscard]] jpeg_decompress_struct *get() noexcept {
         return &state_;
     }
 
-private:
+  private:
     jpeg_decompress_struct state_{};
     jpeg_error_mgr errors_{};
 };
 
 } // namespace
 
-TEST(BuildSmoke, RoundTripsWithPinnedLibJpegTurbo)
-{
+TEST(BuildSmoke, RoundTripsWithPinnedLibJpegTurbo) {
     constexpr std::array<JSAMPLE, 3> expected_pixel = {17, 101, 203};
     JpegCompressor compressor;
     compressor.get()->mem->max_memory_to_use = 1024L * 1024L;
-    unsigned char* encoded_bytes = nullptr;
+    unsigned char *encoded_bytes = nullptr;
     unsigned long encoded_size = 0;
     jpeg_mem_dest(compressor.get(), &encoded_bytes, &encoded_size);
     compressor.get()->image_width = 1;
@@ -82,7 +75,7 @@ TEST(BuildSmoke, RoundTripsWithPinnedLibJpegTurbo)
     }
     jpeg_set_quality(compressor.get(), 100, TRUE);
     jpeg_start_compress(compressor.get(), TRUE);
-    JSAMPROW input_row = const_cast<JSAMPLE*>(expected_pixel.data());
+    JSAMPROW input_row = const_cast<JSAMPLE *>(expected_pixel.data());
     ASSERT_EQ(jpeg_write_scanlines(compressor.get(), &input_row, 1), 1U);
     jpeg_finish_compress(compressor.get());
     std::unique_ptr<unsigned char, decltype(&std::free)> encoded(

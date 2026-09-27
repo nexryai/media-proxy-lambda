@@ -11,18 +11,15 @@
 namespace mediaproxy::http {
 
 QueryParameters::QueryParameters(std::vector<QueryParameter> parameters)
-    : parameters_(std::move(parameters))
-{
+    : parameters_(std::move(parameters)) {
 }
 
-const std::vector<QueryParameter>& QueryParameters::entries() const noexcept
-{
+const std::vector<QueryParameter> &QueryParameters::entries() const noexcept {
     return parameters_;
 }
 
-std::string_view QueryParameters::first(std::string_view key) const noexcept
-{
-    for (const auto& parameter : parameters_) {
+std::string_view QueryParameters::first(std::string_view key) const noexcept {
+    for (const auto &parameter : parameters_) {
         if (parameter.key == key) {
             return parameter.value;
         }
@@ -30,13 +27,11 @@ std::string_view QueryParameters::first(std::string_view key) const noexcept
     return {};
 }
 
-bool QueryParameters::boolean(std::string_view key) const noexcept
-{
+bool QueryParameters::boolean(std::string_view key) const noexcept {
     return first(key) == "1";
 }
 
-QueryParameters parse_query(std::string_view raw_query)
-{
+QueryParameters parse_query(std::string_view raw_query) {
     std::vector<QueryParameter> parameters;
     std::size_t field_start = 0;
     while (field_start <= raw_query.size()) {
@@ -51,8 +46,8 @@ QueryParameters parse_query(std::string_view raw_query)
             const std::size_t equals = field.find('=');
             const std::string_view encoded_key = field.substr(0, equals);
             const std::string_view encoded_value = equals == std::string_view::npos
-                ? std::string_view{}
-                : field.substr(equals + 1);
+                                                       ? std::string_view{}
+                                                       : field.substr(equals + 1);
             auto key = detail::percent_decode(encoded_key, true);
             auto value = detail::percent_decode(encoded_value, true);
             if (key && value) {
@@ -69,8 +64,7 @@ QueryParameters parse_query(std::string_view raw_query)
     return QueryParameters{std::move(parameters)};
 }
 
-MediaOptions select_media_options(const QueryParameters& parameters) noexcept
-{
+MediaOptions select_media_options(const QueryParameters &parameters) noexcept {
     MediaOptions options;
     if (parameters.boolean("avatar")) {
         options = {
@@ -116,8 +110,7 @@ MediaOptions select_media_options(const QueryParameters& parameters) noexcept
         };
     }
     options.force_static = parameters.boolean("static");
-    options.url_only = parameters.entries().size() == 1
-        && parameters.entries().front().key == "url";
+    options.url_only = parameters.entries().size() == 1 && parameters.entries().front().key == "url";
     return options;
 }
 

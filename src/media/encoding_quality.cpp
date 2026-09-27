@@ -8,11 +8,10 @@ constexpr int original_size_quality = 70;
 
 } // namespace
 
-int encoding_quality_value(EncodingQuality quality) noexcept
-{
+int encoding_quality_value(EncodingQuality quality) noexcept {
     return quality == EncodingQuality::url_only
-        ? original_size_quality
-        : standard_quality;
+               ? original_size_quality
+               : standard_quality;
 }
 
 } // namespace mediaproxy::media

@@ -14,10 +14,8 @@ using mediaproxy::http::AddressError;
 using mediaproxy::http::AddressFamily;
 using mediaproxy::http::validate_public_address;
 
-std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadAddressVectors()
-{
-    const std::string path = std::string{MEDIAPROXY_SOURCE_DIR}
-        + "/tests/vectors/address-policy.json";
+std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadAddressVectors() {
+    const std::string path = std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/vectors/address-policy.json";
     std::ifstream input(path, std::ios::binary);
     EXPECT_TRUE(input.is_open()) << path;
     std::string json{
@@ -35,25 +33,23 @@ std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadAddressVectors()
 
 } // namespace
 
-TEST(AddressPolicy, MatchesCheckedInPublicAddressCorpus)
-{
+TEST(AddressPolicy, MatchesCheckedInPublicAddressCorpus) {
     const auto document = LoadAddressVectors();
     ASSERT_NE(document, nullptr);
-    yyjson_val* const root = yyjson_doc_get_root(document.get());
+    yyjson_val *const root = yyjson_doc_get_root(document.get());
     ASSERT_TRUE(yyjson_is_obj(root));
-    yyjson_val* const cases = yyjson_obj_get(root, "cases");
+    yyjson_val *const cases = yyjson_obj_get(root, "cases");
     ASSERT_TRUE(yyjson_is_arr(cases));
 
     std::size_t index = 0;
     std::size_t maximum = 0;
-    yyjson_val* vector = nullptr;
-    yyjson_arr_foreach(cases, index, maximum, vector)
-    {
+    yyjson_val *vector = nullptr;
+    yyjson_arr_foreach(cases, index, maximum, vector) {
         ASSERT_TRUE(yyjson_is_obj(vector));
-        const char* const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
-        const char* const address =
+        const char *const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
+        const char *const address =
             yyjson_get_str(yyjson_obj_get(vector, "address"));
-        yyjson_val* const accepted_value =
+        yyjson_val *const accepted_value =
             yyjson_obj_get(vector, "accepted");
         ASSERT_NE(id, nullptr);
         ASSERT_NE(address, nullptr);
@@ -67,8 +63,7 @@ TEST(AddressPolicy, MatchesCheckedInPublicAddressCorpus)
     }
 }
 
-TEST(AddressPolicy, PreservesValidatedFamilyAndRejectsParserConfusion)
-{
+TEST(AddressPolicy, PreservesValidatedFamilyAndRejectsParserConfusion) {
     const auto ipv4 = validate_public_address("1.1.1.1");
     ASSERT_TRUE(ipv4);
     EXPECT_EQ(ipv4.address.family, AddressFamily::ipv4);
@@ -91,8 +86,7 @@ TEST(AddressPolicy, PreservesValidatedFamilyAndRejectsParserConfusion)
     EXPECT_FALSE(validate_public_address("2606:4700:4700::1111%eth0"));
 }
 
-TEST(AddressPolicy, ChecksBothSidesOfExplicitRangeBoundaries)
-{
+TEST(AddressPolicy, ChecksBothSidesOfExplicitRangeBoundaries) {
     EXPECT_TRUE(validate_public_address("100.63.255.255"));
     EXPECT_FALSE(validate_public_address("100.64.0.0"));
     EXPECT_FALSE(validate_public_address("100.127.255.255"));

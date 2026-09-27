@@ -15,8 +15,7 @@ namespace mediaproxy::http {
 namespace {
 
 [[nodiscard]] std::string_view remove_line_ending(
-    std::string_view line) noexcept
-{
+    std::string_view line) noexcept {
     if (line.ends_with("\r\n")) {
         line.remove_suffix(2);
     } else if (line.ends_with('\n')) {
@@ -27,16 +26,15 @@ namespace {
 
 [[nodiscard]] bool ascii_iequals(
     std::string_view left,
-    std::string_view right) noexcept
-{
+    std::string_view right) noexcept {
     if (left.size() != right.size()) {
         return false;
     }
     for (std::size_t index = 0; index < left.size(); ++index) {
         const auto lowercase = [](char value) noexcept {
             return value >= 'A' && value <= 'Z'
-                ? static_cast<char>(value - 'A' + 'a')
-                : value;
+                       ? static_cast<char>(value - 'A' + 'a')
+                       : value;
         };
         if (lowercase(left[index]) != lowercase(right[index])) {
             return false;
@@ -46,8 +44,7 @@ namespace {
 }
 
 [[nodiscard]] std::string_view trim_optional_whitespace(
-    std::string_view value) noexcept
-{
+    std::string_view value) noexcept {
     while (!value.empty() && (value.front() == ' ' || value.front() == '\t')) {
         value.remove_prefix(1);
     }
@@ -60,8 +57,7 @@ namespace {
 } // namespace
 
 void OriginResponseAccumulator::consume_header_line(
-    std::string_view line) noexcept
-{
+    std::string_view line) noexcept {
     if (error_ != OriginResponseError::none) {
         return;
     }
@@ -85,17 +81,16 @@ void OriginResponseAccumulator::consume_header_line(
             // Preserve the field value verbatim after HTTP optional whitespace
             // removal; URL resolution and policy validation happen later.
             location_ = std::string{value};
-        } catch (const std::bad_alloc&) {
+        } catch (const std::bad_alloc &) {
             error_ = OriginResponseError::allocation;
-        } catch (const std::length_error&) {
+        } catch (const std::length_error &) {
             error_ = OriginResponseError::allocation;
         }
     }
 }
 
 void OriginResponseAccumulator::set_content_length(
-    std::string_view value) noexcept
-{
+    std::string_view value) noexcept {
     if (value.empty()) {
         error_ = OriginResponseError::invalid_content_length;
         return;
@@ -125,36 +120,33 @@ void OriginResponseAccumulator::set_content_length(
     }
     try {
         body_.reserve(static_cast<std::size_t>(parsed));
-    } catch (const std::bad_alloc&) {
+    } catch (const std::bad_alloc &) {
         error_ = OriginResponseError::allocation;
-    } catch (const std::length_error&) {
+    } catch (const std::length_error &) {
         error_ = OriginResponseError::allocation;
     }
 }
 
 std::size_t OriginResponseAccumulator::append_body(
-    std::span<const std::byte> bytes) noexcept
-{
-    if (error_ != OriginResponseError::none || bytes.empty()
-        || body_.size() == maximum_origin_body_bytes) {
+    std::span<const std::byte> bytes) noexcept {
+    if (error_ != OriginResponseError::none || bytes.empty() || body_.size() == maximum_origin_body_bytes) {
         return 0;
     }
     const std::size_t remaining = maximum_origin_body_bytes - body_.size();
     const std::size_t accepted = std::min(remaining, bytes.size());
     try {
         body_.insert(body_.end(), bytes.begin(), bytes.begin() + accepted);
-    } catch (const std::bad_alloc&) {
+    } catch (const std::bad_alloc &) {
         error_ = OriginResponseError::allocation;
         return 0;
-    } catch (const std::length_error&) {
+    } catch (const std::length_error &) {
         error_ = OriginResponseError::allocation;
         return 0;
     }
     return accepted;
 }
 
-bool OriginResponseAccumulator::finish(long status) noexcept
-{
+bool OriginResponseAccumulator::finish(long status) noexcept {
     if (error_ != OriginResponseError::none) {
         return false;
     }
@@ -165,30 +157,25 @@ bool OriginResponseAccumulator::finish(long status) noexcept
     return true;
 }
 
-OriginResponseError OriginResponseAccumulator::error() const noexcept
-{
+OriginResponseError OriginResponseAccumulator::error() const noexcept {
     return error_;
 }
 
 std::optional<std::int64_t> OriginResponseAccumulator::content_length()
-    const noexcept
-{
+    const noexcept {
     return content_length_;
 }
 
-const std::optional<std::string>& OriginResponseAccumulator::location()
-    const noexcept
-{
+const std::optional<std::string> &OriginResponseAccumulator::location()
+    const noexcept {
     return location_;
 }
 
-const std::vector<std::byte>& OriginResponseAccumulator::body() const noexcept
-{
+const std::vector<std::byte> &OriginResponseAccumulator::body() const noexcept {
     return body_;
 }
 
-bool OriginResponseAccumulator::at_body_limit() const noexcept
-{
+bool OriginResponseAccumulator::at_body_limit() const noexcept {
     return body_.size() == maximum_origin_body_bytes;
 }
 

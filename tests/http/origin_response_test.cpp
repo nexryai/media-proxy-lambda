@@ -12,13 +12,13 @@
 
 namespace {
 
+using mediaproxy::http::maximum_origin_body_bytes;
 using mediaproxy::http::OriginResponseAccumulator;
 using mediaproxy::http::OriginResponseError;
-using mediaproxy::http::maximum_origin_body_bytes;
 
 struct ContentLengthCase {
-    const char* name;
-    const char* value;
+    const char *name;
+    const char *value;
     OriginResponseError error;
     std::int64_t expected;
 };
@@ -26,9 +26,8 @@ struct ContentLengthCase {
 class ContentLengthTest : public testing::TestWithParam<ContentLengthCase> {
 };
 
-TEST_P(ContentLengthTest, ParsesSignedBaseTenWithinRetainedLimit)
-{
-    const auto& parameter = GetParam();
+TEST_P(ContentLengthTest, ParsesSignedBaseTenWithinRetainedLimit) {
+    const auto &parameter = GetParam();
     OriginResponseAccumulator response;
     const std::string header =
         std::string{"Content-Length: "} + parameter.value + "\r\n";
@@ -68,20 +67,18 @@ INSTANTIATE_TEST_SUITE_P(
             "9223372036854775808",
             OriginResponseError::invalid_content_length,
             0}),
-    [](const testing::TestParamInfo<ContentLengthCase>& info) {
+    [](const testing::TestParamInfo<ContentLengthCase> &info) {
         return info.param.name;
     });
 
-TEST(OriginResponse, TreatsContentLengthNameCaseInsensitivelyAndTrimsOws)
-{
+TEST(OriginResponse, TreatsContentLengthNameCaseInsensitivelyAndTrimsOws) {
     OriginResponseAccumulator response;
     response.consume_header_line("content-length:\t 42 \t\r\n");
     ASSERT_TRUE(response.content_length().has_value());
     EXPECT_EQ(*response.content_length(), 42);
 }
 
-TEST(OriginResponse, AppliesExactNextDnsHeaderRule)
-{
+TEST(OriginResponse, AppliesExactNextDnsHeaderRule) {
     OriginResponseAccumulator blocked;
     blocked.consume_header_line("Blocked-By: NextDNS\r\n");
     EXPECT_EQ(blocked.error(), OriginResponseError::blocked_by_nextdns);
@@ -97,8 +94,7 @@ TEST(OriginResponse, AppliesExactNextDnsHeaderRule)
     }
 }
 
-TEST(OriginResponse, RetainsTrimmedCaseInsensitiveRedirectLocation)
-{
+TEST(OriginResponse, RetainsTrimmedCaseInsensitiveRedirectLocation) {
     OriginResponseAccumulator response;
     response.consume_header_line("lOcAtIoN:\t ../next?value=1 \t\r\n");
     ASSERT_TRUE(response.location().has_value());
@@ -109,8 +105,7 @@ TEST(OriginResponse, RetainsTrimmedCaseInsensitiveRedirectLocation)
     EXPECT_EQ(*response.location(), "https://next.example/final");
 }
 
-TEST(OriginResponse, RetainsAtMostTenMibWithoutProbeByte)
-{
+TEST(OriginResponse, RetainsAtMostTenMibWithoutProbeByte) {
     OriginResponseAccumulator response;
     const std::vector<std::byte> chunk(64U * 1024U, std::byte{0x5a});
     while (response.body().size() < maximum_origin_body_bytes) {
@@ -129,24 +124,28 @@ TEST(OriginResponse, RetainsAtMostTenMibWithoutProbeByte)
     EXPECT_TRUE(response.finish(200));
 }
 
-TEST(OriginResponse, TruncatesCrossingCallbackAtExactLimit)
-{
+TEST(OriginResponse, TruncatesCrossingCallbackAtExactLimit) {
     OriginResponseAccumulator response;
     const std::vector<std::byte> prefix(
         maximum_origin_body_bytes - 3U,
         std::byte{0x11});
     ASSERT_EQ(response.append_body(prefix), prefix.size());
     constexpr std::array<std::byte, 8> crossing{
-        std::byte{1}, std::byte{2}, std::byte{3}, std::byte{4},
-        std::byte{5}, std::byte{6}, std::byte{7}, std::byte{8},
+        std::byte{1},
+        std::byte{2},
+        std::byte{3},
+        std::byte{4},
+        std::byte{5},
+        std::byte{6},
+        std::byte{7},
+        std::byte{8},
     };
     EXPECT_EQ(response.append_body(crossing), 3U);
     ASSERT_EQ(response.body().size(), maximum_origin_body_bytes);
     EXPECT_EQ(response.body()[maximum_origin_body_bytes - 1], std::byte{3});
 }
 
-TEST(OriginResponse, EvaluatesStatusOnlyAfterBodyHasBeenRetained)
-{
+TEST(OriginResponse, EvaluatesStatusOnlyAfterBodyHasBeenRetained) {
     OriginResponseAccumulator response;
     constexpr std::array<std::byte, 3> body{
         std::byte{0x62}, std::byte{0x61}, std::byte{0x64}};

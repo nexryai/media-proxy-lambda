@@ -12,19 +12,19 @@
 
 namespace mediaproxy::http {
 
-using OriginEasyCreateFunction = CURL* (*)(void* context);
-using OriginEasyDestroyFunction = void (*)(CURL* easy, void* context);
+using OriginEasyCreateFunction = CURL *(*)(void *context);
+using OriginEasyDestroyFunction = void (*)(CURL *easy, void *context);
 using OriginPerformFunction = CURLcode (*)(
-    CURL* easy,
-    OriginResponseAccumulator& response,
-    void* context);
+    CURL *easy,
+    OriginResponseAccumulator &response,
+    void *context);
 using OriginResponseCodeFunction = CURLcode (*)(
-    CURL* easy,
-    long* status,
-    void* context);
+    CURL *easy,
+    long *status,
+    void *context);
 
 struct OriginTransportApi {
-    void* context = nullptr;
+    void *context = nullptr;
     OriginEasyCreateFunction create = nullptr;
     OriginEasyDestroyFunction destroy = nullptr;
     OriginPerformFunction perform = nullptr;
@@ -33,11 +33,11 @@ struct OriginTransportApi {
 
 [[nodiscard]] OriginTransportApi system_origin_transport() noexcept;
 
-using OriginRemainingTimeFunction = long (*)(void* context);
+using OriginRemainingTimeFunction = long (*)(void *context);
 
 struct OriginTimeoutApi {
     // The caller subtracts the response-submission reserve before returning.
-    void* context = nullptr;
+    void *context = nullptr;
     OriginRemainingTimeFunction remaining_milliseconds = nullptr;
 };
 
@@ -67,20 +67,19 @@ struct OriginDownloadResult {
     long status = 0;
     std::size_t redirect_count = 0;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == OriginDownloadError::none;
     }
 };
 
 [[nodiscard]] OriginDownloadResult download_origin_once(
-    const OriginUrl& origin,
+    const OriginUrl &origin,
     long timeout_milliseconds,
     AddressResolverApi resolver = {},
     OriginTransportApi transport = system_origin_transport());
 
 [[nodiscard]] OriginDownloadResult download_origin(
-    const OriginUrl& initial,
+    const OriginUrl &initial,
     OriginTimeoutApi timeout,
     AddressResolverApi resolver = {},
     OriginTransportApi transport = system_origin_transport());

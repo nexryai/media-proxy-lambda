@@ -10,17 +10,16 @@
 
 namespace {
 
+using mediaproxy::media::classify_media;
+using mediaproxy::media::is_convertible_mime;
 using mediaproxy::media::MediaPlan;
 using mediaproxy::media::MimeType;
 using mediaproxy::media::OutputFormat;
-using mediaproxy::media::classify_media;
-using mediaproxy::media::is_convertible_mime;
 
 void WriteU32Be(
-    std::vector<std::byte>& bytes,
+    std::vector<std::byte> &bytes,
     std::size_t offset,
-    std::uint32_t value)
-{
+    std::uint32_t value) {
     for (std::size_t index = 0; index < 4; ++index) {
         const unsigned int shift = static_cast<unsigned int>(24U - index * 8U);
         bytes[offset + index] = static_cast<std::byte>(value >> shift);
@@ -28,10 +27,9 @@ void WriteU32Be(
 }
 
 void WriteAscii(
-    std::vector<std::byte>& bytes,
+    std::vector<std::byte> &bytes,
     std::size_t offset,
-    std::string_view value)
-{
+    std::string_view value) {
     for (std::size_t index = 0; index < value.size(); ++index) {
         bytes[offset + index] = static_cast<std::byte>(
             static_cast<unsigned char>(value[index]));
@@ -40,8 +38,7 @@ void WriteAscii(
 
 std::vector<std::byte> MakeAvifFtyp(
     std::string_view major_brand,
-    std::initializer_list<std::string_view> compatible_brands = {})
-{
+    std::initializer_list<std::string_view> compatible_brands = {}) {
     const auto size = 16U + compatible_brands.size() * 4U;
     std::vector<std::byte> bytes(size, std::byte{0});
     WriteU32Be(bytes, 0, static_cast<std::uint32_t>(size));
@@ -55,8 +52,7 @@ std::vector<std::byte> MakeAvifFtyp(
     return bytes;
 }
 
-TEST(MediaClassification, AcceptsExactlySpecifiedMimeTypes)
-{
+TEST(MediaClassification, AcceptsExactlySpecifiedMimeTypes) {
     constexpr std::array accepted{
         MimeType::image_avif,
         MimeType::image_ico,
@@ -101,12 +97,12 @@ TEST(MediaClassification, AcceptsExactlySpecifiedMimeTypes)
     for (const MimeType mime : rejected) {
         EXPECT_FALSE(is_convertible_mime(mime));
         EXPECT_FALSE(classify_media(
-            mime, {}, false, OutputFormat::webp).has_value());
+                         mime, {}, false, OutputFormat::webp)
+                         .has_value());
     }
 }
 
-TEST(MediaClassification, GifIsAnimatedUnlessStaticIsForced)
-{
+TEST(MediaClassification, GifIsAnimatedUnlessStaticIsForced) {
     const auto animated = classify_media(
         MimeType::image_gif, {}, false, OutputFormat::avif);
     ASSERT_TRUE(animated.has_value());
@@ -120,8 +116,7 @@ TEST(MediaClassification, GifIsAnimatedUnlessStaticIsForced)
     EXPECT_EQ(static_image->output, OutputFormat::avif);
 }
 
-TEST(MediaClassification, WebpRequiresAnimAtExactFixedOffset)
-{
+TEST(MediaClassification, WebpRequiresAnimAtExactFixedOffset) {
     std::vector<std::byte> body(34, std::byte{0});
     constexpr std::array tag{'A', 'N', 'I', 'M'};
     for (std::size_t index = 0; index < tag.size(); ++index) {
@@ -149,8 +144,7 @@ TEST(MediaClassification, WebpRequiresAnimAtExactFixedOffset)
     EXPECT_FALSE(plan->animated);
 }
 
-TEST(MediaClassification, AvifUsesAvisMajorOrCompatibleBrand)
-{
+TEST(MediaClassification, AvifUsesAvisMajorOrCompatibleBrand) {
     const auto major_brand = MakeAvifFtyp("avis");
     auto plan = classify_media(
         MimeType::image_avif, major_brand, false, OutputFormat::avif);
@@ -169,38 +163,42 @@ TEST(MediaClassification, AvifUsesAvisMajorOrCompatibleBrand)
     EXPECT_EQ(*plan, (MediaPlan{false, OutputFormat::avif}));
 }
 
-TEST(MediaClassification, AvifRequiresAvisInsideValidFtypBox)
-{
+TEST(MediaClassification, AvifRequiresAvisInsideValidFtypBox) {
     auto body = MakeAvifFtyp("avif", {"mif1", "avis"});
     ASSERT_TRUE(classify_media(
-        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+                    MimeType::image_avif, body, false, OutputFormat::webp)
+                    ->animated);
 
     WriteU32Be(body, 0, 16);
     EXPECT_FALSE(classify_media(
-        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+                     MimeType::image_avif, body, false, OutputFormat::webp)
+                     ->animated);
 
     body = MakeAvifFtyp("avif", {"avis"});
     WriteU32Be(body, 0, 19);
     EXPECT_FALSE(classify_media(
-        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+                     MimeType::image_avif, body, false, OutputFormat::webp)
+                     ->animated);
 
     body = MakeAvifFtyp("avis");
     WriteU32Be(body, 0, 17);
     EXPECT_FALSE(classify_media(
-        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+                     MimeType::image_avif, body, false, OutputFormat::webp)
+                     ->animated);
 
     body = MakeAvifFtyp("avis");
     WriteAscii(body, 4, "free");
     EXPECT_FALSE(classify_media(
-        MimeType::image_avif, body, false, OutputFormat::webp)->animated);
+                     MimeType::image_avif, body, false, OutputFormat::webp)
+                     ->animated);
 
     EXPECT_FALSE(classify_media(MimeType::image_avif,
-        std::vector<std::byte>(15), false,
-        OutputFormat::webp)->animated);
+                                std::vector<std::byte>(15), false,
+                                OutputFormat::webp)
+                     ->animated);
 }
 
-TEST(MediaClassification, OtherImagesRemainStaticAndUsePreference)
-{
+TEST(MediaClassification, OtherImagesRemainStaticAndUsePreference) {
     const auto avif = classify_media(
         MimeType::image_png, {}, false, OutputFormat::avif);
     ASSERT_TRUE(avif.has_value());

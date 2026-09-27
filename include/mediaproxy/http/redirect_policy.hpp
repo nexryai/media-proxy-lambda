@@ -25,23 +25,22 @@ struct RedirectResult {
     RedirectError error = RedirectError::none;
     UrlError url_error = UrlError::none;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return url.has_value();
     }
 };
 
 class RedirectTracker final {
-public:
+  public:
     [[nodiscard]] static std::optional<RedirectTracker> create(
-        const OriginUrl& initial);
+        const OriginUrl &initial);
 
     [[nodiscard]] RedirectResult follow(std::string_view location);
 
-    [[nodiscard]] const OriginUrl& current() const noexcept;
+    [[nodiscard]] const OriginUrl &current() const noexcept;
     [[nodiscard]] std::size_t redirect_count() const noexcept;
 
-private:
+  private:
     explicit RedirectTracker(OriginUrl initial);
 
     OriginUrl current_;

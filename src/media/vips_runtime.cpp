@@ -6,10 +6,9 @@ namespace mediaproxy::media {
 namespace {
 
 class VipsRuntime final {
-public:
+  public:
     VipsRuntime() noexcept
-        : initialized_(vips_init("mediaproxy-lambda") == 0)
-    {
+        : initialized_(vips_init("mediaproxy-lambda") == 0) {
         if (!initialized_) {
             return;
         }
@@ -19,29 +18,26 @@ public:
         vips_cache_set_max_files(vips_cache_maximum_files);
     }
 
-    ~VipsRuntime()
-    {
+    ~VipsRuntime() {
         if (initialized_) {
             vips_shutdown();
         }
     }
 
-    VipsRuntime(const VipsRuntime&) = delete;
-    VipsRuntime& operator=(const VipsRuntime&) = delete;
+    VipsRuntime(const VipsRuntime &) = delete;
+    VipsRuntime &operator=(const VipsRuntime &) = delete;
 
-    [[nodiscard]] bool initialized() const noexcept
-    {
+    [[nodiscard]] bool initialized() const noexcept {
         return initialized_;
     }
 
-private:
+  private:
     bool initialized_;
 };
 
 } // namespace
 
-bool initialize_vips() noexcept
-{
+bool initialize_vips() noexcept {
     static const VipsRuntime runtime;
     return runtime.initialized();
 }

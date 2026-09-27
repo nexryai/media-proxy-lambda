@@ -15,10 +15,8 @@ using mediaproxy::http::AddressFamily;
 using mediaproxy::http::UrlError;
 using mediaproxy::http::validate_origin_url;
 
-std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadUrlVectors()
-{
-    const std::string path = std::string{MEDIAPROXY_SOURCE_DIR}
-        + "/tests/vectors/url-policy.json";
+std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadUrlVectors() {
+    const std::string path = std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/vectors/url-policy.json";
     std::ifstream input(path, std::ios::binary);
     EXPECT_TRUE(input.is_open()) << path;
     std::string json{
@@ -36,25 +34,23 @@ std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadUrlVectors()
 
 } // namespace
 
-TEST(UrlPolicy, MatchesCheckedInSyntaxAndAddressCorpus)
-{
+TEST(UrlPolicy, MatchesCheckedInSyntaxAndAddressCorpus) {
     const auto document = LoadUrlVectors();
     ASSERT_NE(document, nullptr);
-    yyjson_val* const root = yyjson_doc_get_root(document.get());
+    yyjson_val *const root = yyjson_doc_get_root(document.get());
     ASSERT_TRUE(yyjson_is_obj(root));
-    yyjson_val* const cases = yyjson_obj_get(root, "cases");
+    yyjson_val *const cases = yyjson_obj_get(root, "cases");
     ASSERT_TRUE(yyjson_is_arr(cases));
 
     std::size_t index = 0;
     std::size_t maximum = 0;
-    yyjson_val* vector = nullptr;
-    yyjson_arr_foreach(cases, index, maximum, vector)
-    {
+    yyjson_val *vector = nullptr;
+    yyjson_arr_foreach(cases, index, maximum, vector) {
         ASSERT_TRUE(yyjson_is_obj(vector));
-        const char* const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
-        const char* const source =
+        const char *const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
+        const char *const source =
             yyjson_get_str(yyjson_obj_get(vector, "url"));
-        yyjson_val* const accepted_value =
+        yyjson_val *const accepted_value =
             yyjson_obj_get(vector, "accepted");
         ASSERT_NE(id, nullptr);
         ASSERT_NE(source, nullptr);
@@ -80,8 +76,7 @@ TEST(UrlPolicy, MatchesCheckedInSyntaxAndAddressCorpus)
     }
 }
 
-TEST(UrlPolicy, CanonicalizesIdnaBeforeDnsAndDropsFragments)
-{
+TEST(UrlPolicy, CanonicalizesIdnaBeforeDnsAndDropsFragments) {
     const auto result =
         validate_origin_url("https://😀.example/a%2Fb?x=1#not-sent");
     ASSERT_TRUE(result);
@@ -94,8 +89,7 @@ TEST(UrlPolicy, CanonicalizesIdnaBeforeDnsAndDropsFragments)
     EXPECT_FALSE(result.url->literal_address.has_value());
 }
 
-TEST(UrlPolicy, RetainsValidatedLiteralAndExplicitPort)
-{
+TEST(UrlPolicy, RetainsValidatedLiteralAndExplicitPort) {
     const auto result = validate_origin_url("https://1.1.1.1:80/image.png");
     ASSERT_TRUE(result);
     ASSERT_TRUE(result.url.has_value());
@@ -106,8 +100,7 @@ TEST(UrlPolicy, RetainsValidatedLiteralAndExplicitPort)
     EXPECT_EQ(result.url->canonical_url, "https://1.1.1.1:80/image.png");
 }
 
-TEST(UrlPolicy, RejectsDelimiterAndTerminatorConfusion)
-{
+TEST(UrlPolicy, RejectsDelimiterAndTerminatorConfusion) {
     EXPECT_FALSE(validate_origin_url("https://@origin.example/image.png"));
     EXPECT_FALSE(validate_origin_url("https://:secret@origin.example/image.png"));
 

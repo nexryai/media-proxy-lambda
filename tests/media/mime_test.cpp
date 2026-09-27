@@ -16,8 +16,7 @@ namespace {
 using mediaproxy::media::mime_type_name;
 using mediaproxy::media::sniff_mime;
 
-std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadMimeVectors()
-{
+std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadMimeVectors() {
     const std::string path =
         std::string{MEDIAPROXY_SOURCE_DIR} + "/tests/vectors/mime.json";
     std::ifstream input(path, std::ios::binary);
@@ -35,8 +34,7 @@ std::unique_ptr<yyjson_doc, decltype(&yyjson_doc_free)> LoadMimeVectors()
     return document;
 }
 
-unsigned char HexNibble(char value)
-{
+unsigned char HexNibble(char value) {
     if (value >= '0' && value <= '9') {
         return static_cast<unsigned char>(value - '0');
     }
@@ -48,8 +46,7 @@ unsigned char HexNibble(char value)
     return static_cast<unsigned char>(value - 'A' + 10);
 }
 
-std::vector<std::byte> DecodeHex(std::string_view hex)
-{
+std::vector<std::byte> DecodeHex(std::string_view hex) {
     EXPECT_EQ(hex.size() % 2, 0U);
     std::vector<std::byte> decoded;
     decoded.reserve(hex.size() / 2);
@@ -61,49 +58,44 @@ std::vector<std::byte> DecodeHex(std::string_view hex)
     return decoded;
 }
 
-std::vector<std::byte> Utf8Sample(std::string_view text)
-{
-    const auto* bytes = reinterpret_cast<const std::byte*>(text.data());
+std::vector<std::byte> Utf8Sample(std::string_view text) {
+    const auto *bytes = reinterpret_cast<const std::byte *>(text.data());
     return {bytes, bytes + text.size()};
 }
 
 void ExpectMime(
     std::span<const std::byte> sample,
-    std::string_view expected)
-{
+    std::string_view expected) {
     EXPECT_EQ(mime_type_name(sniff_mime(sample)), expected);
 }
 
 void CheckStringVariants(
-    yyjson_val* variants,
+    yyjson_val *variants,
     std::string_view expected,
-    bool hexadecimal)
-{
+    bool hexadecimal) {
     ASSERT_TRUE(yyjson_is_arr(variants));
     std::size_t index = 0;
     std::size_t maximum = 0;
-    yyjson_val* value = nullptr;
-    yyjson_arr_foreach(variants, index, maximum, value)
-    {
-        const char* text = yyjson_get_str(value);
+    yyjson_val *value = nullptr;
+    yyjson_arr_foreach(variants, index, maximum, value) {
+        const char *text = yyjson_get_str(value);
         ASSERT_NE(text, nullptr);
         const std::vector<std::byte> sample = hexadecimal
-            ? DecodeHex(text)
-            : Utf8Sample(text);
+                                                  ? DecodeHex(text)
+                                                  : Utf8Sample(text);
         ExpectMime(sample, expected);
     }
 }
 
 void CheckGeneratedSample(
-    yyjson_val* generated,
-    std::string_view expected)
-{
+    yyjson_val *generated,
+    std::string_view expected) {
     ASSERT_TRUE(yyjson_is_obj(generated));
-    const char* prefix_hex =
+    const char *prefix_hex =
         yyjson_get_str(yyjson_obj_get(generated, "prefixByteHex"));
-    const char* suffix_hex =
+    const char *suffix_hex =
         yyjson_get_str(yyjson_obj_get(generated, "suffixHex"));
-    yyjson_val* const count_value = yyjson_obj_get(generated, "prefixCount");
+    yyjson_val *const count_value = yyjson_obj_get(generated, "prefixCount");
     ASSERT_NE(prefix_hex, nullptr);
     ASSERT_NE(suffix_hex, nullptr);
     ASSERT_TRUE(yyjson_is_uint(count_value));
@@ -119,40 +111,38 @@ void CheckGeneratedSample(
 
 } // namespace
 
-TEST(Mime, MatchesCheckedInSniffAndOverrideVectors)
-{
+TEST(Mime, MatchesCheckedInSniffAndOverrideVectors) {
     const auto document = LoadMimeVectors();
     ASSERT_NE(document, nullptr);
-    yyjson_val* const root = yyjson_doc_get_root(document.get());
+    yyjson_val *const root = yyjson_doc_get_root(document.get());
     ASSERT_TRUE(yyjson_is_obj(root));
-    yyjson_val* const cases = yyjson_obj_get(root, "cases");
+    yyjson_val *const cases = yyjson_obj_get(root, "cases");
     ASSERT_TRUE(yyjson_is_arr(cases));
 
     std::size_t index = 0;
     std::size_t maximum = 0;
-    yyjson_val* vector = nullptr;
-    yyjson_arr_foreach(cases, index, maximum, vector)
-    {
+    yyjson_val *vector = nullptr;
+    yyjson_arr_foreach(cases, index, maximum, vector) {
         ASSERT_TRUE(yyjson_is_obj(vector));
-        const char* const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
-        const char* const expected =
+        const char *const id = yyjson_get_str(yyjson_obj_get(vector, "id"));
+        const char *const expected =
             yyjson_get_str(yyjson_obj_get(vector, "expected"));
         ASSERT_NE(id, nullptr);
         ASSERT_NE(expected, nullptr);
         SCOPED_TRACE(id);
 
-        if (yyjson_val* value = yyjson_obj_get(vector, "sampleHex")) {
-            const char* text = yyjson_get_str(value);
+        if (yyjson_val *value = yyjson_obj_get(vector, "sampleHex")) {
+            const char *text = yyjson_get_str(value);
             ASSERT_NE(text, nullptr);
             ExpectMime(DecodeHex(text), expected);
-        } else if (yyjson_val* value = yyjson_obj_get(vector, "sampleUtf8")) {
-            const char* text = yyjson_get_str(value);
+        } else if (yyjson_val *value = yyjson_obj_get(vector, "sampleUtf8")) {
+            const char *text = yyjson_get_str(value);
             ASSERT_NE(text, nullptr);
             ExpectMime(Utf8Sample(text), expected);
-        } else if (yyjson_val* value =
+        } else if (yyjson_val *value =
                        yyjson_obj_get(vector, "sampleHexVariants")) {
             CheckStringVariants(value, expected, true);
-        } else if (yyjson_val* value =
+        } else if (yyjson_val *value =
                        yyjson_obj_get(vector, "sampleUtf8Variants")) {
             CheckStringVariants(value, expected, false);
         } else {

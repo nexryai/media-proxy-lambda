@@ -33,8 +33,7 @@ struct AddressPolicyResult {
     ValidatedAddress address;
     AddressError error = AddressError::none;
 
-    [[nodiscard]] explicit operator bool() const noexcept
-    {
+    [[nodiscard]] explicit operator bool() const noexcept {
         return error == AddressError::none;
     }
 };

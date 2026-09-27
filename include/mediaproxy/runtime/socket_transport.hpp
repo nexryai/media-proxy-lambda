@@ -19,14 +19,14 @@ struct RuntimeAuthority {
     std::string_view authority);
 
 class SocketTransport final : public ByteSink {
-public:
+  public:
     explicit SocketTransport(int fd) noexcept;
     ~SocketTransport() override;
 
-    SocketTransport(const SocketTransport&) = delete;
-    SocketTransport& operator=(const SocketTransport&) = delete;
-    SocketTransport(SocketTransport&& other) noexcept;
-    SocketTransport& operator=(SocketTransport&& other) noexcept;
+    SocketTransport(const SocketTransport &) = delete;
+    SocketTransport &operator=(const SocketTransport &) = delete;
+    SocketTransport(SocketTransport &&other) noexcept;
+    SocketTransport &operator=(SocketTransport &&other) noexcept;
 
     [[nodiscard]] static std::optional<SocketTransport> connect(
         std::string_view authority);
@@ -35,9 +35,11 @@ public:
     [[nodiscard]] std::ptrdiff_t read_some(
         std::span<std::byte> output) noexcept;
     [[nodiscard]] bool shutdown_write() noexcept;
-    [[nodiscard]] explicit operator bool() const noexcept { return fd_ >= 0; }
+    [[nodiscard]] explicit operator bool() const noexcept {
+        return fd_ >= 0;
+    }
 
-private:
+  private:
     void close() noexcept;
 
     int fd_ = -1;
