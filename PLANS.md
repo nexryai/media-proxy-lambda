@@ -493,6 +493,11 @@ Deliverables:
   API and assemble timed lossy WebP with direct libwebp, preserving the final
   frame duration and bounding frame count, total decoded pixels, and
   timestamps.
+- Merge a monochrome `pict` track referring to the visual track through `auxl`
+  into each RGBA frame when libheif does not associate that track as alpha.
+  Apply the same merge to the static first-frame fallback, and reject mismatched
+  alpha timelines or dimensions. Pin the Issue #4 sample and decoded frame
+  output hashes as offline regression coverage.
 - Detect animated JPEG XL from libjxl basic information, decode coalesced
   displayed frames one at a time, and assemble timed lossy WebP with the same
   frame, pixel, and timestamp bounds. Keep `static=1` on the first-frame path.

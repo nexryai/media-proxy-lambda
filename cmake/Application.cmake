@@ -513,6 +513,7 @@ target_link_libraries(mediaproxy_http
 
 set(mediaproxy_media_sources
     "${svg_font_object}"
+    src/media/avif_alpha.cpp
     src/media/animated_conversion.cpp
     src/media/apng.cpp
     src/media/apng_compositor.cpp

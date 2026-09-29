@@ -1,5 +1,7 @@
 #include <mediaproxy/media/animated_conversion.hpp>
 
+#include "avif_alpha.hpp"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -197,6 +199,11 @@ auto convert_animated_avif(std::span<const std::byte> body, ImageDimensions limi
     if (!track || heif_track_get_track_handler_type(track.get()) != heif_track_type_image_sequence) {
         return fail(AnimatedConversionError::decode);
     }
+    heif_track *raw_alpha = nullptr;
+    if (!find_avif_alpha_track(context.get(), track.get(), &raw_alpha)) {
+        return fail(AnimatedConversionError::decode);
+    }
+    HeifTrackPtr alpha(raw_alpha);
 
     std::uint16_t width = 0;
     std::uint16_t height = 0;
@@ -268,6 +275,9 @@ auto convert_animated_avif(std::span<const std::byte> body, ImageDimensions limi
         if (heif_image_get_width(frame.get(), heif_channel_interleaved) != width || heif_image_get_height(frame.get(), heif_channel_interleaved) != height) {
             return fail(AnimatedConversionError::dimensions);
         }
+        if (!apply_avif_alpha_frame(alpha.get(), frame.get(), decoding_options.get())) {
+            return fail(AnimatedConversionError::decode);
+        }
 
         std::size_t stride = 0;
         const std::uint8_t *pixels = heif_image_get_plane_readonly2(frame.get(), heif_channel_interleaved, &stride);
@@ -297,6 +307,14 @@ auto convert_animated_avif(std::span<const std::byte> body, ImageDimensions limi
 
     if (frame_count == 0) {
         return fail(AnimatedConversionError::decode);
+    }
+    if (alpha) {
+        heif_image *extra = nullptr;
+        const heif_error alpha_end = heif_track_decode_next_image(alpha.get(), &extra, heif_colorspace_undefined, heif_chroma_undefined, decoding_options.get());
+        HeifImagePtr extra_frame(extra);
+        if (alpha_end.code != heif_error_End_of_sequence) {
+            return fail(AnimatedConversionError::decode);
+        }
     }
     if (WebPAnimEncoderAdd(encoder.get(), nullptr, timestamp_ms, nullptr) == 0) {
         return fail(AnimatedConversionError::encode);

@@ -19,6 +19,7 @@
 #include <mediaproxy/media/vips_runtime.hpp>
 #include <openssl/sha.h>
 #include <vips/vips.h>
+#include <webp/demux.h>
 
 namespace {
 
@@ -149,6 +150,74 @@ TEST_F(MediaConversionTest, ConvertsAvisSequenceWithFrameTiming) {
     ASSERT_NE(static_decoded, nullptr) << vips_error_buffer();
     EXPECT_EQ(vips_image_get_width(static_decoded.get()), 320);
     EXPECT_EQ(vips_image_get_height(static_decoded.get()), 180);
+}
+
+TEST_F(MediaConversionTest, PreservesAlphaFromAnimatedAvif) {
+    const auto input = read_media_fixture("animated/issue-4-alpha.avif");
+    ASSERT_FALSE(input.empty());
+    const auto result = convert_media(input, MimeType::image_avif, false, OutputFormat::webp, ImageDimensions{.width = 3200, .height = 3200});
+    ASSERT_TRUE(result) << static_cast<int>(result.error);
+    EXPECT_EQ(result.encoded_format, OutputFormat::webp);
+    std::array<std::uint8_t, SHA256_DIGEST_LENGTH> encoded_digest{};
+    ASSERT_EQ(::SHA256(reinterpret_cast<const std::uint8_t *>(result.body.data()), result.body.size(), encoded_digest.data()), encoded_digest.data());
+    constexpr char hex[] = "0123456789abcdef";
+    std::string encoded_hash;
+    for (const auto byte : encoded_digest) {
+        encoded_hash.push_back(hex[byte >> 4U]);
+        encoded_hash.push_back(hex[byte & 0x0fU]);
+    }
+    EXPECT_EQ(encoded_hash, "9cea28d4277bdbedd0328c2ad103996664e619be71160bf1358a7f3c485af078");
+    WebPData webp{.bytes = reinterpret_cast<const std::uint8_t *>(result.body.data()), .size = result.body.size()};
+    using DecoderPtr = std::unique_ptr<WebPAnimDecoder, decltype(&WebPAnimDecoderDelete)>;
+    DecoderPtr decoder(WebPAnimDecoderNew(&webp, nullptr), &WebPAnimDecoderDelete);
+    ASSERT_NE(decoder, nullptr);
+    WebPAnimInfo info{};
+    ASSERT_NE(WebPAnimDecoderGetInfo(decoder.get(), &info), 0);
+    EXPECT_EQ(info.canvas_width, 250);
+    EXPECT_EQ(info.canvas_height, 250);
+    std::uint8_t *rgba = nullptr;
+    int timestamp = 0;
+    int frames = 0;
+    SHA256_CTX pixel_context{};
+    ASSERT_EQ(SHA256_Init(&pixel_context), 1);
+    while (WebPAnimDecoderGetNext(decoder.get(), &rgba, &timestamp) != 0) {
+        ++frames;
+        ASSERT_EQ(SHA256_Update(&pixel_context, rgba, 250U * 250U * 4U), 1);
+        std::size_t transparent = 0;
+        std::size_t partial = 0;
+        for (int y = 0; y < 250; ++y) {
+            for (int x = 0; x < 250; ++x) {
+                const auto alpha = rgba[(((static_cast<std::size_t>(y) * 250) + x) * 4) + 3];
+                transparent += static_cast<std::size_t>(alpha == 0);
+                partial += static_cast<std::size_t>(alpha > 0 && alpha < 255);
+            }
+        }
+        EXPECT_GT(transparent, 0U) << "frame " << frames;
+        EXPECT_GT(partial, 0U) << "frame " << frames;
+    }
+    EXPECT_EQ(frames, 67);
+    std::array<std::uint8_t, SHA256_DIGEST_LENGTH> pixel_digest{};
+    ASSERT_EQ(SHA256_Final(pixel_digest.data(), &pixel_context), 1);
+    std::string pixel_hash;
+    for (const auto byte : pixel_digest) {
+        pixel_hash.push_back(hex[byte >> 4U]);
+        pixel_hash.push_back(hex[byte & 0x0fU]);
+    }
+    EXPECT_EQ(pixel_hash, "9019f39384344b79479890f6a57a941538a29f80ef63f3507a495366007dbf94");
+    const auto still = convert_media(input, MimeType::image_avif, true, OutputFormat::webp, ImageDimensions{.width = 3200, .height = 3200});
+    ASSERT_TRUE(still) << static_cast<int>(still.error);
+    const ImagePtr decoded = load_all(still.body);
+    ASSERT_NE(decoded, nullptr);
+    EXPECT_EQ(vips_image_hasalpha(decoded.get()), 1);
+    VipsImage *raw_alpha = nullptr;
+    ASSERT_EQ(vips_extract_band(decoded.get(), &raw_alpha, 3, nullptr), 0);
+    ImagePtr alpha(raw_alpha);
+    double minimum = 255;
+    double maximum = 0;
+    ASSERT_EQ(vips_min(alpha.get(), &minimum, nullptr), 0);
+    ASSERT_EQ(vips_max(alpha.get(), &maximum, nullptr), 0);
+    EXPECT_EQ(minimum, 0);
+    EXPECT_EQ(maximum, 255);
 }
 
 TEST_F(MediaConversionTest, ConvertsAnimatedJxlAndHonorsStaticPreference) {

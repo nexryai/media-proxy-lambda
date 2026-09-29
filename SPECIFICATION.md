@@ -344,6 +344,15 @@ absent track, invalid timescale, mismatched frame size, failed decode, empty
 sequence, more than 1024 frames, or more than 128,000,000 total decoded frame
 pixels. This total-pixel cap exceeds the checked-in AVIF sequence fixtures.
 Retain no decoded frame after its WebP encoder input is prepared.
+If the first visual track has no libheif-associated alpha channel, also inspect
+tracks that reference it through `auxl`. A single referencing `pict` track is
+an alpha track when its decoded samples are monochrome. Decode it in lockstep
+with the visual track and replace each RGBA alpha byte with its Y sample,
+rounded from the sample bit depth to 8 bits. Reject multiple references,
+mismatched timescales, dimensions, frame durations or counts, non-monochrome
+samples, or invalid sample depths. The same first-frame alpha merge applies to
+the sequence fallback under `static=1`. A libheif-associated alpha channel is
+already present in the RGBA output and must not be merged again.
 
 When an AVIF request follows the static path, including `static=1`, and has no
 top-level primary image for the libvips HEIF loader, use the pinned libheif

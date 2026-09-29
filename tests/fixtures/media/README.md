@@ -22,6 +22,14 @@ It covers a JPEG XL input whose basic information does not signal animation.
 `https://jpegxl.info/images/anim-icos.jxl`, SHA-256
 `4a4c545a478e1fbebf674ee465be0afd498f94501564f9b71d9f745f960da1fe`.
 It covers animated JPEG XL routing, frame decoding, and static preference offline.
+`animated/issue-4-alpha.avif` is the sample linked from issue #4, downloaded
+from `https://naradesign.github.io/img/animated-avif.avif`, SHA-256
+`424c54cfb9c721efb423df8257817cecab6306436c3b25bf4a0c5d6e045088`.
+Its monochrome alpha track uses a `pict` handler and an `auxl` reference to the
+visual track. The regression test checks all decoded WebP frames and the
+static first-frame output offline.
+The sample is distributed under the source repository's MIT license; its
+copyright and full license notice are in `animated/issue-4-LICENSE`.
 
 The checked-in `apng/manifest.json` records each input SHA-256, chunk-scan
 classification, input loop count, and full-canvas RGBA SHA-256 before and after

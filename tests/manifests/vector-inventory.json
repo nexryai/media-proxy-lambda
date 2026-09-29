@@ -419,7 +419,8 @@
                 "animated resize target and frame count",
                 "track duration converted to cumulative milliseconds",
                 "last frame duration retained",
-                "static flag selects first frame"
+                "static flag selects first frame",
+                "pict auxl alpha track retained in every WebP frame and static fallback"
             ]
         },
         {

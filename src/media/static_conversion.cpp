@@ -1,5 +1,7 @@
 #include <mediaproxy/media/static_conversion.hpp>
 
+#include "avif_alpha.hpp"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -88,6 +90,11 @@ void release_heif_image(void *image) noexcept {
     if (!track || heif_track_get_track_handler_type(track.get()) != heif_track_type_image_sequence) {
         return {};
     }
+    heif_track *raw_alpha = nullptr;
+    if (!find_avif_alpha_track(context.get(), track.get(), &raw_alpha)) {
+        return {};
+    }
+    HeifTrackPtr alpha(raw_alpha);
     std::uint16_t track_width = 0;
     std::uint16_t track_height = 0;
     if (!heif_ok(heif_track_get_image_resolution(track.get(), &track_width, &track_height)) || !validate_dimensions(track_width, track_height, 1, false)) {
@@ -104,10 +111,16 @@ void release_heif_image(void *image) noexcept {
         return {};
     }
     HeifImagePtr decoded(raw_decoded);
+    if (!decoded) {
+        return {};
+    }
 
     const int width = heif_image_get_width(decoded.get(), heif_channel_interleaved);
     const int height = heif_image_get_height(decoded.get(), heif_channel_interleaved);
     if (!validate_dimensions(width, height, 1, false)) {
+        return {};
+    }
+    if (!apply_avif_alpha_frame(alpha.get(), decoded.get(), options.get())) {
         return {};
     }
     std::size_t stride = 0;
