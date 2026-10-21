@@ -685,3 +685,17 @@ deployment as a completion gate.
 
 External references provide context only. `SPECIFICATION.md` remains the
 complete local behavioral contract.
+
+## CA security refresh (2026-10-21)
+
+Update the embedded curl Mozilla extract from 2026-07-16 to 2026-10-20
+(118 roots) to address the eMudhra intermediate CA compromise. Verify the
+bundle hash against curl's published SHA-256 and retain the dated source URL.
+Offline bundle tests pin the bytes, date, and count and reject both
+`emSign ECC Root CA - G3` and `AAA Certificate Services`, covering the known
+cross-sign trust path. Rebuild the bootstrap so the updated data reaches
+`CURLOPT_CAINFO_BLOB`; changing the host CA store alone is insufficient.
+Keep LLVM and the host-matched Rust source/toolchain unchanged for this refresh.
+
+Sources: <https://curl.se/docs/caextract.html> and
+<https://emudhra.we-have-a-problem.com/>.

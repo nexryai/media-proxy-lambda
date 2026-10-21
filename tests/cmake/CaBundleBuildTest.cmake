@@ -21,15 +21,23 @@ if(NOT actual_sha256 STREQUAL EXPECTED_SHA256)
     message(FATAL_ERROR "Embedded CA input does not match the dependency lock")
 endif()
 file(SIZE "${BUNDLE}" bundle_size)
-if(NOT bundle_size EQUAL 186446)
+if(NOT bundle_size EQUAL 200116)
     message(FATAL_ERROR "Unexpected CA bundle size: ${bundle_size}")
 endif()
 file(READ "${BUNDLE}" bundle_text)
 string(REGEX MATCHALL "-----BEGIN CERTIFICATE-----" certificates "${bundle_text}")
 list(LENGTH certificates certificate_count)
-if(NOT certificate_count EQUAL 119)
+if(NOT certificate_count EQUAL 118)
     message(FATAL_ERROR "Unexpected CA certificate count: ${certificate_count}")
 endif()
+
+# These roots can authenticate the compromised eMudhra intermediates, including cross-signs.
+foreach(distrusted_root IN ITEMS "emSign ECC Root CA - G3" "AAA Certificate Services")
+    string(FIND "${bundle_text}" "${distrusted_root}" root_offset)
+    if(NOT root_offset EQUAL -1)
+        message(FATAL_ERROR "Distrusted eMudhra trust path remains: ${distrusted_root}")
+    endif()
+endforeach()
 
 execute_process(
     COMMAND "${READELF}" --file-header --sections --symbols --wide

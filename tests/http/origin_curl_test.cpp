@@ -68,11 +68,11 @@ TEST(OriginCurl, ConfiguresPinnedVerifiedGetRequest) {
 
 TEST(OriginCurl, EmbedsPinnedMozillaTrustBundle) {
     const std::span<const std::byte> bundle = embedded_ca_bundle();
-    ASSERT_EQ(bundle.size(), 186446U);
+    ASSERT_EQ(bundle.size(), 200116U);
     const std::string_view text{reinterpret_cast<const char *>(bundle.data()), bundle.size()};
     EXPECT_TRUE(text.starts_with("##\n## Bundle of CA Root Certificates\n"));
     EXPECT_NE(text.find("Certificate data from Mozilla as of: "
-                        "Thu Jul 16 03:12:01 2026 GMT"),
+                        "Tue Oct 20 13:32:40 2026 GMT"),
               std::string_view::npos);
 
     constexpr std::string_view certificate_begin = "-----BEGIN CERTIFICATE-----";
@@ -80,7 +80,10 @@ TEST(OriginCurl, EmbedsPinnedMozillaTrustBundle) {
     for (std::size_t offset = 0; (offset = text.find(certificate_begin, offset)) != std::string_view::npos; offset += certificate_begin.size()) {
         ++certificate_count;
     }
-    EXPECT_EQ(certificate_count, 119U);
+    EXPECT_EQ(certificate_count, 118U);
+    // Cover both the direct issuer and the cross-sign trust path for the eMudhra compromise.
+    EXPECT_EQ(text.find("emSign ECC Root CA - G3"), std::string_view::npos);
+    EXPECT_EQ(text.find("AAA Certificate Services"), std::string_view::npos);
 }
 
 TEST(OriginCurl, RejectsInvalidArgumentsAndMismatchedPin) {

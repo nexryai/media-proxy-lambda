@@ -216,7 +216,10 @@ Redirects are a security exception to legacy behavior:
 - Method: GET.
 - User agent: `Misskey-Media-Proxy-Go v0.10`.
 - TLS: BoringSSL with certificate-chain and hostname verification enabled,
-  using the embedded CA bundle.
+  using the embedded, hash-pinned Mozilla CA bundle from `dependencies.lock.json`.
+  The 2026-10-20 refresh removes trust in the compromised eMudhra intermediate
+  CA chains: neither `emSign ECC Root CA - G3` nor `AAA Certificate Services`
+  may appear in the bundle, including after future refreshes.
 - HTTP versions: allow HTTP/1.1 and HTTP/2 negotiation; do not require HTTP/3.
 - Content coding: advertise/accept gzip behavior equivalent to automatic
   transparent decompression and sniff the decompressed bytes.
