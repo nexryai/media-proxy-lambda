@@ -17,7 +17,7 @@ using MatchDataPtr = std::unique_ptr<pcre2_match_data, decltype(&pcre2_match_dat
 TEST(BuildSmoke, MatchesBoundedUnicodeWithPinnedPcre2) {
     PCRE2_UCHAR version[32] = {};
     ASSERT_GE(pcre2_config(PCRE2_CONFIG_VERSION, version), 0);
-    EXPECT_TRUE(std::string_view{reinterpret_cast<const char *>(version)}.starts_with("10.48 "));
+    EXPECT_TRUE(std::string_view{reinterpret_cast<const char *>(version)}.starts_with("10.49 "));
 
     std::uint32_t jit_enabled = 1U;
     ASSERT_GE(pcre2_config(PCRE2_CONFIG_JIT, &jit_enabled), 0);

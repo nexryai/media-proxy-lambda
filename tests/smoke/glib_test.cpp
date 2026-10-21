@@ -20,8 +20,8 @@ struct GObjectDeleter {
 
 TEST(BuildSmoke, UsesPinnedGlibUnicodeAndRegex) {
     EXPECT_EQ(glib_major_version, 2U);
-    EXPECT_EQ(glib_minor_version, 88U);
-    EXPECT_EQ(glib_micro_version, 3U);
+    EXPECT_EQ(glib_minor_version, 90U);
+    EXPECT_EQ(glib_micro_version, 1U);
 
     std::unique_ptr<gchar, decltype(&g_free)> normalized(g_utf8_normalize("e\xCC\x81", -1, G_NORMALIZE_DEFAULT_COMPOSE), &g_free);
     ASSERT_NE(normalized, nullptr);

@@ -28,19 +28,6 @@ index e3808f7..bf8640e 100644
  subdir('fuzzing')
  if get_option('tests')
    subdir('tests')
-diff --git a/glib/glib-private.h b/glib/glib-private.h
-index 0cbf8ad..f60014c 100644
---- a/glib/glib-private.h
-+++ b/glib/glib-private.h
-@@ -100,7 +100,7 @@ g_leak_sanitizer_is_supported (void)
- #if defined (_GLIB_ADDRESS_SANITIZER)
-   return TRUE;
- #elif defined (HAS_DYNAMIC_ASAN_LOADING)
--  return G_UNLIKELY (__lsan_enable != NULL && __lsan_ignore_object != NULL);
-+  return (gboolean) G_UNLIKELY (__lsan_enable != NULL && __lsan_ignore_object != NULL);
- #else
-   return FALSE;
- #endif
 diff --git a/gobject/gmarshal.c b/gobject/gmarshal.c
 index b4468a3..6567d9e 100644
 --- a/gobject/gmarshal.c

@@ -41,7 +41,8 @@ foreach(required_member IN ITEMS
         random_getrandom.c.o
         xmlparse.c.o
         xmlrole.c.o
-        xmltok.c.o)
+        xmltok.c.o
+        xcs.c.o)
     string(FIND "\n${archive_members}" "\n${required_member}\n" member_offset)
     if(member_offset EQUAL -1)
         message(FATAL_ERROR
@@ -104,7 +105,7 @@ endforeach()
 
 file(READ "${PKGCONFIG}" pkgconfig)
 foreach(required_pc_line IN ITEMS
-        "Version: 2.8.4"
+        "Version: 2.9.0"
         "Libs: -L\${libdir} -lexpat"
         "Cflags: -I\${includedir}"
         "Cflags.private: -DXML_STATIC")
@@ -122,9 +123,9 @@ endif()
 
 file(READ "${COMPILE_COMMANDS}" compile_commands_json)
 string(JSON command_count LENGTH "${compile_commands_json}")
-if(NOT command_count EQUAL 4)
+if(NOT command_count EQUAL 5)
     message(FATAL_ERROR
-        "libexpat must compile exactly four library C sources, found "
+        "libexpat must compile exactly five library C sources, found "
         "${command_count}")
 endif()
 
@@ -133,6 +134,7 @@ set(required_sources
     /lib/xmlparse.c
     /lib/xmlrole.c
     /lib/xmltok.c
+    /lib/xcs.c
 )
 foreach(required_source IN LISTS required_sources)
     set(matching_command "")
@@ -207,7 +209,7 @@ math(EXPR last_command "${command_count} - 1")
 foreach(index RANGE 0 ${last_command})
     string(JSON source_file GET "${compile_commands_json}" ${index} file)
     if(NOT source_file MATCHES
-            "/lib/(random_getrandom|xmlparse|xmlrole|xmltok)\\.c$")
+            "/lib/(random_getrandom|xmlparse|xmlrole|xmltok|xcs)\\.c$")
         message(FATAL_ERROR
             "libexpat compiled non-library source: ${source_file}")
     endif()

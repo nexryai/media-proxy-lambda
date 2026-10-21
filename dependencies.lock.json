@@ -78,10 +78,10 @@
         },
         {
             "name": "boringssl",
-            "version": "0.20260813.0",
-            "revision": "7c1efd8d6ffb36a57feba44e8c73cf674801f3cb",
-            "url": "https://github.com/google/boringssl/releases/download/0.20260813.0/boringssl-0.20260813.0.tar.gz",
-            "sha256": "37e23cb9a5fa54f01b07cadd653cebc1d1b235945439a6c334fea58ea47b5b0a",
+            "version": "0.20261020.0",
+            "revision": "d3bf4795ad5b79d646cddf2fec687da5b9b502db",
+            "url": "https://github.com/google/boringssl/releases/download/0.20261020.0/boringssl-0.20261020.0.tar.gz",
+            "sha256": "fb43aac7fbd323c9dfa1f45fe92a1c01142433c05b23fe34f61d6ba8b13b642e",
             "license": "Apache-2.0",
             "buildOptions": [
                 "BUILD_SHARED_LIBS=OFF",
@@ -122,13 +122,13 @@
         },
         {
             "name": "curl",
-            "version": "8.22.0",
-            "revision": "01346829096c61b372692f6dc43ffa778c6caccd",
-            "url": "https://curl.se/download/curl-8.22.0.tar.xz",
-            "sha256": "f7ef3ae8a22e521f289803fe93543eb64c329b58aa73a9e224dfd915a2a5f4f7",
+            "version": "8.23.0",
+            "revision": "3163ec065643ba20709f190111f42c3e1fe95273",
+            "url": "https://curl.se/download/curl-8.23.0.tar.xz",
+            "sha256": "8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5",
             "license": "curl",
             "buildOptions": [
-                "HTTP_ONLY=ON",
+                "HTTP and HTTPS only; all other protocols explicitly disabled",
                 "BUILD_SHARED_LIBS=OFF",
                 "BUILD_STATIC_LIBS=ON",
                 "BUILD_CURL_EXE=OFF",
@@ -148,7 +148,14 @@
                 "8.22.0 fixes nine CVEs affecting 8.21.0, including CVE-2026-80229 and CVE-2026-18924",
                 "cookies, authentication, proxying, native CA lookup, wolfSSL, LDAP, SSH, GSSAPI, and WebSockets remain excluded, reducing exposure to several fixed code paths"
             ],
-            "reason": "Bounded HTTP/HTTPS transport for the Lambda Runtime API and validated origins"
+            "reason": "Bounded HTTP/HTTPS transport for the Lambda Runtime API and validated origins",
+            "patches": [
+                {
+                    "path": "cmake/patches/curl-8.23.0-boringssl-asn1-length.patch",
+                    "sha256": "97f4197e76e348be32672dd11cbf7b678f3c7f08499bc0c07812cdc6d58247c4",
+                    "reason": "Use the native ASN1_STRING_get_length supplied by pinned BoringSSL instead of defining curl's OpenSSL compatibility helper with the same name"
+                }
+            ]
         },
         {
             "name": "mozilla-ca-bundle",
@@ -198,10 +205,10 @@
         },
         {
             "name": "libexpat",
-            "version": "2.8.4",
-            "revision": "12cf0b1f25f026a022fe728ad8f7e3d017285b80",
-            "url": "https://github.com/libexpat/libexpat/releases/download/R_2_8_4/expat-2.8.4.tar.xz",
-            "sha256": "656ae1cc8da3b4ea513bb4e254f33e6243938084c0ec6239da873376b09985a7",
+            "version": "2.9.0",
+            "revision": "a76b1174c1ea52abb639a4c69d52b630a8a106a2",
+            "url": "https://github.com/libexpat/libexpat/releases/download/R_2_9_0/expat-2.9.0.tar.xz",
+            "sha256": "1e6371862cc31999b368c3b89b49994f0677e1bab5f1b2b85ae3741f5d803051",
             "license": "MIT",
             "buildOptions": [
                 "EXPAT_SHARED_LIBS=OFF",
@@ -257,10 +264,10 @@
         },
         {
             "name": "pcre2",
-            "version": "10.48",
-            "revision": "7978954dbd2efc6f2196869290553cf1871b4ce6",
-            "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.48/pcre2-10.48.tar.gz",
-            "sha256": "ebcc25aadf2a51fa1fefa9b8bc9e7a79b3dae86870a0f1152a22e42befd46888",
+            "version": "10.49",
+            "revision": "6f9d7c1373262c541324a16a358785b33ef116cf",
+            "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.49/pcre2-10.49.tar.gz",
+            "sha256": "929f0b20e62879252a15886b06c89f1edef61a363cbd5826fb041080a5e557ae",
             "license": "BSD-3-Clause WITH PCRE2-exception",
             "buildOptions": [
                 "BUILD_SHARED_LIBS=OFF and BUILD_STATIC_LIBS=ON",
@@ -303,10 +310,10 @@
         },
         {
             "name": "glib",
-            "version": "2.88.3",
-            "revision": "43bc79ea8803e33c5eb368085e2d5906f9f98079",
-            "url": "https://download.gnome.org/sources/glib/2.88/glib-2.88.3.tar.xz",
-            "sha256": "ab24d24e698dfa1e408b7bcdb508f4aafc906185a8b8ce72fdf79bbbdc9b383b",
+            "version": "2.90.1",
+            "revision": "e05063ccc6c8f222465a1080927f4c14349f3de6",
+            "url": "https://download.gnome.org/sources/glib/2.90/glib-2.90.1.tar.xz",
+            "sha256": "93c941aa17d5eb1d53fe838365f29a8b4e539c222a256d974ec8f30fc413e396",
             "license": "LGPL-2.1-or-later",
             "buildOptions": [
                 "Meson cross build driven by the CMake superbuild",
@@ -325,8 +332,8 @@
             ],
             "patches": [
                 {
-                    "path": "cmake/patches/glib-2.88.2-disable-static-dlopen.patch",
-                    "sha256": "a6103ea35c5ccdea9f56d08bded4d9c8c74b01776834a7d996d86ba7b5b5a95a",
+                    "path": "cmake/patches/glib-2.90.1-disable-static-dlopen.patch",
+                    "sha256": "a14d7def9b1ad01a1c34552674b37de9e628270d74ccc028cbb4910a2733dbec",
                     "upstreamCommit": null,
                     "reason": "Disable dlopen-backed GModule, omit GIRepository when introspection is disabled, make Clang 22 conversions and fallthrough explicit in target-specific paths, use the signed gint8 range on unsigned-char arm64, and scope a musl CMSG_NXTHDR sign warning in the deployment-only static build"
                 }

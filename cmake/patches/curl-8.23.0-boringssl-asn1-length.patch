@@ -1,0 +1,10 @@
+diff --git a/lib/vtls/openssl.c b/lib/vtls/openssl.c
+--- a/lib/vtls/openssl.c
++++ b/lib/vtls/openssl.c
+@@ -175,4 +175,5 @@
+-#if OPENSSL_VERSION_NUMBER < 0x40100000L
++#if OPENSSL_VERSION_NUMBER < 0x40100000L && \
++  !defined(OPENSSL_IS_BORINGSSL)
+ static size_t ASN1_STRING_get_length(const ASN1_STRING *str)
+ {
+    const int length = ASN1_STRING_length(str);

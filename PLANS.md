@@ -699,3 +699,22 @@ Keep LLVM and the host-matched Rust source/toolchain unchanged for this refresh.
 
 Sources: <https://curl.se/docs/caextract.html> and
 <https://emudhra.we-have-a-problem.com/>.
+
+## Runtime dependency refresh (2026-10-21)
+
+Refresh BoringSSL to 0.20261020.0, curl to 8.23.0, Expat to 2.9.0,
+PCRE2 to 10.49, and GLib to 2.90.1 using hash-pinned release archives.
+Keep LLVM 22.1.2 and the host-matched Rust 1.93.1 source unchanged.
+curl 8.23.0 removed HTTP_ONLY, so explicitly disable every non-HTTP protocol
+and retain the protocol enumeration and generated-config regression gates.
+Rebase the GLib static-module patch, dropping its leak-sanitizer boolean
+conversion fix now supplied upstream. Preserve the existing CFI exceptions
+and all other hardening, TLS-provider, and offline-test requirements.
+The curl compatibility patch uses BoringSSL's native unsigned ASN.1 string
+length API instead of redefining it in curl's OpenSSL compatibility layer.
+Hash both the patch and the source into curl's build directories so the
+superbuild applies it to a fresh source tree.
+Review the new GIO systemd-networkd monitor translation unit (using GIO's
+existing D-Bus implementation, without a libsystemd dependency) and Expat's
+new xcs.c helpers; extend the exact archive/source-count gates and check the
+same hardening flags on these new sources. GLib now uses C11 rather than C99.

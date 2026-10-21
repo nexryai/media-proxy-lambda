@@ -131,7 +131,7 @@ auto main() -> int {
     }
     auto *volatile expat_version_function = &XML_ExpatVersion;
     const XML_LChar *const expat_version = expat_version_function();
-    if (expat_version == nullptr || std::string_view{expat_version} != "expat_2.8.4") {
+    if (expat_version == nullptr || std::string_view{expat_version} != "expat_2.9.0") {
         return 1;
     }
     ffi_cif ffi_call_interface{};
@@ -179,7 +179,7 @@ auto main() -> int {
     }
     auto *volatile pcre2_config_function = &pcre2_config;
     PCRE2_UCHAR pcre2_version[32] = {};
-    if (pcre2_config_function(PCRE2_CONFIG_VERSION, pcre2_version) < 0 || !std::string_view{reinterpret_cast<const char *>(pcre2_version)}.starts_with("10.48 ")) {
+    if (pcre2_config_function(PCRE2_CONFIG_VERSION, pcre2_version) < 0 || !std::string_view{reinterpret_cast<const char *>(pcre2_version)}.starts_with("10.49 ")) {
         return 1;
     }
     constexpr int required_webp_version = 0x010600;

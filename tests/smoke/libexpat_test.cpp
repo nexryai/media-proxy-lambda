@@ -35,7 +35,7 @@ using ParserPtr = std::unique_ptr<ParserPointee, decltype(&XML_ParserFree)>;
 TEST(BuildSmoke, ParsesBoundedXmlWithPinnedLibExpat) {
     constexpr unsigned long long protection_activation_bytes = 4ULL * 1024ULL * 1024ULL;
 
-    EXPECT_STREQ(XML_ExpatVersion(), "expat_2.8.4");
+    EXPECT_STREQ(XML_ExpatVersion(), "expat_2.9.0");
 
     ParserPtr parser(XML_ParserCreateNS(nullptr, '|'), &XML_ParserFree);
     ASSERT_NE(parser, nullptr);

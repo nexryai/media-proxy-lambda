@@ -33,7 +33,7 @@ set(glib_archives
 if(NOT TARGET_ARCH STREQUAL "x86_64" AND NOT TARGET_ARCH STREQUAL "arm64")
     message(FATAL_ERROR "Unsupported TARGET_ARCH: ${TARGET_ARCH}")
 endif()
-set(expected_member_counts 0 21 1 2 244)
+set(expected_member_counts 0 21 1 2 245)
 set(archive_index 0)
 foreach(archive IN LISTS glib_archives)
     if(NOT EXISTS "${archive}")
@@ -53,9 +53,9 @@ foreach(archive IN LISTS glib_archives)
         # A native runner can execute the musl printf probes. A cross-only
         # builder cannot, so GLib adds eleven gnulib compatibility objects.
         if(archive_member_count EQUAL 97)
-            set(expected_hardened_command_count 351)
+            set(expected_hardened_command_count 352)
         elseif(archive_member_count EQUAL 108)
-            set(expected_hardened_command_count 362)
+            set(expected_hardened_command_count 363)
         else()
             message(FATAL_ERROR
                 "${archive} contains unexpected ${archive_member_count} objects")
@@ -146,11 +146,11 @@ foreach(required_config IN ITEMS
 endforeach()
 
 foreach(pkgconfig_check IN ITEMS
-        "${GLIB_PKGCONFIG}|Name: GLib|Version: 2.88.3|Requires: libpcre2-8 >= 10.32|Libs: -L\${libdir} -lglib-2.0 -lm -pthread"
-        "${GOBJECT_PKGCONFIG}|Name: GObject|Version: 2.88.3|Requires: glib-2.0, libffi >=  3.0.0"
-        "${GTHREAD_PKGCONFIG}|Name: GThread|Version: 2.88.3|Requires: glib-2.0"
-        "${GMODULE_PKGCONFIG}|Name: GModule|Version: 2.88.3|gmodule_supported=false"
-        "${GIO_PKGCONFIG}|Name: GIO|Version: 2.88.3|Requires: glib-2.0, gobject-2.0, gmodule-no-export-2.0, zlib|giomoduledir=\${prefix}/lib/mediaproxy-gio-modules-disabled")
+        "${GLIB_PKGCONFIG}|Name: GLib|Version: 2.90.1|Requires: libpcre2-8 >= 10.32|Libs: -L\${libdir} -lglib-2.0 -lm -pthread"
+        "${GOBJECT_PKGCONFIG}|Name: GObject|Version: 2.90.1|Requires: glib-2.0, libffi >=  3.0.0"
+        "${GTHREAD_PKGCONFIG}|Name: GThread|Version: 2.90.1|Requires: glib-2.0"
+        "${GMODULE_PKGCONFIG}|Name: GModule|Version: 2.90.1|gmodule_supported=false"
+        "${GIO_PKGCONFIG}|Name: GIO|Version: 2.90.1|Requires: glib-2.0, gobject-2.0, gmodule-no-export-2.0, zlib|giomoduledir=\${prefix}/lib/mediaproxy-gio-modules-disabled")
     string(REPLACE "|" ";" pkgconfig_fields "${pkgconfig_check}")
     list(POP_FRONT pkgconfig_fields pkgconfig_file)
     file(READ "${pkgconfig_file}" pkgconfig)
@@ -185,7 +185,7 @@ foreach(index RANGE 0 ${last_command})
             -fvisibility=hidden
             -flto=thin
             -fsplit-lto-unit
-            -std=gnu99
+            -std=gnu11
             -Wall
             -Wextra
             -Werror

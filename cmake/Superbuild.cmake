@@ -97,6 +97,8 @@ mediaproxy_lock_get(boringssl version boringssl_version)
 mediaproxy_lock_get(curl url curl_url)
 mediaproxy_lock_get(curl sha256 curl_sha256)
 mediaproxy_lock_get(curl version curl_version)
+mediaproxy_lock_get_patch(curl 0 path curl_patch_relative)
+mediaproxy_lock_get_patch(curl 0 sha256 curl_patch_sha256)
 mediaproxy_lock_get(mozilla-ca-bundle url ca_bundle_url)
 mediaproxy_lock_get(mozilla-ca-bundle sha256 ca_bundle_sha256)
 mediaproxy_lock_get(mozilla-ca-bundle version ca_bundle_version)
@@ -2202,10 +2204,20 @@ ExternalProject_Add(boringssl
         "${boringssl_include_dir}/openssl/ssl.h"
 )
 
-set(curl_binary_directory "${CMAKE_BINARY_DIR}/curl-static-build")
+set(curl_patch "${CMAKE_SOURCE_DIR}/${curl_patch_relative}")
+file(SHA256 "${curl_patch}" actual_curl_patch_sha256)
+if(NOT actual_curl_patch_sha256 STREQUAL curl_patch_sha256)
+    message(FATAL_ERROR
+        "curl compatibility patch does not match dependencies.lock.json")
+endif()
+string(SHA256 curl_build_configuration "${curl_sha256}:${curl_patch_sha256}")
+string(SUBSTRING "${curl_build_configuration}" 0 12 curl_build_id)
+set(curl_binary_directory
+    "${CMAKE_BINARY_DIR}/curl-${curl_version}-${curl_build_id}-static-build")
 set(curl_library "${sysroot}/usr/lib/libcurl.a")
 set(curl_include_dir "${sysroot}/usr/include")
 ExternalProject_Add(curl
+    PREFIX "${CMAKE_BINARY_DIR}/curl-${curl_version}-${curl_build_id}-prefix"
     DEPENDS boringssl fortify_headers nghttp2 zlib
     URL "${curl_url}"
     URL_HASH "SHA256=${curl_sha256}"
@@ -2213,6 +2225,10 @@ ExternalProject_Add(curl
     DOWNLOAD_NAME "curl-${curl_version}.tar.xz"
     DOWNLOAD_EXTRACT_TIMESTAMP FALSE
     UPDATE_DISCONNECTED TRUE
+    PATCH_COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "GIT_CEILING_DIRECTORIES=${CMAKE_BINARY_DIR}"
+        "${host_git}" apply "${curl_patch}"
     BINARY_DIR "${curl_binary_directory}"
     CMAKE_GENERATOR Ninja
     CMAKE_ARGS
@@ -2248,7 +2264,21 @@ ExternalProject_Add(curl
         "-DCURL_ENABLE_EXPORT_TARGET=OFF"
         "-DCURL_WERROR=ON"
         "-DPICKY_COMPILER=ON"
-        "-DHTTP_ONLY=ON"
+        "-DCURL_DISABLE_DICT=ON"
+        "-DCURL_DISABLE_FILE=ON"
+        "-DCURL_DISABLE_FTP=ON"
+        "-DCURL_DISABLE_GOPHER=ON"
+        "-DCURL_DISABLE_IMAP=ON"
+        "-DCURL_DISABLE_LDAP=ON"
+        "-DCURL_DISABLE_LDAPS=ON"
+        "-DCURL_DISABLE_MQTT=ON"
+        "-DCURL_DISABLE_POP3=ON"
+        "-DCURL_DISABLE_RTSP=ON"
+        "-DCURL_DISABLE_SMTP=ON"
+        "-DCURL_DISABLE_TELNET=ON"
+        "-DCURL_DISABLE_TFTP=ON"
+        "-DCURL_DISABLE_WEBSOCKETS=ON"
+        "-DCURL_DISABLE_IPFS=ON"
         "-DCURL_ENABLE_SSL=ON"
         "-DCURL_USE_OPENSSL=ON"
         "-DCURL_USE_MBEDTLS=OFF"
