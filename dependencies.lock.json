@@ -347,10 +347,10 @@
         },
         {
             "name": "libaom",
-            "version": "3.14.1",
-            "revision": "03087864cf4bea6abb0d28f95cf7843511413d8f",
-            "url": "https://storage.googleapis.com/aom-releases/libaom-3.14.1.tar.gz",
-            "sha256": "44bf90dbd23e734d50e70a8c41c285193922938bd0d3bc2ee56764d181d55ef5",
+            "version": "3.15.2",
+            "revision": "af3dc9aadc793c1b00edc003e3fc19a44fdeb574",
+            "url": "https://storage.googleapis.com/aom-releases/libaom-3.15.2.tar.gz",
+            "sha256": "67bb54b245f33ed98600e08269e6139986e48114e14042474ddd8885801dfddc",
             "license": "BSD-2-Clause AND LicenseRef-AOM-Patent-License-1.0",
             "buildOptions": [
                 "static libaom archive with PIC",
@@ -358,18 +358,10 @@
                 "generic C target with runtime CPU detection and architecture SIMD disabled",
                 "multithreading retained for bounded image encode/decode work",
                 "WebM I/O and bundled libyuv disabled",
-                "examples, tools, tests, test data, and documentation disabled",
+                "ENABLE_APPS=OFF; examples, tools, tests, test data, and documentation disabled",
                 "production hardening flags including fortify, ThinLTO, trapping CFI, stack protection, zero initialization, and architecture branch protection",
                 "warnings as errors",
                 "LLVM tools only"
-            ],
-            "patches": [
-                {
-                    "path": "cmake/patches/libaom-3.14.1-preserve-fortify.patch",
-                    "sha256": "32eafecf0cdc20a822f6c5a3f18c3ee122d52220e6df7bd42b294084e2601672",
-                    "upstreamCommit": null,
-                    "reason": "Preserve the superbuild's _FORTIFY_SOURCE=3 setting in Release builds instead of overriding it with _FORTIFY_SOURCE=0"
-                }
             ],
             "securityNotes": [
                 "generic target removes assembly and runtime CPU dispatch from the static deployment graph",
@@ -380,10 +372,10 @@
         },
         {
             "name": "libheif",
-            "version": "1.23.4",
-            "revision": "4e14f5942c1732ace9611b9522cc991501445463",
-            "url": "https://github.com/strukturag/libheif/releases/download/v1.23.4/libheif-1.23.4.tar.gz",
-            "sha256": "d0c02b4b0e978f34a1974b6f3eea7975a537bf7a9195ffeea38e7242ff316fdd",
+            "version": "1.23.6",
+            "revision": "f81f28ac014b1c28dee483ac45b72c6b05bc421a",
+            "url": "https://github.com/strukturag/libheif/releases/download/v1.23.6/libheif-1.23.6.tar.gz",
+            "sha256": "4484346dc5995319dbc11e3a1c35d0a2ec46511ce370900869337fd2c7033125",
             "license": "LGPL-3.0-or-later",
             "buildOptions": [
                 "BUILD_SHARED_LIBS=OFF",
@@ -421,10 +413,10 @@
         },
         {
             "name": "highway",
-            "version": "1.2.0",
-            "revision": "457c891775a7397bdb0376bb1031e6e027af1c48",
-            "url": "https://github.com/google/highway/archive/refs/tags/1.2.0.tar.gz",
-            "sha256": "7e0be78b8318e8bdbf6fa545d2ecb4c90f947df03f7aadc42c1967f019e63343",
+            "version": "1.4.0",
+            "revision": "2607d3b5b0113992fe84d3848859eae13b3b52c1",
+            "url": "https://github.com/google/highway/releases/download/1.4.0/highway-1.4.0.tar.gz",
+            "sha256": "36f672ab48ddb3c8555e9e89e16fe400cd7d16c6eb455a1a3d0c146a63ababdc",
             "license": "Apache-2.0",
             "buildOptions": [
                 "BUILD_SHARED_LIBS=OFF and HWY_FORCE_STATIC_LIBS=ON",
@@ -478,10 +470,10 @@
         },
         {
             "name": "libvips",
-            "version": "8.18.6",
-            "revision": "426af3f44246fce9cfa8dd51a353aa4dfd48c553",
-            "url": "https://github.com/libvips/libvips/releases/download/v8.18.6/vips-8.18.6.tar.xz",
-            "sha256": "3c41e1d5458081bfa4a5bc54e116c46259c75c6760a18027764555632b9dda3e",
+            "version": "8.18.7",
+            "revision": "24ad4d042940e6bf99a68871ba886ca8847c9c82",
+            "url": "https://github.com/libvips/libvips/releases/download/v8.18.7/vips-8.18.7.tar.xz",
+            "sha256": "5baaead3b0bb20ffdb9e9ff09aa9fda08620923df77b63b436654cb5e0b3bf94",
             "license": "LGPL-2.1-or-later",
             "buildOptions": [
                 "Meson cross-build with --default-library=static and b_staticpic=true",
@@ -514,10 +506,10 @@
         },
         {
             "name": "libpng",
-            "version": "1.6.58",
-            "revision": "3061454d980de7d53608f594194cfac722721d2a",
-            "url": "https://download.sourceforge.net/libpng/libpng-1.6.58.tar.xz",
-            "sha256": "28eb403f51f0f7405249132cecfe82ea5c0ef97f1b32c5a65828814ae0d34775",
+            "version": "1.6.59",
+            "revision": "cd952f49f95bb27154ae77dbb103032d95f6e580",
+            "url": "https://download.sourceforge.net/libpng/libpng-1.6.59.tar.xz",
+            "sha256": "d80dd2a38a37f803cb9b6ac7b14bd6e74ddc3b654780a8380bdf93523fdb4389",
             "license": "libpng-2.0",
             "buildOptions": [
                 "curated CMake static-only source build",
@@ -875,11 +867,11 @@
             "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
         },
         {
-            "name": "cargo-crate-crc32fast-1.5.2",
-            "version": "1.5.2",
-            "revision": "Cargo package checksum 01a7799fd6b852db0e61728dde9a204c423b44d689dbd432522543614b490e78",
-            "url": "https://static.crates.io/crates/crc32fast/crc32fast-1.5.2.crate",
-            "sha256": "01a7799fd6b852db0e61728dde9a204c423b44d689dbd432522543614b490e78",
+            "name": "cargo-crate-crc32fast-1.5.3",
+            "version": "1.5.3",
+            "revision": "Cargo package checksum 0ba106e844045ddc02c20768ac4b0b7cb45f2cc2ecbd833ac9f5dacb183c2055",
+            "url": "https://static.crates.io/crates/crc32fast/crc32fast-1.5.3.crate",
+            "sha256": "0ba106e844045ddc02c20768ac4b0b7cb45f2cc2ecbd833ac9f5dacb183c2055",
             "license": "MIT OR Apache-2.0",
             "buildOptions": [
                 "exact Cargo.lock version and checksum",
@@ -981,11 +973,11 @@
             "scope": "resolution"
         },
         {
-            "name": "cargo-crate-font-types-0.12.5",
-            "version": "0.12.5",
-            "revision": "Cargo package checksum b8eb065f3251655b3c90e22e5e363f310fc5332fb3402e37bbc94752283248f6",
-            "url": "https://static.crates.io/crates/font-types/font-types-0.12.5.crate",
-            "sha256": "b8eb065f3251655b3c90e22e5e363f310fc5332fb3402e37bbc94752283248f6",
+            "name": "cargo-crate-font-types-0.12.7",
+            "version": "0.12.7",
+            "revision": "Cargo package checksum 835ae9d781464a79026cde387f9cbc650c9a4909d7cf7e658b127e3c35d2f35d",
+            "url": "https://static.crates.io/crates/font-types/font-types-0.12.7.crate",
+            "sha256": "835ae9d781464a79026cde387f9cbc650c9a4909d7cf7e658b127e3c35d2f35d",
             "license": "MIT OR Apache-2.0",
             "buildOptions": [
                 "exact Cargo.lock version and checksum",
@@ -1527,11 +1519,11 @@
             "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
         },
         {
-            "name": "cargo-crate-siphasher-1.0.3",
-            "version": "1.0.3",
-            "revision": "Cargo package checksum 8ee5873ec9cce0195efcb7a4e9507a04cd49aec9c83d0389df45b1ef7ba2e649",
-            "url": "https://static.crates.io/crates/siphasher/siphasher-1.0.3.crate",
-            "sha256": "8ee5873ec9cce0195efcb7a4e9507a04cd49aec9c83d0389df45b1ef7ba2e649",
+            "name": "cargo-crate-siphasher-1.0.4",
+            "version": "1.0.4",
+            "revision": "Cargo package checksum 33f4fe9184a62d842c9ef383018f3306d8ba224fd9d836f56d7288308847c256",
+            "url": "https://static.crates.io/crates/siphasher/siphasher-1.0.4.crate",
+            "sha256": "33f4fe9184a62d842c9ef383018f3306d8ba224fd9d836f56d7288308847c256",
             "license": "MIT OR Apache-2.0",
             "buildOptions": [
                 "exact Cargo.lock version and checksum",
@@ -1566,11 +1558,11 @@
             "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
         },
         {
-            "name": "cargo-crate-smallvec-1.16.1",
-            "version": "1.16.1",
-            "revision": "Cargo package checksum ba467056f1b547ed52077911161fc86985becbc60e8e1857c8a144dab0def891",
-            "url": "https://static.crates.io/crates/smallvec/smallvec-1.16.1.crate",
-            "sha256": "ba467056f1b547ed52077911161fc86985becbc60e8e1857c8a144dab0def891",
+            "name": "cargo-crate-smallvec-1.16.3",
+            "version": "1.16.3",
+            "revision": "Cargo package checksum 5b3dc8af474f516a851ff4bd12db780f948b9250ad37211e4eec0bccea54e01b",
+            "url": "https://static.crates.io/crates/smallvec/smallvec-1.16.3.crate",
+            "sha256": "5b3dc8af474f516a851ff4bd12db780f948b9250ad37211e4eec0bccea54e01b",
             "license": "MIT OR Apache-2.0",
             "buildOptions": [
                 "exact Cargo.lock version and checksum",
@@ -1605,11 +1597,11 @@
             "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
         },
         {
-            "name": "cargo-crate-syn-3.0.6",
-            "version": "3.0.6",
-            "revision": "Cargo package checksum 8593e8e72159ed2257d083c7a454a85cbf854f37a0966d8d483aff8c8a3ebcee",
-            "url": "https://static.crates.io/crates/syn/syn-3.0.6.crate",
-            "sha256": "8593e8e72159ed2257d083c7a454a85cbf854f37a0966d8d483aff8c8a3ebcee",
+            "name": "cargo-crate-syn-3.0.9",
+            "version": "3.0.9",
+            "revision": "Cargo package checksum d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b",
+            "url": "https://static.crates.io/crates/syn/syn-3.0.9.crate",
+            "sha256": "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b",
             "license": "MIT OR Apache-2.0",
             "buildOptions": [
                 "exact Cargo.lock version and checksum",
@@ -1670,11 +1662,11 @@
             "reason": "Pinned transitive Cargo dependency for resvg SVG rasterization"
         },
         {
-            "name": "cargo-crate-unicode-ident-1.0.26",
-            "version": "1.0.26",
-            "revision": "Cargo package checksum d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954",
-            "url": "https://static.crates.io/crates/unicode-ident/unicode-ident-1.0.26.crate",
-            "sha256": "d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954",
+            "name": "cargo-crate-unicode-ident-1.0.27",
+            "version": "1.0.27",
+            "revision": "Cargo package checksum a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563",
+            "url": "https://static.crates.io/crates/unicode-ident/unicode-ident-1.0.27.crate",
+            "sha256": "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563",
             "license": "(MIT OR Apache-2.0) AND Unicode-3.0",
             "buildOptions": [
                 "exact Cargo.lock version and checksum",

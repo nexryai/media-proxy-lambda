@@ -63,8 +63,8 @@ endforeach()
 
 foreach(lgpl_archive IN ITEMS
         glib-2.90.1.tar.xz
-        libheif-1.23.4.tar.gz
-        vips-8.18.6.tar.xz
+        libheif-1.23.6.tar.gz
+        vips-8.18.7.tar.xz
         libexif-0.6.26.tar.xz)
     if(NOT EXISTS
             "${COMPLIANCE_DIRECTORY}/corresponding-source/archives/${lgpl_archive}")

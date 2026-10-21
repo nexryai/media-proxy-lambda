@@ -87,9 +87,9 @@ if(NOT highway_ar_result EQUAL 0)
 endif()
 string(REGEX MATCHALL "[^\n]+" highway_member_list "${highway_members}")
 list(LENGTH highway_member_list highway_member_count)
-if(NOT highway_member_count EQUAL 7)
+if(NOT highway_member_count EQUAL 9)
     message(FATAL_ERROR
-        "Highway contains ${highway_member_count} objects instead of 7")
+        "Highway contains ${highway_member_count} objects instead of 9")
 endif()
 
 function(check_compile_commands path output_pattern expected_count)
@@ -134,7 +134,7 @@ function(check_compile_commands path output_pattern expected_count)
     endif()
 endfunction()
 
-check_compile_commands("${HIGHWAY_COMPILE_COMMANDS}" "CMakeFiles/hwy.dir/" 7)
+check_compile_commands("${HIGHWAY_COMPILE_COMMANDS}" "CMakeFiles/hwy.dir/" 9)
 check_compile_commands("${LIBJXL_COMPILE_COMMANDS}" "jxl_dec-obj.dir/" 75)
 
 file(READ "${LINK_MAP}" link_map)

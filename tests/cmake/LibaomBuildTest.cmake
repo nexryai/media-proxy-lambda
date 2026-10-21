@@ -88,8 +88,8 @@ endif()
 file(READ "${PKGCONFIG}" pkgconfig)
 foreach(required_line IN ITEMS
         "Name: aom"
-        "Description: Alliance for Open Media AV1 codec library v3.14.1."
-        "Version: 3.14.1"
+        "Description: Alliance for Open Media AV1 codec library v3.15.2."
+        "Version: 3.15.2"
         "Libs: -L\${libdir} -laom"
         "Libs.private: -lm")
     string(FIND "${pkgconfig}" "${required_line}" pc_offset)
@@ -176,6 +176,13 @@ endif()
 
 get_filename_component(library_dir "${LIBAOM_ARCHIVE}" DIRECTORY)
 get_filename_component(build_dir "${COMPILE_COMMANDS}" DIRECTORY)
+file(READ "${build_dir}/CMakeCache.txt" build_cache)
+foreach(disabled_option IN ITEMS ENABLE_APPS ENABLE_DOCS ENABLE_EXAMPLES
+        ENABLE_TESTDATA ENABLE_TESTS ENABLE_TOOLS)
+    if(NOT build_cache MATCHES "(^|\n)${disabled_option}:(BOOL|UNINITIALIZED)=OFF(\n|$)")
+        message(FATAL_ERROR "libaom must disable ${disabled_option}")
+    endif()
+endforeach()
 file(GLOB forbidden_outputs
     "${library_dir}/libaom.so*"
     "${build_dir}/aomdec"

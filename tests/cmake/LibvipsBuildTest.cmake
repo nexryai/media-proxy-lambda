@@ -129,7 +129,7 @@ endforeach()
 file(READ "${PKGCONFIG}" pkgconfig)
 foreach(required_line IN ITEMS
         "Name: vips"
-        "Version: 8.18.6"
+        "Version: 8.18.7"
         "Libs: -L\${libdir} -lvips"
         "libheif >= 1.7.0"
         "libjpeg"

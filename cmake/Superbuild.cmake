@@ -119,8 +119,6 @@ mediaproxy_lock_get_patch(glib 0 sha256 glib_patch_sha256)
 mediaproxy_lock_get(libaom url libaom_url)
 mediaproxy_lock_get(libaom sha256 libaom_sha256)
 mediaproxy_lock_get(libaom version libaom_version)
-mediaproxy_lock_get_patch(libaom 0 path libaom_patch_relative)
-mediaproxy_lock_get_patch(libaom 0 sha256 libaom_patch_sha256)
 mediaproxy_lock_get(libheif url libheif_url)
 mediaproxy_lock_get(libheif sha256 libheif_sha256)
 mediaproxy_lock_get(libheif version libheif_version)
@@ -190,12 +188,6 @@ set(glib_patch "${CMAKE_SOURCE_DIR}/${glib_patch_relative}")
 file(SHA256 "${glib_patch}" actual_glib_patch_sha256)
 if(NOT actual_glib_patch_sha256 STREQUAL glib_patch_sha256)
     message(FATAL_ERROR "GLib hardening patch does not match dependencies.lock.json")
-endif()
-
-set(libaom_patch "${CMAKE_SOURCE_DIR}/${libaom_patch_relative}")
-file(SHA256 "${libaom_patch}" actual_libaom_patch_sha256)
-if(NOT actual_libaom_patch_sha256 STREQUAL libaom_patch_sha256)
-    message(FATAL_ERROR "libaom hardening patch does not match dependencies.lock.json")
 endif()
 
 set(libheif_patch "${CMAKE_SOURCE_DIR}/${libheif_patch_relative}")
@@ -1734,13 +1726,13 @@ ExternalProject_Add(ada_idna
 )
 
 string(SHA256 libaom_build_configuration_sha256
-    "${libaom_sha256}:${libaom_patch_sha256}")
+    "${libaom_sha256}:upstream-fortify")
 string(SUBSTRING "${libaom_build_configuration_sha256}" 0 12
-    libaom_patch_build_id)
+    libaom_build_id)
 set(libaom_prefix_directory
-    "${CMAKE_BINARY_DIR}/libaom-${libaom_version}-${libaom_patch_build_id}-prefix")
+    "${CMAKE_BINARY_DIR}/libaom-${libaom_version}-${libaom_build_id}-prefix")
 set(libaom_binary_directory
-    "${CMAKE_BINARY_DIR}/libaom-${libaom_version}-${libaom_patch_build_id}-static-build")
+    "${CMAKE_BINARY_DIR}/libaom-${libaom_version}-${libaom_build_id}-static-build")
 set(libaom_library "${sysroot}/usr/lib/libaom.a")
 set(libaom_include_dir "${sysroot}/usr/include")
 set(libaom_libheif_include_dir "${sysroot}/usr/include/libheif-aom")
@@ -1754,10 +1746,7 @@ ExternalProject_Add(libaom
     DOWNLOAD_NAME "libaom-${libaom_version}.tar.gz"
     DOWNLOAD_EXTRACT_TIMESTAMP FALSE
     UPDATE_DISCONNECTED TRUE
-    PATCH_COMMAND
-        "${CMAKE_COMMAND}" -E env
-        "GIT_CEILING_DIRECTORIES=${CMAKE_BINARY_DIR}"
-        "${host_git}" apply "${libaom_patch}"
+    PATCH_COMMAND ""
     BINARY_DIR "${libaom_binary_directory}"
     CMAKE_GENERATOR Ninja
     CMAKE_ARGS
@@ -1789,6 +1778,7 @@ ExternalProject_Add(libaom
         "-DCONFIG_RUNTIME_CPU_DETECT=0"
         "-DCONFIG_WEBM_IO=0"
         "-DCONFIG_LIBYUV=0"
+        "-DENABLE_APPS=OFF"
         "-DENABLE_DOCS=OFF"
         "-DENABLE_EXAMPLES=OFF"
         "-DENABLE_TESTDATA=OFF"
@@ -2507,7 +2497,7 @@ set(application_cmake_args
         "-DMEDIAPROXY_RESVG_LIBRARY=${resvg_library}"
         "-DMEDIAPROXY_RESVG_MANIFEST=${CMAKE_SOURCE_DIR}/rust/resvg-shim/Cargo.toml"
         "-DMEDIAPROXY_RESVG_MANIFEST_LOCK=${CMAKE_SOURCE_DIR}/rust/resvg-shim/Cargo.lock"
-        "-DMEDIAPROXY_RESVG_MANIFEST_LOCK_SHA256=4757e4967ea9fef8a551bf2dafc045b14f44f71dfb3a9a59dee38e2032e945b8"
+        "-DMEDIAPROXY_RESVG_MANIFEST_LOCK_SHA256=befd43a59417e1355b225924fdc37076cee8462786b440250bbf012958c07901"
         "-DMEDIAPROXY_SVG_FONT=${svg_font_file}"
         "-DMEDIAPROXY_SVG_FONT_SHA256=c6a5f15dcbce870497c580de7fa578a75eb8846d2b5603a65eb8fb69ab949892"
         "-DMEDIAPROXY_NGHTTP2_INCLUDE_DIR=${nghttp2_include_dir}"

@@ -9,9 +9,9 @@
 
 TEST(BuildSmoke, InitializesPinnedLibaomAv1Codecs) {
     EXPECT_EQ(aom_codec_version_major(), 3);
-    EXPECT_EQ(aom_codec_version_minor(), 14);
-    EXPECT_EQ(aom_codec_version_patch(), 1);
-    EXPECT_EQ(std::string_view{aom_codec_version_str()}, "v3.14.1");
+    EXPECT_EQ(aom_codec_version_minor(), 15);
+    EXPECT_EQ(aom_codec_version_patch(), 2);
+    EXPECT_EQ(std::string_view{aom_codec_version_str()}, "v3.15.2");
 
     aom_codec_iface_t *const encoder_interface = aom_codec_av1_cx();
     aom_codec_iface_t *const decoder_interface = aom_codec_av1_dx();

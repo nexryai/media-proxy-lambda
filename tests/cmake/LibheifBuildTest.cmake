@@ -89,8 +89,8 @@ endif()
 
 file(READ "${CONFIG_HEADER}" version_header)
 foreach(required_version IN ITEMS
-        "#define LIBHEIF_VERSION \"1.23.4\""
-        "#define LIBHEIF_NUMERIC_VERSION ((1<<24) | (23<<16) | (4<<8) | 0)")
+        "#define LIBHEIF_VERSION \"1.23.6\""
+        "#define LIBHEIF_NUMERIC_VERSION ((1<<24) | (23<<16) | (6<<8) | 0)")
     string(FIND "${version_header}" "${required_version}" version_offset)
     if(version_offset EQUAL -1)
         message(FATAL_ERROR
@@ -141,7 +141,7 @@ endforeach()
 file(READ "${PKGCONFIG}" pkgconfig)
 foreach(required_line IN ITEMS
         "Name: libheif"
-        "Version: 1.23.4"
+        "Version: 1.23.6"
         "Libs: -L\${libdir} -lheif"
         "Requires.private: aom libsharpyuv")
     string(FIND "${pkgconfig}" "${required_line}" pc_offset)

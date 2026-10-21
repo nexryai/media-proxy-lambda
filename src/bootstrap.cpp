@@ -158,7 +158,7 @@ auto main() -> int {
     auto *volatile aom_encoder_config_function = &aom_codec_enc_config_default;
     aom_codec_iface_t *const aom_encoder_interface = aom_encoder_interface_function();
     aom_codec_enc_cfg_t aom_encoder_config{};
-    if (aom_version_function() != ((3 << 16) | (14 << 8) | 1) || aom_encoder_interface == nullptr || aom_decoder_interface_function() == nullptr || aom_encoder_config_function(aom_encoder_interface, &aom_encoder_config, AOM_USAGE_ALL_INTRA) != AOM_CODEC_OK) {
+    if (aom_version_function() != ((3 << 16) | (15 << 8) | 2) || aom_encoder_interface == nullptr || aom_decoder_interface_function() == nullptr || aom_encoder_config_function(aom_encoder_interface, &aom_encoder_config, AOM_USAGE_ALL_INTRA) != AOM_CODEC_OK) {
         return 1;
     }
     auto *volatile heif_version_function = &heif_get_version_number;

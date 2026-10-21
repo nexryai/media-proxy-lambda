@@ -718,3 +718,23 @@ Review the new GIO systemd-networkd monitor translation unit (using GIO's
 existing D-Bus implementation, without a libsystemd dependency) and Expat's
 new xcs.c helpers; extend the exact archive/source-count gates and check the
 same hardening flags on these new sources. GLib now uses C11 rather than C99.
+
+## Media dependency refresh (2026-10-21)
+
+Refresh libaom to 3.15.2, libheif to 1.23.6, Highway to 1.4.0,
+libvips to 8.18.7, and libpng to 1.6.59. Remove the libaom fortify patch
+because the release now preserves the supplied fortify flags upstream;
+retain the build-policy checks proving effective level-3 fortification.
+Disable the new ENABLE_APPS option explicitly to exclude aomdec/aomenc.
+Keep the decoder/encoder selection, scalar Highway target, CFI exceptions,
+and codec options unchanged. Highway now includes abort.cc and print.cc;
+verify all nine archive objects retain the scalar target and hardening flags.
+Retain every encoded-byte and pixel golden gate.
+Update the resvg Cargo closure with Cargo's compatible-version resolver:
+crc32fast 1.5.3, font-types 0.12.7, siphasher 1.0.4, smallvec 1.16.3,
+syn 3.0.9, and unicode-ident 1.0.27. Preserve the pinned Rust standard-library
+closure and host Rust version; resvg, its fixed font, and direct shim
+requirements remain at their latest available stable versions.
+Update the startup and smoke-test numeric version pins along with the
+resvg lock-file SHA-256. Bound the bootstrap protocol mock with a 30-second
+CTest timeout so a rejected startup cannot leave the suite waiting forever.

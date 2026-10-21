@@ -990,7 +990,8 @@ if(BUILD_TESTING)
             AND NOT MEDIAPROXY_SANITIZER_BUILD)
         gtest_discover_tests(
             mediaproxy_bootstrap_test
-            DISCOVERY_MODE PRE_TEST)
+            DISCOVERY_MODE PRE_TEST
+            PROPERTIES TIMEOUT 30)
     endif()
 
     function(mediaproxy_add_fuzzer target source library corpus max_length)
